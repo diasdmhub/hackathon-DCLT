@@ -27,10 +27,12 @@ require (
 
 ## Descrição
 
-O build do `donation-service` falha na etapa `go mod tidy` com o erro:
+De forma similar à [issue #2][issue2] do repositório ["auth-service"][authser] (_fase 1 DLCT_), o build do `donation-service` falha na etapa `go mod tidy` com o erro:
 
+```
 go: errors parsing go.mod:
 go.mod:19:2: require github.com/jackc/pgx/v4/stdlib: version "v4.18.3" invalid: should be v0 or v1, not v4
+```
 
 <BR>
 
@@ -38,11 +40,13 @@ go.mod:19:2: require github.com/jackc/pgx/v4/stdlib: version "v4.18.3" invalid: 
 
 O bloco de dependências indiretas do `go.mod` contém:
 
+```go
 require github.com/jackc/pgx/v4/stdlib v4.18.3 // indirect
+```
 
-`github.com/jackc/pgx/v4/stdlib` não é um módulo Go independente - é um subpacote do módulo `github.com/jackc/pgx/v4`, que já está corretamente declarado (sem `// indirect`) mais acima no mesmo arquivo. Como o caminho não termina em `/vN`, o Go aplica a regra de sufixo de major version e rejeita a versão `v4.18.3` informada.
+`github.com/jackc/pgx/v4/stdlib` não é um módulo Go independente, é um subpacote do módulo `github.com/jackc/pgx/v4`, que já está corretamente declarado (sem `// indirect`) mais acima no mesmo arquivo. Como o caminho não termina em `/vX`, o Go aplica a regra de sufixo de major version e rejeita a versão `v4.18.3` informada.
 
-O repositório não possui `go.sum` versionado, então esse erro só aparece na primeira vez que alguém executa `go mod tidy`/`go build` a partir do zero.
+O repositório não possui `go.sum` versionado, então esse erro só aparece na primeira vez em que o `go mod tidy`/`go build` é executado.
 
 <BR>
 
@@ -50,7 +54,12 @@ O repositório não possui `go.sum` versionado, então esse erro só aparece na 
 
 Remover ou comentar a linha `github.com/jackc/pgx/v4/stdlib v4.18.3 // indirect` do `go.mod`. O import `_ "github.com/jackc/pgx/v4/stdlib"` em `main.go` continua funcionando normalmente, coberto pelo require do módulo pai (`github.com/jackc/pgx/v4`).
 
-### Observação relacionada
+<BR>
 
-Após esse fix, o build ainda falha em `go build` por imports não utilizados em `main.go` (`fmt` e `strconv`), que também precisam ser removidos.
+### _Observação relacionada_
+
+Após esse fix, o build ainda falha em `go build` por imports não utilizados em `main.go` (`fmt` e `strconv`), que também precisam ser removidos ou comentados.
+
+[issue2]: https://github.com/FIAP-TCs/auth-service/issues/2
+[authser]: https://github.com/FIAP-TCs/auth-service
 */
