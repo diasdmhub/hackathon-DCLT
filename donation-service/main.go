@@ -3,11 +3,11 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
+//	"fmt"  // importa fmt, mas não usa em lugar algum. Causa erro de compilação.
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+//	"strconv"  // importa strconv, mas não usa em lugar algum. Causa erro de compilação.
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
