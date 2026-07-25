@@ -46,4 +46,14 @@ docker-compose.override.yml
 
 # Ignore environment files
 .env
-.env*
+.env.*
+
+# General ignores
+.git
+dist
+coverage
+*.log
+.next
+.cache
+docker-compose.*.yml
+tests/
