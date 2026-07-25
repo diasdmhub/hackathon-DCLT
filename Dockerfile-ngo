@@ -1,5 +1,5 @@
 # ---------- Build ----------
-# Base Alpine para redução do tamanho da imagem de execução
+# Base Slim para compilação completa da imagem e com tamanho razoável
 FROM docker.io/library/python:3-alpine
 WORKDIR /usr/src/ngo
 
