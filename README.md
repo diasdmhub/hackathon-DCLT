@@ -7,6 +7,8 @@
 - Devido às limitações do ambiente de laboratório da AWS, principalmente quanto aos acessos, não foi possivel implementar toda a infraestrutura do projeto adequadamente.
 Foi utilizado um conta privada da AWS para este projeto, no entanto, a infraestrutura do projeto só é mantida em produção pelo período de demonstração e testes para evitar custos elevados.
 
+<BR>
+
 ---
 
 <details>
@@ -378,6 +380,8 @@ Faça a diferença com a **SolidaryTech** 💙
 </details>
 
 ---
+
+<BR>
 
 | [⬆️ Top](#fiap---hackathon-fase-5---solidarytech) |
 | --- |
