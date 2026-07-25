@@ -22,44 +22,43 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 )
 
-/*
-# Bug: `go mod tidy` falha - entrada inválida em `donation-service/go.mod`
 
-## Descrição
+// # Bug: `go mod tidy` falha - entrada inválida em `donation-service/go.mod`
 
-De forma similar à [issue #2][issue2] do repositório ["auth-service"][authser] (_fase 1 DLCT_), o build do `donation-service` falha na etapa `go mod tidy` com o erro:
+// ## Descrição
 
-```
-go: errors parsing go.mod:
-go.mod:19:2: require github.com/jackc/pgx/v4/stdlib: version "v4.18.3" invalid: should be v0 or v1, not v4
-```
+// De forma similar à [issue #2][issue2] do repositório ["auth-service"][authser] (_fase // 1 DLCT_), o build do `donation-service` falha na etapa `go mod tidy` com o erro:
 
-<BR>
+// ```
+// go: errors parsing go.mod:
+// go.mod:19:2: require github.com/jackc/pgx/v4/stdlib: version "v4.18.3" invalid: // should be v0 or v1, not v4
+// ```
 
-## Causa
+// <BR>
 
-O bloco de dependências indiretas do `go.mod` contém:
+// ## Causa
 
-```go
-require github.com/jackc/pgx/v4/stdlib v4.18.3 // indirect
-```
+// O bloco de dependências indiretas do `go.mod` contém:
 
-`github.com/jackc/pgx/v4/stdlib` não é um módulo Go independente, é um subpacote do módulo `github.com/jackc/pgx/v4`, que já está corretamente declarado (sem `// indirect`) mais acima no mesmo arquivo. Como o caminho não termina em `/vX`, o Go aplica a regra de sufixo de major version e rejeita a versão `v4.18.3` informada.
+// ```go
+// require github.com/jackc/pgx/v4/stdlib v4.18.3 // indirect
+// ```
 
-O repositório não possui `go.sum` versionado, então esse erro só aparece na primeira vez em que o `go mod tidy`/`go build` é executado.
+// `github.com/jackc/pgx/v4/stdlib` não é um módulo Go independente, é um subpacote do // módulo `github.com/jackc/pgx/v4`, que já está corretamente declarado (sem `// // indirect`) mais acima no mesmo arquivo. Como o caminho não termina em `/vX`, o Go // aplica a regra de sufixo de major version e rejeita a versão `v4.18.3` informada.
 
-<BR>
+// O repositório não possui `go.sum` versionado, então esse erro só aparece na primeira // vez em que o `go mod tidy`/`go build` é executado.
 
-## Correção
+// <BR>
 
-Remover ou comentar a linha `github.com/jackc/pgx/v4/stdlib v4.18.3 // indirect` do `go.mod`. O import `_ "github.com/jackc/pgx/v4/stdlib"` em `main.go` continua funcionando normalmente, coberto pelo require do módulo pai (`github.com/jackc/pgx/v4`).
+// ## Correção
 
-<BR>
+// Remover ou comentar a linha `github.com/jackc/pgx/v4/stdlib v4.18.3 // indirect` do // `go.mod`. O import `_ "github.com/jackc/pgx/v4/stdlib"` em `main.go` continua // funcionando normalmente, coberto pelo require do módulo pai (`github.com/jackc/pgx/// v4`).
 
-### _Observação relacionada_
+// <BR>
 
-Após esse fix, o build ainda falha em `go build` por imports não utilizados em `main.go` (`fmt` e `strconv`), que também precisam ser removidos ou comentados.
+// ### _Observação relacionada_
 
-[issue2]: https://github.com/FIAP-TCs/auth-service/issues/2
-[authser]: https://github.com/FIAP-TCs/auth-service
-*/
+// Após esse fix, o build ainda falha em `go build` por imports não utilizados em // `main.go` (`fmt` e `strconv`), que também precisam ser removidos ou comentados.
+
+// [issue2]: https://github.com/FIAP-TCs/auth-service/issues/2
+// [authser]: https://github.com/FIAP-TCs/auth-service
