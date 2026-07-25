@@ -1,3 +1,17 @@
+# FIAP - Projeto da Fase 5 - "Hackathon" SolidaryTech
+
+<BR>
+
+## Considerações
+
+- Devido às limitações do ambiente de laboratório da AWS, principalmente quanto aos acessos, não foi possivel implementar toda a infraestrutura do projeto adequadamente.
+Foi utilizado um conta privada da AWS para este projeto, no entanto, a infraestrutura do projeto só é mantida em produção pelo período de demonstração e testes para evitar custos elevados.
+
+---
+
+<details>
+    <summary><b>Proposta inicial do "hackathon" da fase 5. <i>Clique para expandir</i></b></summary>
+
 # 🚀 SolidaryTech — Hackathon Fase 5
 
 Bem-vindo ao repositório oficial da **SolidaryTech**.
@@ -360,3 +374,10 @@ Sinta-se livre para evoluir a arquitetura, melhorar a observabilidade e implemen
 Bom Hackathon 🚀
 
 Faça a diferença com a **SolidaryTech** 💙
+
+</details>
+
+---
+
+| [⬆️ Top](#fiap---hackathon-fase-5---solidarytech) |
+| --- |

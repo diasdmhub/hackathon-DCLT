@@ -1,0 +1,21 @@
+# ---------- Build ----------
+# Base Alpine para redução do tamanho da imagem de execução
+FROM docker.io/library/python:3-alpine
+WORKDIR /usr/src/volunteer
+
+# Copia somente os requisitos para o cache desta camada
+COPY ./volunteer-service/requirements.txt ./
+
+# Instala as dependências
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Gera e instala os pacotes de auto-instrumentação para as bibliotecas
+RUN pip install --no-cache-dir opentelemetry-instrumentation || true
+
+# Copia o script principal
+COPY ./volunteer-service/app.py ./volunteer.py
+
+# ----------- Run -----------
+EXPOSE 8083
+
+CMD [ "opentelemetry-instrument", "gunicorn", "--bind", "0.0.0.0:8083", "volunteer:app" ]

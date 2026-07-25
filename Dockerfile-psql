@@ -1,0 +1,10 @@
+# Ref: https://hub.docker.com/_/postgres
+
+# Imagem Alpine
+FROM docker.io/library/postgres:18-alpine
+
+# Copia o script SQL do donation-service para que o Postgres crie a tabela donations
+COPY ./donation-service/db/init.sql /docker-entrypoint-initdb.d/init-donation-service.sql
+
+# Copia o script SQL do ngo-service para que o Postgres crie a tabela ngos
+COPY ./ngo-service/db/init.sql /docker-entrypoint-initdb.d/init-ngo-service.sql
