@@ -7,7 +7,7 @@ Abaixo são descritas algumas das disciplinas utilizadas neste projeto.
 ## Fundamentos DevOps
 
 - **Container e Kubernetes** - "Dockerfiles" otimizados para o _build_ dos 3 microserviços e implantação no Kubernetes.
-    - Eles utilizam imagens reduzidas `alpine`.
+    - Os microserviços e acessórios utilizam imagens reduzidas, como `alpine`.
     - Possuem _stage build_ otimizado para redução de artefatos quando necessário (_donation-service_).
     - _Vide arquivos `Dockerfile-*` na raiz do repositório._
 - **Infraestrutura como Código (IaC)** - Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) via Terraform.

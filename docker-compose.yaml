@@ -14,6 +14,12 @@ services:
       - ./elasticmq/elasticmq.conf:/opt/elasticmq.conf
 #    ports:
 #      - 9324:9324
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z elasticmq 9324"]
+      start_interval: 5s
+      interval: 10s
+      timeout: 2s
+      retries: 3
     networks:
       - sol-net
 
@@ -24,6 +30,12 @@ services:
     command: ["-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb"]
 #    ports:
 #      - 8000:8000
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null http://dynamodb:8000"]
+      start_interval: 5s
+      interval: 10s
+      timeout: 2s
+      retries: 3
     networks:
       - sol-net
 
@@ -123,7 +135,7 @@ services:
       psql:
         condition: service_healthy
       elasticmq:
-        condition: service_started
+        condition: service_healthy
     networks:
       - sol-net
 
@@ -142,8 +154,8 @@ services:
     depends_on:
       psql:
         condition: service_healthy
-      dynamodb-init:
-        condition: service_completed_successfully
+      dynamodb:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://volunteer:8083/health"]
       start_interval: 5s
