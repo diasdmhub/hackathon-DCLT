@@ -2,6 +2,16 @@
 
 <BR>
 
+---
+
+### [↗️ Estrutura de disciplinas do ambiente][estrutura]
+### [↗️ Arquitetura dos microserviços][arquiteturamicro]
+### [↗️ Teste manual dos microserviços][testemanual]
+
+---
+
+<BR>
+
 ## Considerações
 
 - Conforme as orientações gerais do projeto Hackthon, divulgadas na plataforma Pós-tech, o foco não é no código das aplicações, mas nas práticas de SRE, FinOps, Segurança e ITSM/AIOps. Portanto, a [issue documentada no repositório original][issue3] pode prejudicar ou atrasar ao andamento do projeto pois traz uma carga desnecessária de _troubleshooting_ e está fora de contexto com o projeto. Entendo que esta é uma realidade de muitas aplicações em ambientes de produção. Contudo, para a boa continuidade do aprendizado na FIAP, acredito que o _donation-service_ precisa ser revisado com parcimônia a fim de otimizar o aprendizado.
@@ -388,5 +398,8 @@ Faça a diferença com a **SolidaryTech** 💙
 | [⬆️ Top](#fiap---hackathon-fase-5---solidarytech) |
 | --- |
 
+[estrutura]: /doc/arquitetura.md
+[arquiteturamicro]: /doc/estrutura.md
+[testemanual]: /doc/teste-manual.md
 [issue3]: https://github.com/dougls/hackathon-DCLT/issues/3
 [dockercompose]: ./docker-compose.yaml
