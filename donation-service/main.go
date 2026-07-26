@@ -55,7 +55,11 @@ func main() {
 	queueURL := os.Getenv("AWS_SQS_URL")
 	region := os.Getenv("AWS_REGION")
 	if queueURL != "" && region != "" {
-		sess, _ := session.NewSession(&aws.Config{Region: aws.String(region)})
+        cfg := &aws.Config{Region: aws.String(region)}
+        if endpoint := os.Getenv("AWS_ENDPOINT_URL"); endpoint != "" {
+            cfg.Endpoint = aws.String(endpoint) // permite apontar para um emulador local (ex: ElasticMQ) em vez da AWS real
+        }
+        sess, _ := session.NewSession(cfg)
 		sqsSvc = sqs.New(sess)
 		log.Println("Integração com AWS SQS ativada.")
 	}
