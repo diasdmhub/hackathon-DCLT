@@ -4,8 +4,10 @@
 
 ## Considerações
 
+- Conforme as orientações gerais do projeto Hackthon, divulgadas na plataforma Pós-tech, o foco não é no código das aplicações, mas nas práticas de SRE, FinOps, Segurança e ITSM/AIOps. Portanto, a [issue documentada no repositório original][issue3] pode prejudicar ou atrasar ao andamento do projeto pois traz uma carga desnecessária de _troubleshooting_ e está fora de contexto com o projeto. Entendo que esta é uma realidade de muitas aplicações em ambientes de produção. Contudo, para a boa continuidade do aprendizado na FIAP, acredito que o _donation-service_ precisa ser revisado com parcimônia a fim de otimizar o aprendizado.
 - Devido às limitações do ambiente de laboratório da AWS, principalmente quanto aos acessos, não foi possivel implementar toda a infraestrutura do projeto adequadamente.
 Foi utilizado um conta privada da AWS para este projeto, no entanto, a infraestrutura do projeto só é mantida em produção pelo período de demonstração e testes para evitar custos elevados.
+- Para desenvolvimento, testes ou uso limitado, foi implementado um ambiente local de emulação AWS utilizando o Docker Compose ([`docker-compose.yaml`][dockercompose]) a fim de evitar o uso do ambiente real da AWS e seus custos agregados. Foi incluído o ElasticMQ para emular o SQS, e o DynamoDB Local para a tabela do DynamoDB do _volunteer-service_.
 
 <BR>
 
@@ -249,9 +251,9 @@ gunicorn --bind 0.0.0.0:8083 app:app
 
 | Serviço | URL |
 |---|---|
-| NGO Service | http://localhost:8081 |
-| Donation Service | http://localhost:8082 |
-| Volunteer Service | http://localhost:8083 |
+| NGO Service | `http://localhost:8081` |
+| Donation Service | `http://localhost:8082` |
+| Volunteer Service | `http://localhost:8083` |
 
 ---
 
@@ -385,3 +387,6 @@ Faça a diferença com a **SolidaryTech** 💙
 
 | [⬆️ Top](#fiap---hackathon-fase-5---solidarytech) |
 | --- |
+
+[issue3]: https://github.com/dougls/hackathon-DCLT/issues/3
+[dockercompose]: ./docker-compose.yaml

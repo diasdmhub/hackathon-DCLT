@@ -60,5 +60,7 @@ require (
 
 // Após esse fix, o build ainda falha em `go build` por imports não utilizados em // `main.go` (`fmt` e `strconv`), que também precisam ser removidos ou comentados.
 
+// > Issue post: https://github.com/dougls/hackathon-DCLT/issues/3
+
 // [issue2]: https://github.com/FIAP-TCs/auth-service/issues/2
 // [authser]: https://github.com/FIAP-TCs/auth-service

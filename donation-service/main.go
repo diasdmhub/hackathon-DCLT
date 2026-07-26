@@ -90,7 +90,7 @@ func (a *App) DonationHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		d.Status = "APPROVED" // Simulação de gateway de pagamento
+		d.Status = "APPROVED"  // Simulação de gateway de pagamento
 		err := a.DB.QueryRow(
 			"INSERT INTO donations (ngo_id, amount, donor_name, status) VALUES ($1, $2, $3, $4) RETURNING id, created_at",
 			d.NgoID, d.Amount, d.DonorName, d.Status,
