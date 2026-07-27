@@ -18,11 +18,9 @@ VOLUNTEER_URL="${VOLUNTEER_URL:-http://localhost:8083}"
 
 if [ -z "${SQS_NETWORK:-}" ]; then
     SQS_NETWORK=$(docker inspect donation-service \
-      --format '{{range $net, $_ := .NetworkSettings.Networks}}{{$net}}{{end}}' 2>/dev/null || t
-rue)
+      --format '{{range $net, $_ := .NetworkSettings.Networks}}{{$net}}{{end}}' 2>/dev/null || true)
     if [ -z "$SQS_NETWORK" ]; then
-        echo "FALHOU: não foi possível detectar a rede docker do container donation-service (def
-ina SQS_NETWORK manualmente)" >&2
+        echo "FALHOU: não foi possível detectar a rede docker do container donation-service (defina SQS_NETWORK manualmente)" >&2
         exit 1
     fi
 fi
