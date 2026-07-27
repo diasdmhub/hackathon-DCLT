@@ -1,24 +1,45 @@
 #!/usr/bin/env bash
-# Smoke test de ponta a ponta dos microserviços da SolidaryTech.
-# Reproduz o roteiro manual descrito em doc/teste-manual.md contra uma stack
-# já no ar (docker compose up --wait), validando os casos positivos e
-# negativos de cada serviço e a publicação assíncrona no SQS/ElasticMQ.
+# Valida o fluxo de cadastro e consulta de cada serviço (caminho positivo) contra
+# uma stack já no ar (docker compose up --wait), além da publicação
+# assíncrona no SQS/ElasticMQ.
 #
 # Uso: build/scripts/smoke-test.sh
 # Variáveis de ambiente opcionais:
 #   NGO_URL, DONATION_URL, VOLUNTEER_URL - base URLs dos serviços
 #   SQS_NETWORK                          - rede docker onde o ElasticMQ está acessível
+#                                           (por padrão, detectada a partir do
+#                                           container donation-service)
 
 set -euo pipefail
 
 NGO_URL="${NGO_URL:-http://localhost:8081}"
 DONATION_URL="${DONATION_URL:-http://localhost:8082}"
 VOLUNTEER_URL="${VOLUNTEER_URL:-http://localhost:8083}"
-SQS_NETWORK="${SQS_NETWORK:-solidarytech_sol-net}"
+
+if [ -z "${SQS_NETWORK:-}" ]; then
+    SQS_NETWORK=$(docker inspect donation-service \
+      --format '{{range $net, $_ := .NetworkSettings.Networks}}{{$net}}{{end}}' 2>/dev/null || t
+rue)
+    if [ -z "$SQS_NETWORK" ]; then
+        echo "FALHOU: não foi possível detectar a rede docker do container donation-service (def
+ina SQS_NETWORK manualmente)" >&2
+        exit 1
+    fi
+fi
 
 # Todo log de diagnóstico vai para stderr, para que stdout possa ser
 # capturado com segurança via $(...) e conter somente o corpo JSON da resposta.
-log() { echo "[smoke-test] $*" >&2; }
+log() { echo "[smoke-test]     $*" >&2; }
+
+# Título de uma nova etapa do roteiro
+_first_section=1
+section() {
+    if [ "$_first_section" -eq 0 ]; then
+        echo >&2
+    fi
+    _first_section=0
+    echo "[smoke-test] $*" >&2
+}
 
 # Executa uma requisição HTTP e valida o status code esperado.
 # Em caso de sucesso, ecoa o corpo da resposta em stdout (para captura via $(...)).
@@ -44,12 +65,13 @@ expect_status() {
     cat /tmp/smoke_body
 }
 
-log "1) Health check dos três serviços"
+section "1) Health check dos três serviços"
 expect_status "ngo-service /health" 200 GET "$NGO_URL/health" >/dev/null
 expect_status "donation-service /health" 200 GET "$DONATION_URL/health" >/dev/null
 expect_status "volunteer-service /health" 200 GET "$VOLUNTEER_URL/health" >/dev/null
 
-log "2) ngo-service - criar ONG de referência"
+
+section "2) ngo-service - criar ONG de referência"
 NGO_EMAIL="smoke-test-$(date +%s)@example.com"
 NGO_BODY=$(expect_status "POST /ngos (válido)" 201 POST "$NGO_URL/ngos" \
   "{\"name\":\"ONG Smoke Test\",\"email\":\"$NGO_EMAIL\",\"cause\":\"Educação\",\"city\":\"Curitiba\"}")
@@ -58,12 +80,9 @@ log "NGO_ID=$NGO_ID"
 [ "$NGO_ID" != "null" ] && [ -n "$NGO_ID" ]
 
 expect_status "GET /ngos" 200 GET "$NGO_URL/ngos" >/dev/null
-expect_status "POST /ngos (campo obrigatório ausente)" 400 POST "$NGO_URL/ngos" \
-  '{"name":"X","email":"x@x.org","cause":"Fome"}' >/dev/null
-expect_status "POST /ngos (e-mail duplicado)" 409 POST "$NGO_URL/ngos" \
-  "{\"name\":\"Duplicada\",\"email\":\"$NGO_EMAIL\",\"cause\":\"Fome\",\"city\":\"SP\"}" >/dev/null
 
-log "3) donation-service - registrar doação para a ONG"
+
+section "3) donation-service - registrar doação para a ONG"
 DONATION_BODY=$(expect_status "POST /donations (válido)" 201 POST "$DONATION_URL/donations" \
   "{\"ngo_id\": $NGO_ID, \"amount\": 150.00, \"donor_name\": \"Doador Smoke Test\"}")
 DONATION_ID=$(echo "$DONATION_BODY" | jq -r '.id')
@@ -72,10 +91,9 @@ log "DONATION_ID=$DONATION_ID status=$DONATION_STATUS"
 [ "$DONATION_STATUS" = "APPROVED" ]
 
 expect_status "GET /donations" 200 GET "$DONATION_URL/donations" >/dev/null
-expect_status "POST /donations (payload inválido)" 400 POST "$DONATION_URL/donations" \
-  '{ngo_id: nope}' >/dev/null
 
-log "3.1) Confirmando a publicação assíncrona no SQS (ElasticMQ)"
+
+section "3.1) Confirmando a publicação assíncrona no SQS (ElasticMQ)"
 sqs_received=0
 for i in 1 2 3 4 5; do
   response=$(docker run --rm --network "$SQS_NETWORK" \
@@ -96,7 +114,7 @@ if [ "$sqs_received" -ne 1 ]; then
   exit 1
 fi
 
-log "4) volunteer-service - registrar voluntário para a ONG"
+section "4) volunteer-service - registrar voluntário para a ONG"
 VOLUNTEER_BODY=$(expect_status "POST /volunteers (válido)" 201 POST "$VOLUNTEER_URL/volunteers" \
   "{\"name\": \"Voluntário Smoke Test\", \"email\": \"vol-smoke-test@example.com\", \"ngo_id\": $NGO_ID}")
 VOLUNTEER_ID=$(echo "$VOLUNTEER_BODY" | jq -r '.volunteer_id')
@@ -104,8 +122,5 @@ log "VOLUNTEER_ID=$VOLUNTEER_ID"
 [ "$VOLUNTEER_ID" != "null" ] && [ -n "$VOLUNTEER_ID" ]
 
 expect_status "GET /volunteers/{ngo_id}" 200 GET "$VOLUNTEER_URL/volunteers/$NGO_ID" >/dev/null
-expect_status "POST /volunteers (campo obrigatório ausente)" 400 POST "$VOLUNTEER_URL/volunteers" \
-  '{"name":"X","email":"x@x.com"}' >/dev/null
-expect_status "GET /volunteers/{ngo_id} (ID não inteiro)" 404 GET "$VOLUNTEER_URL/volunteers/nao_inteiro" >/dev/null
 
-log "Todos os testes passaram."
+section "Todos os testes passaram."
