@@ -30,6 +30,8 @@ Foi utilizado um conta privada da AWS para este projeto, no entanto, a infraestr
 <details>
     <summary><b>Proposta inicial do "hackathon" da fase 5. <i>Clique para expandir</i></b></summary>
 
+> Repositório original: [https://github.com/dougls/hackathon-DCLT](https://github.com/dougls/hackathon-DCLT)
+
 # 🚀 SolidaryTech — Hackathon Fase 5
 
 Bem-vindo ao repositório oficial da **SolidaryTech**.
