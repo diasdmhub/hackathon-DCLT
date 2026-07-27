@@ -1,5 +1,9 @@
 # FIAP - Projeto da Fase 5 - "Hackathon" SolidaryTech
 
+> Análise geral e implementação comentada do "hackathon" da Fase 5 do curso DevOps e Arquitetura Cloud da FIAP.
+
+Este é o ecossistema de microsserviços da SolidaryTech que simulam um ambiente corporativo distribuído para um plataforma de doações NGO. A SolidaryTech é uma iniciativa sem fins lucrativos que conecta ONGs a doadores e voluntários.
+
 <BR>
 
 ---

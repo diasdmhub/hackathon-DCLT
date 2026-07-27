@@ -11,6 +11,12 @@ Este é um resumo da arquitetura do ambiente da SolidaryTech.
 
 ## Microserviços
 
+A SolidaryTech possui 3 microsserviços independentes, desenvolvidos com tecnologias diferentes para simular um ambiente corporativo distribuído.
+
+1. **`ngo-service`**: (_Non-Gorvermental Organization_) responsável pelo gerenciamento e cadastro das ONGs parceiras da plataforma.
+2. **`donation-service`**: responsável pelo processamento das doações e publicação de eventos assíncronos em filas para processamento posterior (_Caminho Crítico/Hot Path_).
+3. **`volunteer-service`**: gerencia o cadastro e inscrição de voluntários interessados em apoiar as ONGs parceiras.
+
 O [`README.md`](/) original descreve os 3 microserviços isoladamente, mas não deixa claro **quais endpoints existem**, **quais campos cada um espera** e **como uma ONG se conecta a doações e voluntários**. Este resumo cobre os três pontos, na forma de uma cadeia de chamadas manuais que podem ser [reproduzidas manualmente com o `curl`][testemanual].
 
 <BR>
