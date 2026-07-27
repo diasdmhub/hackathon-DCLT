@@ -406,4 +406,4 @@ Faça a diferença com a **SolidaryTech** 💙
 [arquiteturamicro]: /doc/arquitetura.md
 [testemanual]: /doc/teste-manual.md
 [issue3]: https://github.com/dougls/hackathon-DCLT/issues/3
-[dockercompose]: ./docker-compose.yaml
+[dockercompose]: /build/docker-compose.yaml
