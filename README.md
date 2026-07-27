@@ -398,7 +398,7 @@ Faça a diferença com a **SolidaryTech** 💙
 | [⬆️ Top](#fiap---hackathon-fase-5---solidarytech) |
 | --- |
 
-[estrutura]: /doc/arquitetura.md
+[estrutura]: /doc/estrutura.md
 [arquiteturamicro]: /doc/estrutura.md
 [testemanual]: /doc/teste-manual.md
 [issue3]: https://github.com/dougls/hackathon-DCLT/issues/3

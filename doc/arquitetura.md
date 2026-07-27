@@ -1,3 +1,6 @@
+| [↩️ Voltar](./) |
+| --- |
+
 # Arquitetura
 
 > ⚠️ **_Em construção_**
@@ -65,5 +68,8 @@ sequenceDiagram
 |                       | GET    | `/health`              | -                            | `200`                                           | - |
 | **volunteer-service** | POST   | `/volunteers`          | `name, email, ngo_id`        | `201` + registro (`volunteer_id` UUID gerado)   | `400` Campo ausente ou inválido - `500` Erro ao salvar voluntário (DB) |
 |                       | GET    | `/volunteers/<ngo_id>` | num inteiro no path          | `200` + lista filtrada                          | `404` se `ngo_id` não for inteiro - `500` Erro ao buscar dados (DB) |
+
+| [⬆️ Top](#arquitetura) |
+| --- |
 
 [testemanual]: ./teste-manual.md
