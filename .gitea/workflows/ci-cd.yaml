@@ -1,0 +1,270 @@
+name: SolidaryTech Microservices - CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths:
+      - build/**
+      - .gitea/workflows/**
+  pull_request:
+    branches: [ main ]
+    paths:
+      - build/**
+      - .gitea/workflows/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "stable"
+  PYTHON_VERSION: "3.13"
+  TRIVY_VERSION: "0.70.0"
+  COMPOSE_PROJECT: solidarytech
+
+jobs:
+  # ---------------------------------------------------------------------
+  # 1. Lint + SAST (gosec/bandit) + SCA (Trivy filesystem), por serviço
+  # ---------------------------------------------------------------------
+  sast-sca:
+    name: SAST/SCA - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: ngo
+            language: python
+            code_dir: build/ngo-service
+
+          - service: donation
+            language: go
+            code_dir: build/donation-service
+
+          - service: volunteer
+            language: python
+            code_dir: build/volunteer-service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Setup Python
+        if: matrix.language == 'python'
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Linter / Análise estática
+      - name: Go Lint (golangci-lint)
+        if: matrix.language == 'go'
+        env:
+          GOLANGCI_LINT_CACHE: ~/.cache/golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: "latest"
+          working-directory: "./${{ matrix.code_dir }}"
+          args: "--modules-download-mode=mod"
+
+      - name: Python Lint (Ruff)
+        if: matrix.language == 'python'
+        uses: astral-sh/ruff-action@v4.0.0
+        with:
+          version: "latest"
+          src: "./${{ matrix.code_dir }}"
+
+      # Preparação de dependências (fixa versões para o Trivy conseguir avaliar a árvore)
+      - name: Preparação de dependências (Go)
+        if: matrix.language == 'go'
+        working-directory: ${{ matrix.code_dir }}
+        run: go mod tidy
+
+      - name: Preparação de dependências (Python)
+        if: matrix.language == 'python'
+        working-directory: ${{ matrix.code_dir }}
+        run: |
+          pip install -r requirements.txt
+          pip -v freeze > requirements.txt
+
+      # SCA - Trivy filesystem (bloqueia vulnerabilidade crítica)
+      - name: Cache Trivy DB
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: |
+            trivy-db-
+
+      - name: Setup Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | \
+          sh -s -- -b /usr/local/bin v${{ env.TRIVY_VERSION }}
+
+      - name: SCA - Trivy (filesystem)
+        run: |
+          trivy fs \
+          --cache-dir ~/.cache/trivy \
+          --skip-version-check \
+          --disable-telemetry \
+          --format table \
+          --exit-code 1 \
+          --severity CRITICAL \
+          --ignore-unfixed \
+          --pkg-types library \
+          --scanners vuln \
+          "${{ github.workspace }}/${{ matrix.code_dir }}"
+
+      # SAST específico por linguagem (não bloqueia o pipeline)
+      - name: SAST - gosec (Go)
+        if: matrix.language == 'go'
+        continue-on-error: true
+        uses: securego/gosec@master
+        with:
+          args: "./${{ matrix.code_dir }}/..."
+
+      - name: SAST - bandit (Python)
+        if: matrix.language == 'python'
+        working-directory: ${{ matrix.code_dir }}
+        continue-on-error: true
+        run: |
+          pip install bandit
+          bandit -q -lll -iii -f txt -s B104 -r .
+
+  # ---------------------------------------------------------------------
+  # 2. Smoke test de ponta a ponta (docker compose up + doc/teste-manual.md)
+  # ---------------------------------------------------------------------
+  smoke-test:
+    name: Smoke test (stack completa)
+    runs-on: ubuntu-latest
+    needs: sast-sca
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Subir a stack (docker compose)
+        run: |
+          docker compose -f build/docker-compose.yaml --project-directory build \
+            --project-name ${{ env.COMPOSE_PROJECT }} up --build -d
+
+      - name: Aguardar os três serviços responderem em /health
+        run: |
+          for url in http://localhost:8081/health http://localhost:8082/health http://localhost:8083/health; do
+            echo "Aguardando $url..."
+            for i in $(seq 1 30); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' "$url" || true)
+              [ "$code" = "200" ] && { echo "$url OK"; break; }
+              [ "$i" = "30" ] && { echo "Timeout aguardando $url"; docker compose -f build/docker-compose.yaml --project-name ${{ env.COMPOSE_PROJECT }} ps; exit 1; }
+              sleep 3
+            done
+          done
+
+      - name: Executar smoke test (ngo/donation/volunteer)
+        env:
+          SQS_NETWORK: ${{ env.COMPOSE_PROJECT }}_sol-net
+        run: bash build/scripts/smoke-test.sh
+
+      - name: Logs dos containers (em caso de falha)
+        if: failure()
+        run: docker compose -f build/docker-compose.yaml --project-name ${{ env.COMPOSE_PROJECT }} logs
+
+      - name: Encerrar a stack
+        if: always()
+        run: docker compose -f build/docker-compose.yaml --project-name ${{ env.COMPOSE_PROJECT }} down -v
+
+  # ---------------------------------------------------------------------
+  # 3. Build das imagens + scan de imagem (Trivy) + push para o Docker Hub
+  # ---------------------------------------------------------------------
+  build-and-push:
+    name: Build - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: smoke-test
+    if: github.event_name != 'pull_request'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: ngo
+            dockerfile: build/Dockerfile-ngo
+            dockerhub_repo: diasdmhub/ngo
+
+          - service: donation
+            dockerfile: build/Dockerfile-donation
+            dockerhub_repo: diasdmhub/donation
+
+          - service: volunteer
+            dockerfile: build/Dockerfile-volunteer
+            dockerhub_repo: diasdmhub/volunteer
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup do Docker Buildx
+        uses: docker/setup-buildx-action@v4
+        with:
+          driver: docker
+
+      - name: Build do microserviço
+        uses: docker/build-push-action@v7
+        with:
+          context: ./build
+          file: ./${{ matrix.dockerfile }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+          tags: ${{ matrix.service }}:${{ github.sha }}
+          push: false
+
+      # Scan da imagem construída
+      - name: Cache Trivy DB
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: |
+            trivy-db-
+
+      - name: Setup Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | \
+          sh -s -- -b /usr/local/bin v${{ env.TRIVY_VERSION }}
+
+      - name: SCA - Trivy (imagem)
+        run: |
+          trivy image \
+          --cache-dir ~/.cache/trivy \
+          --skip-version-check \
+          --disable-telemetry \
+          --format table \
+          --exit-code 1 \
+          --severity CRITICAL \
+          --ignore-unfixed \
+          --pkg-types library \
+          --scanners vuln \
+          "${{ matrix.service }}:${{ github.sha }}"
+
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push do microserviço ao Docker Hub
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          docker tag ${{ matrix.service }}:${{ github.sha }} docker.io/${{ matrix.dockerhub_repo }}:${SHORT_SHA}
+          docker push docker.io/${{ matrix.dockerhub_repo }}:${SHORT_SHA}
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            docker tag ${{ matrix.service }}:${{ github.sha }} docker.io/${{ matrix.dockerhub_repo }}:latest
+            docker push docker.io/${{ matrix.dockerhub_repo }}:latest
+          fi
