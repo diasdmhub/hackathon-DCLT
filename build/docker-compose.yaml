@@ -27,6 +27,8 @@ services:
     image: docker.io/amazon/dynamodb-local:latest
     container_name: dynamodb
     # Opção sharedDb adicionada para usar um único arquivo de banco compartilhado
+    environment:
+      - DDB_LOCAL_TELEMETRY=0
     command: ["-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb"]
 #    ports:
 #      - 8000:8000
