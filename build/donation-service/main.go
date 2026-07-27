@@ -3,11 +3,11 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
+//	"fmt"  // importa fmt, mas não usa em lugar algum. Causa erro de compilação.
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+//	"strconv"  // importa strconv, mas não usa em lugar algum. Causa erro de compilação.
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -55,7 +55,11 @@ func main() {
 	queueURL := os.Getenv("AWS_SQS_URL")
 	region := os.Getenv("AWS_REGION")
 	if queueURL != "" && region != "" {
-		sess, _ := session.NewSession(&aws.Config{Region: aws.String(region)})
+        cfg := &aws.Config{Region: aws.String(region)}
+        if endpoint := os.Getenv("AWS_ENDPOINT_URL"); endpoint != "" {
+            cfg.Endpoint = aws.String(endpoint) // permite apontar para um emulador local (ex: ElasticMQ) em vez da AWS real
+        }
+        sess, _ := session.NewSession(cfg)
 		sqsSvc = sqs.New(sess)
 		log.Println("Integração com AWS SQS ativada.")
 	}
@@ -86,7 +90,7 @@ func (a *App) DonationHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		d.Status = "APPROVED" // Simulação de gateway de pagamento
+		d.Status = "APPROVED"  // Simulação de gateway de pagamento
 		err := a.DB.QueryRow(
 			"INSERT INTO donations (ngo_id, amount, donor_name, status) VALUES ($1, $2, $3, $4) RETURNING id, created_at",
 			d.NgoID, d.Amount, d.DonorName, d.Status,

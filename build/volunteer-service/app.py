@@ -16,13 +16,14 @@ app = Flask(__name__)
 
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 DYNAMODB_TABLE = os.getenv("AWS_DYNAMODB_TABLE")
+AWS_ENDPOINT_URL = os.getenv("AWS_ENDPOINT_URL") or None  # permite apontar para um emulador local (ex: DynamoDB Local) em vez da AWS real
 
 if not DYNAMODB_TABLE:
     log.critical("Erro: AWS_DYNAMODB_TABLE não definida.")
     sys.exit(1)
 
 try:
-    dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
+    dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION, endpoint_url=AWS_ENDPOINT_URL)
     table = dynamodb.Table(DYNAMODB_TABLE)
     log.info(f"Conectado à tabela DynamoDB: {DYNAMODB_TABLE}")
 except Exception as e:

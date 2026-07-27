@@ -1,0 +1,22 @@
+# ---------- Build ----------
+FROM docker.io/library/golang:alpine AS builder
+WORKDIR /src
+
+# Copia somente os arquivos necessários - Esta etapa é incluída no cache
+COPY ./donation-service/go.mod ./donation-service/main.go ./
+RUN go mod tidy
+
+# Contrução do binário estático
+RUN CGO_ENABLED=0 GOOS=linux \
+    go build -ldflags='-s -w' -v -o /src/donation.go .
+
+
+# ---------- Runtime ----------
+FROM docker.io/library/alpine:latest
+WORKDIR /app
+
+# Copia o binário a partir da imagem "builder"
+COPY --from=builder /src/donation.go /app/donation.go
+
+EXPOSE 8082
+CMD ["/app/donation.go"]
