@@ -24,7 +24,7 @@ spec:
       containers:
         - name: dynamodb
           image: docker.io/amazon/dynamodb-local:latest
-          command: ["-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb"]
+          args: ["-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb"]
           env:
             - name: DDB_LOCAL_TELEMETRY
               value: "0"

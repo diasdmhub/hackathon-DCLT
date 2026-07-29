@@ -8,6 +8,7 @@ metadata:
     Project: SolidaryTech
     Environment: dev
 spec:
+  storageClassName: local-path
   accessModes:
     - ReadWriteOnce
   resources:
