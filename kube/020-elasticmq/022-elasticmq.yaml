@@ -6,6 +6,8 @@ metadata:
   labels:
     app: elasticmq
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   replicas: 1
   selector:
@@ -16,6 +18,8 @@ spec:
       labels:
         app: elasticmq
         app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
     spec:
       containers:
         - name: elasticmq
@@ -59,6 +63,8 @@ metadata:
   namespace: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   selector:
     app: elasticmq

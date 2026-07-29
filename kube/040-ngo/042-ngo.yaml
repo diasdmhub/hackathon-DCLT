@@ -6,6 +6,8 @@ metadata:
   labels:
     app: ngo
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   replicas: 1
   selector:
@@ -16,6 +18,8 @@ spec:
       labels:
         app: ngo
         app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
     spec:
       initContainers:
         - name: wait-for-psql
@@ -67,6 +71,8 @@ metadata:
   namespace: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   type: NodePort
   selector:

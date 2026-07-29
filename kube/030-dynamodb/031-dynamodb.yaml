@@ -6,6 +6,8 @@ metadata:
   labels:
     app: dynamodb
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   replicas: 1
   selector:
@@ -16,6 +18,8 @@ spec:
       labels:
         app: dynamodb
         app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
     spec:
       containers:
         - name: dynamodb
@@ -55,6 +59,8 @@ metadata:
   namespace: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   selector:
     app: dynamodb
@@ -69,6 +75,8 @@ metadata:
   namespace: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   backoffLimit: 6
   template:
@@ -76,6 +84,8 @@ spec:
       labels:
         app: dynamodb-init
         app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
     spec:
       restartPolicy: OnFailure
       containers:
