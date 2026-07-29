@@ -1,43 +1,20 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: donation-env
-  namespace: solidarytech
-  labels:
-    app.kubernetes.io/part-of: solidarytech
-type: Opaque
-stringData:
-  PORT: "8082"
-  DATABASE_URL: "postgres://sol:sol@psql:5432/sol_db"
-  AWS_REGION: "us-east-1"
-  # Fila da AWS real (produção) - descomente e ajuste ao migrar para o SQS real
-  # AWS_SQS_URL: "https://sqs.us-east-1.amazonaws.com/123456789012/solidary-donations"
-  # Fila do ElasticMQ rodando no cluster
-  AWS_SQS_URL: "http://elasticmq:9324/queue/solidary-donations"
-  # Endpoint personalizado do SDK. Aponta para o ElasticMQ em vez da AWS real.
-  # Remova esta chave para voltar a usar a AWS real.
-  AWS_ENDPOINT_URL: "http://elasticmq:9324"
-  # Credenciais falsas exigidas pelo SDK para assinar requisições - o ElasticMQ não as valida
-  AWS_ACCESS_KEY_ID: "test"
-  AWS_SECRET_ACCESS_KEY: "test"
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: donation
+  name: volunteer
   namespace: solidarytech
   labels:
-    app: donation
+    app: volunteer
     app.kubernetes.io/part-of: solidarytech
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: donation
+      app: volunteer
   template:
     metadata:
       labels:
-        app: donation
+        app: volunteer
         app.kubernetes.io/part-of: solidarytech
     spec:
       initContainers:
@@ -51,24 +28,24 @@ spec:
                 echo "Aguardando o psql..."
                 sleep 2
               done
-        - name: wait-for-elasticmq
+        - name: wait-for-dynamodb
           image: docker.io/library/busybox:1.36
           command:
             - sh
             - -c
             - |
-              until nc -z -w2 elasticmq 9324; do
-                echo "Aguardando o elasticmq..."
+              until nc -z -w2 dynamodb 8000; do
+                echo "Aguardando o dynamodb..."
                 sleep 2
               done
       containers:
-        - name: donation
-          image: docker.io/diasdmhub/donation:latest
+        - name: volunteer
+          image: docker.io/diasdmhub/volunteer:latest
           ports:
-            - containerPort: 8082
+            - containerPort: 8083
           envFrom:
             - secretRef:
-                name: donation-env
+                name: volunteer-env
           resources:
             requests:
               cpu: 50m
@@ -79,7 +56,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 8082
+              port: 8083
             initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 2
@@ -87,7 +64,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 8082
+              port: 8083
             initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 2
@@ -96,15 +73,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: donation
+  name: volunteer
   namespace: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
 spec:
   type: NodePort
   selector:
-    app: donation
+    app: volunteer
   ports:
-    - port: 8082
-      targetPort: 8082
-      nodePort: 30082
+    - port: 8083
+      targetPort: 8083
+      nodePort: 30083
