@@ -83,11 +83,13 @@ metadata:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
     Environment: dev
+  annotations:
+    metallb.universe.tf/allow-shared-ip: solidarytech-external
 spec:
-  type: NodePort
+  type: LoadBalancer
+  loadBalancerIP: 10.12.11.202
   selector:
     app: donation
   ports:
     - port: 8082
       targetPort: 8082
-      nodePort: 30082
