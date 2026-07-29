@@ -1,11 +1,13 @@
+import logging
 import os
 import sys
-import uuid
 import time
-import logging
+import uuid
+
 import boto3
-from flask import Flask, request, jsonify
+from botocore.exceptions import BotoCoreError, ClientError
 from dotenv import load_dotenv
+from flask import Flask, jsonify, request
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -26,7 +28,7 @@ try:
     dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION, endpoint_url=AWS_ENDPOINT_URL)
     table = dynamodb.Table(DYNAMODB_TABLE)
     log.info(f"Conectado à tabela DynamoDB: {DYNAMODB_TABLE}")
-except Exception as e:
+except (BotoCoreError, ClientError) as e:
     log.critical(f"Falha ao conectar no DynamoDB: {e}")
     sys.exit(1)
 
@@ -52,7 +54,7 @@ def register_volunteer():
     try:
         table.put_item(Item=item)
         return jsonify(item), 201
-    except Exception as e:
+    except (BotoCoreError, ClientError) as e:
         log.error(f"Erro ao salvar voluntário no DynamoDB: {e}")
         return jsonify({"error": "Erro interno ao processar dados"}), 500
 
@@ -65,10 +67,10 @@ def get_volunteers_by_ngo(ngo_id):
             FilterExpression=boto3.dynamodb.conditions.Attr('ngo_id').eq(ngo_id)
         )
         return jsonify(response.get('Items', [])), 200
-    except Exception as e:
+    except (BotoCoreError, ClientError) as e:
         log.error(f"Erro ao buscar dados no DynamoDB: {e}")
         return jsonify({"error": "Erro interno"}), 500
 
 if __name__ == '__main__':
-    port = int(os.getenv("PORT", 8083))
+    port = int(os.getenv("PORT", "8083"))
     app.run(host='0.0.0.0', port=port)

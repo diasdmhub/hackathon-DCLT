@@ -8,6 +8,8 @@ require (
 	github.com/joho/godotenv v1.5.1
 )
 
+require github.com/jmespath/go-jmespath v0.4.0 // indirect
+
 require (
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect

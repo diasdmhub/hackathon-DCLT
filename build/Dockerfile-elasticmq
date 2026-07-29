@@ -1,0 +1,4 @@
+# Imagem do ElasticMQ com a configuração da fila embutida no build.
+FROM docker.io/softwaremill/elasticmq-native:latest
+
+COPY elasticmq/elasticmq.conf /opt/elasticmq.conf

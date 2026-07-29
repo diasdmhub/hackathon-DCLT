@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Valida o fluxo de cadastro e consulta de cada serviço (caminho positivo) contra
-# uma stack já no ar (docker compose up --wait), além da publicação
-# assíncrona no SQS/ElasticMQ.
+# uma stack já no ar (docker compose up -d), além da publicação assíncrona no
+# SQS/ElasticMQ. A seção 1 tolera até 30s de boot dos containers antes de
+# considerar cada serviço indisponível.
 #
 # Uso: build/scripts/smoke-test.sh
 # Variáveis de ambiente opcionais:
@@ -44,29 +45,47 @@ section() {
 expect_status() {
     local desc="$1" expected="$2" method="$3" url="$4" data="${5:-}"
     local status
-  
+
     if [ -n "$data" ]; then
-        status=$(curl -s -o /tmp/smoke_body -w '%{http_code}' -X "$method" "$url" \
+        status=$(curl -s --connect-timeout 5 --max-time 10 -o /tmp/smoke_body -w '%{http_code}' -X "$method" "$url" \
           -H "Content-Type: application/json" -d "$data")
     else
-        status=$(curl -s -o /tmp/smoke_body -w '%{http_code}' -X "$method" "$url")
+        status=$(curl -s --connect-timeout 5 --max-time 10 -o /tmp/smoke_body -w '%{http_code}' -X "$method" "$url")
     fi
-  
+
     if [ "$status" != "$expected" ]; then
         echo "FALHOU: $desc (esperado HTTP $expected, recebido $status)" >&2
         cat /tmp/smoke_body >&2
         echo >&2
         return 1
     fi
-  
+
     log "OK: $desc (HTTP $status)"
     cat /tmp/smoke_body
 }
 
+# Aguarda um endpoint /health responder 200, tolerando o tempo de boot do
+# container. 10 tentativas, uma a cada 3s (30s).
+wait_for_health() {
+    local desc="$1" url="$2" attempts=10 status
+    for i in $(seq 1 "$attempts"); do
+        status=$(curl -s --connect-timeout 5 --max-time 10 -o /dev/null -w '%{http_code}' "$url" || true)
+        if [ "$status" = "200" ]; then
+            log "OK: $desc (HTTP $status)"
+            return 0
+        fi
+        if [ "$i" -eq "$attempts" ]; then
+            echo "FALHOU: $desc não respondeu HTTP 200 após $((attempts * 3))s (último status: ${status:-sem resposta})" >&2
+            return 1
+        fi
+        sleep 3
+    done
+}
+
 section "1) Health check dos três serviços"
-expect_status "ngo-service /health" 200 GET "$NGO_URL/health" >/dev/null
-expect_status "donation-service /health" 200 GET "$DONATION_URL/health" >/dev/null
-expect_status "volunteer-service /health" 200 GET "$VOLUNTEER_URL/health" >/dev/null
+wait_for_health "ngo-service /health" "$NGO_URL/health"
+wait_for_health "donation-service /health" "$DONATION_URL/health"
+wait_for_health "volunteer-service /health" "$VOLUNTEER_URL/health"
 
 
 section "2) ngo-service - criar ONG de referência"

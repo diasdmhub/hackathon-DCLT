@@ -1,6 +1,16 @@
 name: SolidaryTech Microservices - CI/CD Pipeline
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - build/**
+      - .github/workflows/**
+  pull_request:
+    branches: [ main ]
+    paths:
+      - build/**
+      - .github/workflows/**
   workflow_dispatch:
 
 permissions:
