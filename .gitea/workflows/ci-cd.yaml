@@ -10,7 +10,8 @@ env:
   GO_VERSION: "stable"
   PYTHON_VERSION: "3.14"
   TRIVY_VERSION: "0.72.0"
-  COMPOSE_PROJECT: solidarytech
+  PROJECT: solidarytech
+  TAG_VERSION: "1.0"
 
 jobs:
   # ---------------------------------------------------------------------
@@ -144,11 +145,11 @@ jobs:
       - name: Subir a stack (docker compose)
         run: |
           docker compose -f build/docker-compose.yaml --project-directory build \
-            --project-name ${{ env.COMPOSE_PROJECT }} up --build -d
+            --project-name ${{ env.PROJECT }} up --build -d
 
       - name: Executar smoke test (ngo/donation/volunteer)
         env:
-          COMPOSE_NETWORK: ${{ env.COMPOSE_PROJECT }}_sol-net
+          COMPOSE_NETWORK: ${{ env.PROJECT }}_sol-net
         run: |
           # O runner executa este step em um container próprio, fora da rede da
           # stack (sol-net) - por isso o script roda dentro de um container
@@ -167,11 +168,11 @@ jobs:
 
       - name: Logs dos containers (em caso de falha)
         if: failure()
-        run: docker compose -f build/docker-compose.yaml --project-name ${{ env.COMPOSE_PROJECT }} logs
+        run: docker compose -f build/docker-compose.yaml --project-name ${{ env.PROJECT }} logs
 
       - name: Encerrar a stack
         if: always()
-        run: docker compose -f build/docker-compose.yaml --project-name ${{ env.COMPOSE_PROJECT }} down -v
+        run: docker compose -f build/docker-compose.yaml --project-name ${{ env.PROJECT }} down -v
 
   # ---------------------------------------------------------------------
   # 3. Build das imagens + scan de imagem (Trivy) + push para o Docker Hub
@@ -254,7 +255,7 @@ jobs:
 
       - name: Push do microserviço ao Docker Hub
         run: |
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          SHORT_SHA=""v${{ env.TAG_VERSION }}-$(echo ${{ github.sha }} | cut -c1-7)"
           docker tag ${{ matrix.service }}:${{ github.sha }} docker.io/${{ matrix.dockerhub_repo }}:${SHORT_SHA}
           docker push docker.io/${{ matrix.dockerhub_repo }}:${SHORT_SHA}
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
