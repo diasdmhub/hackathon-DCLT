@@ -5,6 +5,8 @@ metadata:
   namespace: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 data:
   init-donation-service.sql: |
     CREATE TABLE IF NOT EXISTS donations (

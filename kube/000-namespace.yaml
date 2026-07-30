@@ -4,3 +4,5 @@ metadata:
   name: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev

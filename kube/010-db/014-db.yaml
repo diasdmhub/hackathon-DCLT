@@ -6,6 +6,8 @@ metadata:
   labels:
     app: psql
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   replicas: 1
   strategy:
@@ -18,6 +20,8 @@ spec:
       labels:
         app: psql
         app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
     spec:
       containers:
         - name: psql
@@ -68,6 +72,8 @@ metadata:
   namespace: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   selector:
     app: psql

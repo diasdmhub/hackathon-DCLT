@@ -5,7 +5,10 @@ metadata:
   namespace: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
+  storageClassName: local-path
   accessModes:
     - ReadWriteOnce
   resources:

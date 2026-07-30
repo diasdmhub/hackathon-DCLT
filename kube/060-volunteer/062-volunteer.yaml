@@ -6,6 +6,8 @@ metadata:
   labels:
     app: volunteer
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
 spec:
   replicas: 1
   selector:
@@ -16,6 +18,8 @@ spec:
       labels:
         app: volunteer
         app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
     spec:
       initContainers:
         - name: wait-for-psql
@@ -77,11 +81,15 @@ metadata:
   namespace: solidarytech
   labels:
     app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+  annotations:
+    metallb.universe.tf/allow-shared-ip: solidarytech-external
 spec:
-  type: NodePort
+  type: LoadBalancer
+  loadBalancerIP: 10.12.11.202
   selector:
     app: volunteer
   ports:
     - port: 8083
       targetPort: 8083
-      nodePort: 30083
