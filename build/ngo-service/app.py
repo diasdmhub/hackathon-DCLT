@@ -27,6 +27,12 @@ except psycopg2.Error as e:
     log.critical(f"Erro ao conectar ao PostgreSQL: {e}")
     sys.exit(1)
 
+@app.after_request
+def log_request(response):
+    if request.path != '/health':
+        log.info(f"{request.method} {request.path} -> {response.status_code}")
+    return response
+
 @app.route('/health')
 def health():
     return jsonify({"status": "ok", "service": "ngo-service"})

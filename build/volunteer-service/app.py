@@ -32,6 +32,12 @@ except (BotoCoreError, ClientError) as e:
     log.critical(f"Falha ao conectar no DynamoDB: {e}")
     sys.exit(1)
 
+@app.after_request
+def log_request(response):
+    if request.path != '/health':
+        log.info(f"{request.method} {request.path} -> {response.status_code}")
+    return response
+
 @app.route('/health')
 def health():
     return jsonify({"status": "ok", "service": "volunteer-service"})
@@ -41,13 +47,18 @@ def register_volunteer():
     data = request.get_json()
     if not data or not all(k in data for k in ('name', 'email', 'ngo_id')):
         return jsonify({"error": "Campos obrigatórios ausentes"}), 400
-    
+
+    try:
+        ngo_id = int(data['ngo_id'])
+    except (TypeError, ValueError):
+        return jsonify({"error": "ngo_id inválido"}), 400
+
     volunteer_id = str(uuid.uuid4())
     item = {
         'volunteer_id': volunteer_id,
         'name': data['name'],
         'email': data['email'],
-        'ngo_id': int(data['ngo_id']),
+        'ngo_id': ngo_id,
         'registered_at': str(int(time.time()))
     }
     

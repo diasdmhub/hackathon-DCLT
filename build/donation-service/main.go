@@ -32,6 +32,26 @@ type App struct {
         SqsQueueURL string
 }
 
+type statusRecorder struct {
+        http.ResponseWriter
+        status int
+}
+
+func (r *statusRecorder) WriteHeader(status int) {
+        r.status = status
+        r.ResponseWriter.WriteHeader(status)
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+                next.ServeHTTP(rec, r)
+                if r.URL.Path != "/health" {
+                        log.Printf("%s %s -> %d", r.Method, r.URL.Path, rec.status)
+                }
+        })
+}
+
 func main() {
         _ = godotenv.Load()
 
@@ -71,7 +91,7 @@ func main() {
         mux.HandleFunc("/donations", app.DonationHandler)
 
         log.Printf("donation-service rodando na porta %s", port)
-        log.Fatal(http.ListenAndServe(":"+port, mux))
+        log.Fatal(http.ListenAndServe(":"+port, loggingMiddleware(mux)))
 }
 
 func (a *App) HealthHandler(w http.ResponseWriter, r *http.Request) {
