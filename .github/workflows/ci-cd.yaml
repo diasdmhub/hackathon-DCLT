@@ -265,7 +265,7 @@ jobs:
 
       - name: Push do microserviço ao Docker Hub
         run: |
-          SHORT_SHA=""v${{ env.TAG_VERSION }}-$(echo ${{ github.sha }} | cut -c1-7)"
+          SHORT_SHA="v${{ env.TAG_VERSION }}-$(echo ${{ github.sha }} | cut -c1-7)"
           docker tag ${{ matrix.service }}:${{ github.sha }} docker.io/${{ matrix.dockerhub_repo }}:${SHORT_SHA}
           docker push docker.io/${{ matrix.dockerhub_repo }}:${SHORT_SHA}
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
