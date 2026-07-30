@@ -70,4 +70,6 @@ spec:
           hostPath:
             path: /var/log/pods
         - name: data
-          emptyDir: {}
+          hostPath:
+            path: /var/lib/alloy/data
+            type: DirectoryOrCreate

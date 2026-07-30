@@ -57,6 +57,14 @@ data:
       forward_to = [loki.write.default.receiver]
 
       stage.cri {}
+
+      // Descarta entradas mais velhas que o limite de aceitação do Loki
+      // (limits_config.reject_old_samples_max_age) para não derrubar o lote
+      // inteiro quando arquivos de log antigos (ex.: restarts históricos de
+      // DaemonSets de sistema) forem lidos junto com entradas recentes.
+      stage.drop {
+        older_than = "160h"
+      }
     }
 
     loki.write "default" {
