@@ -7,6 +7,8 @@ metadata:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
     Environment: dev
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
 spec:
   storageClassName: local-path
   accessModes:
