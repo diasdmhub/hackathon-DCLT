@@ -26,9 +26,9 @@ Abaixo são descritas algumas das disciplinas utilizadas neste projeto.
 
 ### 2. GitOps (Gitea e GitHub) com pipeline de CI/CD
 
-- **CI/CD e DevSecOps** - Pipeline de CI/CD para os 3 microsserviços do SolidaryTech, cobrindo aspectos de qualidade e segurança de código, teste de integração de ponta a ponta contra a stack real, seguidos de build, scan e publicação de imagens no Docker Hub.
+> **Dois workflows equivalentes ([`.gitea/workflows/ci-cd.yaml`][cicdgitea] e [`.github/workflows/ci-cd.yaml`][cicdgithub])**.
 
-Dois workflows equivalentes ([`.gitea/workflows/ci-cd.yaml`][cicdgitea] e [`.github/workflows/ci-cd.yaml`][cicdgithub]), com três estágios sequenciais:
+- **CI/CD e DevSecOps** - Pipeline de CI/CD para os 3 microsserviços do SolidaryTech, cobrindo aspectos de qualidade e segurança de código, teste de integração de ponta a ponta contra a stack real, seguidos de build, scan e publicação de imagens no Docker Hub. Pipeline de três estágios sequenciais:
 
 1. **SAST/SCA por serviço**: lint (_golangci-lint ou ruff_), SCA de dependências via Trivy (_bloqueia CRITICAL_), e SAST (_gosec/bandit, não bloqueante_).
 2. **_Smoke test_ de ponta a ponta**: sobe a stack real via docker compose e executa o script `build/scripts/smoke-test.sh` contra os três serviços (_incluindo checagem da fila no ElasticMQ_).
