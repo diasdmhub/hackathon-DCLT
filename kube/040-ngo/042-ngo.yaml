@@ -34,7 +34,7 @@ spec:
               done
       containers:
         - name: ngo
-          image: docker.io/diasdmhub/ngo:latest # {"$imagepolicy": "flux-system:ngo"}
+          image: docker.io/diasdmhub/ngo:v1.1-20260731005356-ee505ee # {"$imagepolicy": "flux-system:ngo"}
           ports:
             - containerPort: 8081
           envFrom:
