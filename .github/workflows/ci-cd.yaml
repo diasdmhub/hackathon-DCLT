@@ -5,11 +5,13 @@ on:
     branches: [ main ]
     paths:
       - build/**
+      - '!build/scripts/load-test.sh'
       - .github/workflows/**
   pull_request:
     branches: [ main ]
     paths:
       - build/**
+      - '!build/scripts/load-test.sh'
       - .github/workflows/**
   workflow_dispatch:
 

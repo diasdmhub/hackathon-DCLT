@@ -7,7 +7,7 @@ import uuid
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, g, jsonify, request
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -35,7 +35,8 @@ except (BotoCoreError, ClientError) as e:
 @app.after_request
 def log_request(response):
     if request.path != '/health':
-        log.info(f"{request.method} {request.path} -> {response.status_code}")
+        # g.log_detail é preenchido pelos handlers com dados da requisição (ex.: nome do voluntário)
+        log.info(f"{request.method} {request.path} -> {response.status_code}{g.get('log_detail', '')}")
     return response
 
 @app.route('/health')
@@ -45,6 +46,8 @@ def health():
 @app.route('/volunteers', methods=['POST'])
 def register_volunteer():
     data = request.get_json()
+    if isinstance(data, dict):
+        g.log_detail = f' | voluntario="{data.get("name", "?")}" ngo_id={data.get("ngo_id", "?")}'
     if not data or not all(k in data for k in ('name', 'email', 'ngo_id')):
         return jsonify({"error": "Campos obrigatórios ausentes"}), 400
 

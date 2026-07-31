@@ -3,7 +3,7 @@ package main
 import (
         "database/sql"
         "encoding/json"
-//      "fmt"  // importa fmt, mas não usa em lugar algum. Causa erro de compilação.
+        "fmt"
         "log"
         "net/http"
         "os"
@@ -35,6 +35,7 @@ type App struct {
 type statusRecorder struct {
         http.ResponseWriter
         status int
+        detail string // complemento da linha de log, preenchido pelo handler (ex.: valor e doador)
 }
 
 func (r *statusRecorder) WriteHeader(status int) {
@@ -47,7 +48,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
                 rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
                 next.ServeHTTP(rec, r)
                 if r.URL.Path != "/health" {
-                        log.Printf("%s %s -> %d", r.Method, r.URL.Path, rec.status)
+                        log.Printf("%s %s -> %d%s", r.Method, r.URL.Path, rec.status, rec.detail)
                 }
         })
 }
@@ -110,6 +111,11 @@ func (a *App) DonationHandler(w http.ResponseWriter, r *http.Request) {
                 if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
                         http.Error(w, `{"error":"Payload inválido"}`, http.StatusBadRequest)
                         return
+                }
+
+                // Enriquece a linha de log da requisição com os dados da doação
+                if rec, ok := w.(*statusRecorder); ok {
+                        rec.detail = fmt.Sprintf(" | valor=%.2f doador=%q ngo_id=%d", d.Amount, d.DonorName, d.NgoID)
                 }
 
                 d.Status = "APPROVED"  // Simulação de gateway de pagamento

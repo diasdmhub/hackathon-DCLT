@@ -4,7 +4,7 @@ import sys
 
 import psycopg2
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, g, jsonify, request
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import SimpleConnectionPool
 
@@ -30,7 +30,8 @@ except psycopg2.Error as e:
 @app.after_request
 def log_request(response):
     if request.path != '/health':
-        log.info(f"{request.method} {request.path} -> {response.status_code}")
+        # g.log_detail é preenchido pelos handlers com dados da requisição (ex.: nome da ONG)
+        log.info(f"{request.method} {request.path} -> {response.status_code}{g.get('log_detail', '')}")
     return response
 
 @app.route('/health')
@@ -40,6 +41,8 @@ def health():
 @app.route('/ngos', methods=['POST'])
 def create_ngo():
     data = request.get_json()
+    nome = data.get('name', '?') if isinstance(data, dict) else '?'
+    g.log_detail = f' | ong="{nome}"'
     if not data or not all(k in data for k in ('name', 'email', 'cause', 'city')):
         return jsonify({"error": "Campos obrigatórios ausentes"}), 400
     
@@ -52,6 +55,7 @@ def create_ngo():
             )
             new_ngo = cur.fetchone()
             conn.commit()
+            g.log_detail = f' | ong="{nome}" id={new_ngo["id"]}'
             return jsonify(new_ngo), 201
     except psycopg2.IntegrityError:
         conn.rollback()
