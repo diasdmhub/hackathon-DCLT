@@ -7,8 +7,10 @@ import (
         "fmt"
         "log"
         "net/http"
+        "net/url"
         "os"
 //      "strconv"  // importa strconv, mas não usa em lugar algum. Causa erro de compilação.
+        "strings"
         "time"
 
         "github.com/aws/aws-sdk-go-v2/aws"
@@ -38,6 +40,7 @@ type Donation struct {
 
 type App struct {
         DB          *sql.DB
+        DBName      string
         SqsSvc      *sqs.Client
         SqsQueueURL string
 }
@@ -120,6 +123,14 @@ func main() {
         }
         log.Println("Conectado ao PostgreSQL (donation-service).")
 
+        // Nome do banco extraído da DATABASE_URL - vira o nó "virtual" do Postgres
+        // no service graph do Tempo (mesma convenção usada pela auto-instrumentação
+        // do psycopg2 nos serviços Python: atributos db.system/db.name em span CLIENT)
+        dbName := ""
+        if parsed, err := url.Parse(dbURL); err == nil {
+                dbName = strings.TrimPrefix(parsed.Path, "/")
+        }
+
         var sqsSvc *sqs.Client
         queueURL := os.Getenv("AWS_SQS_URL")
         region := os.Getenv("AWS_REGION")
@@ -136,7 +147,7 @@ func main() {
                 log.Println("Integração com AWS SQS ativada.")
         }
 
-        app := &App{DB: db, SqsSvc: sqsSvc, SqsQueueURL: queueURL}
+        app := &App{DB: db, DBName: dbName, SqsSvc: sqsSvc, SqsQueueURL: queueURL}
 
         mux := http.NewServeMux()
         mux.HandleFunc("/health", app.HealthHandler)
@@ -180,9 +191,15 @@ func (a *App) DonationHandler(w http.ResponseWriter, r *http.Request) {
 
                 d.Status = "APPROVED"  // Simulação de gateway de pagamento
 
-                // Span filho do INSERT com os dados de negócio da doação
+                // Span filho do INSERT com os dados de negócio da doação. SpanKind
+                // Client + atributos db.system/db.name (mesma convenção da auto-
+                // instrumentação do psycopg2) fazem o Tempo desenhar o edge para o
+                // nó "virtual" do Postgres no service graph.
                 ctx, span := otel.Tracer("donation-service").Start(r.Context(), "INSERT donations",
+                        oteltrace.WithSpanKind(oteltrace.SpanKindClient),
                         oteltrace.WithAttributes(
+                                attribute.String("db.system", "postgresql"),
+                                attribute.String("db.name", a.DBName),
                                 attribute.Int("donation.ngo_id", d.NgoID),
                                 attribute.Float64("donation.amount", d.Amount),
                                 attribute.String("donation.donor_name", d.DonorName),

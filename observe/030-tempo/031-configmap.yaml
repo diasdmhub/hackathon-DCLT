@@ -38,6 +38,24 @@ data:
           compaction:
             block_retention: 168h
 
+    # Deriva métricas de RED (service-graphs, span-metrics) de cada trace
+    # recebido e as envia (remote_write) ao Prometheus do observe/, que
+    # alimenta o Service Graph / Node Graph do Grafana
+    metrics_generator:
+      storage:
+        path: /var/tempo/generator/wal
+        remote_write:
+          - url: http://prometheus.observe.svc.cluster.local:9090/api/v1/write
+
+    # Processadores do metrics-generator ficam desativados por padrão;
+    # habilitados aqui via overrides globais (não há multi-tenant neste cluster)
+    overrides:
+      defaults:
+        metrics_generator:
+          processors:
+            - service-graphs
+            - span-metrics
+
     # Desativa o envio de estatísticas anônimas à Grafana Labs
     usage_report:
       reporting_enabled: false
