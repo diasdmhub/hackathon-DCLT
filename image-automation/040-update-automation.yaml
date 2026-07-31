@@ -8,7 +8,7 @@ metadata:
     Project: SolidaryTech
     Environment: dev
 spec:
-  interval: 1m0s
+  interval: 10m0s
   sourceRef:
     kind: GitRepository
     name: flux-system

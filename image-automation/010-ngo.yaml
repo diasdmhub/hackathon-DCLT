@@ -9,7 +9,7 @@ metadata:
     Environment: dev
 spec:
   image: docker.io/diasdmhub/ngo
-  interval: 1m0s
+  interval: 10m0s
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
