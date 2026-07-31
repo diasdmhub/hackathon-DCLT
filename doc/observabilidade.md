@@ -101,5 +101,11 @@ O `trace_id` retornado pela busca também aparece no fim da linha de log corresp
 
 <BR>
 
+## Dashboard modelo
+
+[`doc/grafana/dashboard-solidarytech.json`](/doc/grafana/dashboard-solidarytech.json) é um modelo de dashboard (Grafana 13.1.1, importável via **Dashboards → New → Import**) com as métricas de negócio (Loki), RED por serviço e o mapa de serviços (Tempo/Prometheus), e infraestrutura dos 2 nodes (Zabbix). Os painéis de Zabbix usam o filtro de item pelo nome padrão dos templates oficiais (`CPU utilization`, `Memory utilization`, `Load average (1m avg)`, condição `Ready` dos nodes e réplicas disponíveis dos deployments de `ngo`/`donation`/`volunteer` no host `kubernetes_cluster`); como o esquema exato do target JSON do datasource Zabbix varia por versão do plugin, pode ser necessário reselecionar host/item na edição do painel após a importação.
+
+<BR>
+
 | [⬆️ Top](#observabilidade) |
 | --- |
