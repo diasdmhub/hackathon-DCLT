@@ -65,15 +65,15 @@ sequenceDiagram
 | --------------------- | :----: | ---------------------- | :--------------------------- | :---------------------------------------------- | :--------------- |
 |                       | GET    | `/health`              | -                            | `200`                                           | -                |
 | **ngo-service**       | POST   | `/ngos`                | `name, email, cause, city`   | `201` + registro completo                       | `400` Campo ausente - `409` E-mail duplicado - `500` Erro interno |
-|                       | GET    | `/ngos`                | -                            | `200` + lista                                   | `500` Erro ao criar ONG (DB) |
+|                       | GET    | `/ngos`                | -                            | `200` + lista                                   | `500` Erro interno |
 | --------------------- | ------ | ---------------------- | ---------------------------- | ----------------------------------------------- | ---------------- |
 |                       | GET    | `/health`              | -                            | `200`                                           | - |
-| **donation-service**  | POST   | `/donations`           | `ngo_id, amount, donor_name` | `201` + registro (`status` sempre `"APPROVED"`) | `400` Payload inválido - `500` Erro ao salvar doação (DB) |
-|                       | GET    | `/donations`           | -                            | `200` + lista                                   | `500` Erro ao consultar lista de doações (DB) |
+| **donation-service**  | POST   | `/donations`           | `ngo_id, amount, donor_name` | `201` + registro (`status` sempre `"APPROVED"`) | `400` Payload inválido - `500` Erro interno |
+|                       | GET    | `/donations`           | -                            | `200` + lista                                   | `500` Erro interno |
 | --------------------- | ------ | ---------------------- | ---------------------------- | ----------------------------------------------- | ---------------- |
 |                       | GET    | `/health`              | -                            | `200`                                           | - |
-| **volunteer-service** | POST   | `/volunteers`          | `name, email, ngo_id`        | `201` + registro (`volunteer_id` UUID gerado)   | `400` Campo ausente ou inválido - `500` Erro ao salvar voluntário (DB) |
-|                       | GET    | `/volunteers/<ngo_id>` | num inteiro no path          | `200` + lista filtrada                          | `404` se `ngo_id` não for inteiro - `500` Erro ao buscar dados (DB) |
+| **volunteer-service** | POST   | `/volunteers`          | `name, email, ngo_id`        | `201` + registro (`volunteer_id` UUID gerado)   | `400` Campo ausente ou inválido - `500` Erro interno ao processar dados |
+|                       | GET    | `/volunteers/<ngo_id>` | num inteiro no path          | `200` + lista filtrada                          | `404` se `ngo_id` não for inteiro - `500` Erro interno |
 
 | [⬆️ Top](#arquitetura) |
 | --- |
