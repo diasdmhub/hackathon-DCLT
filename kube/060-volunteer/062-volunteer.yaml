@@ -44,7 +44,7 @@ spec:
               done
       containers:
         - name: volunteer
-          image: docker.io/diasdmhub/volunteer:latest
+          image: docker.io/diasdmhub/volunteer:latest # {"$imagepolicy": "flux-system:volunteer"}
           ports:
             - containerPort: 8083
           envFrom:
