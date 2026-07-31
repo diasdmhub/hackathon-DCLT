@@ -6,11 +6,8 @@ WORKDIR /usr/src/volunteer
 # Copia somente os requisitos para o cache desta camada
 COPY ./volunteer-service/requirements.txt ./
 
-# Instala as dependências
+# Instala as dependências, incluindo o distro e as instrumentações OpenTelemetry
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Gera e instala os pacotes de auto-instrumentação para as bibliotecas
-RUN pip install --no-cache-dir opentelemetry-instrumentation || true
 
 # Copia o script principal
 COPY ./volunteer-service/app.py ./volunteer.py

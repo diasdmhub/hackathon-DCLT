@@ -5,6 +5,7 @@ import sys
 import psycopg2
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
+from opentelemetry import trace
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import SimpleConnectionPool
 
@@ -21,7 +22,10 @@ if not DATABASE_URL:
     sys.exit(1)
 
 try:
-    pool = SimpleConnectionPool(1, 10, dsn=DATABASE_URL)
+    # cursor_factory definido na conexão (e não em cada cursor()) para que a
+    # instrumentação OpenTelemetry do psycopg2, que substitui a factory padrão
+    # da conexão por uma versão rastreada, não seja contornada.
+    pool = SimpleConnectionPool(1, 10, dsn=DATABASE_URL, cursor_factory=RealDictCursor)
     log.info("Pool de conexões com o PostgreSQL (ngo-service) inicializado.")
 except psycopg2.Error as e:
     log.critical(f"Erro ao conectar ao PostgreSQL: {e}")
@@ -31,7 +35,10 @@ except psycopg2.Error as e:
 def log_request(response):
     if request.path != '/health':
         # g.log_detail é preenchido pelos handlers com dados da requisição (ex.: nome da ONG)
-        log.info(f"{request.method} {request.path} -> {response.status_code}{g.get('log_detail', '')}")
+        # trace_id correlaciona a linha de log com o trace no Tempo; fica vazio quando o SDK OTel está desativado
+        ctx = trace.get_current_span().get_span_context()
+        trace_ref = f' trace_id={ctx.trace_id:032x}' if ctx.is_valid else ''
+        log.info(f"{request.method} {request.path} -> {response.status_code}{g.get('log_detail', '')}{trace_ref}")
     return response
 
 @app.route('/health')
@@ -43,12 +50,15 @@ def create_ngo():
     data = request.get_json()
     nome = data.get('name', '?') if isinstance(data, dict) else '?'
     g.log_detail = f' | ong="{nome}"'
+    span = trace.get_current_span()
+    if span.is_recording():
+        span.set_attribute("ngo.name", nome)
     if not data or not all(k in data for k in ('name', 'email', 'cause', 'city')):
         return jsonify({"error": "Campos obrigatórios ausentes"}), 400
-    
+
     conn = pool.getconn()
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO ngos (name, email, cause, city) VALUES (%s, %s, %s, %s) RETURNING *",
                 (data['name'], data['email'], data['cause'], data['city'])
@@ -56,6 +66,8 @@ def create_ngo():
             new_ngo = cur.fetchone()
             conn.commit()
             g.log_detail = f' | ong="{nome}" id={new_ngo["id"]}'
+            if span.is_recording():
+                span.set_attribute("ngo.id", new_ngo["id"])
             return jsonify(new_ngo), 201
     except psycopg2.IntegrityError:
         conn.rollback()
@@ -71,7 +83,7 @@ def create_ngo():
 def get_ngos():
     conn = pool.getconn()
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        with conn.cursor() as cur:
             cur.execute("SELECT * FROM ngos ORDER BY id DESC")
             return jsonify(cur.fetchall()), 200
     except psycopg2.Error as e:

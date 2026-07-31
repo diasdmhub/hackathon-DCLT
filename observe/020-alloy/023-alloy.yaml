@@ -31,6 +31,8 @@ spec:
             - "/etc/alloy/config.alloy"
           ports:
             - containerPort: 12345
+            - containerPort: 4317
+            - containerPort: 4318
           volumeMounts:
             - name: config
               mountPath: /etc/alloy
@@ -73,3 +75,24 @@ spec:
           hostPath:
             path: /var/lib/alloy/data
             type: DirectoryOrCreate
+---
+# Ponto de entrada OTLP dos microserviços (traces), roteado pelo Alloy ao Tempo
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+spec:
+  selector:
+    app: alloy
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318

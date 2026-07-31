@@ -8,6 +8,7 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
+from opentelemetry import trace
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -36,7 +37,10 @@ except (BotoCoreError, ClientError) as e:
 def log_request(response):
     if request.path != '/health':
         # g.log_detail é preenchido pelos handlers com dados da requisição (ex.: nome do voluntário)
-        log.info(f"{request.method} {request.path} -> {response.status_code}{g.get('log_detail', '')}")
+        # trace_id correlaciona a linha de log com o trace no Tempo; fica vazio quando o SDK OTel está desativado
+        ctx = trace.get_current_span().get_span_context()
+        trace_ref = f' trace_id={ctx.trace_id:032x}' if ctx.is_valid else ''
+        log.info(f"{request.method} {request.path} -> {response.status_code}{g.get('log_detail', '')}{trace_ref}")
     return response
 
 @app.route('/health')
@@ -55,6 +59,11 @@ def register_volunteer():
         ngo_id = int(data['ngo_id'])
     except (TypeError, ValueError):
         return jsonify({"error": "ngo_id inválido"}), 400
+
+    span = trace.get_current_span()
+    if span.is_recording():
+        span.set_attribute("volunteer.name", data['name'])
+        span.set_attribute("volunteer.ngo_id", ngo_id)
 
     volunteer_id = str(uuid.uuid4())
     item = {

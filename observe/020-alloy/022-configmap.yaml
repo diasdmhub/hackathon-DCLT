@@ -72,3 +72,33 @@ data:
         url = "http://loki.observe.svc.cluster.local:3100/loki/api/v1/push"
       }
     }
+
+    // Recebe traces OTLP dos microserviços e os roteia ao Tempo.
+    // O Alloy é o único ponto de entrada de telemetria do cluster:
+    // logs (tail dos arquivos CRI acima) e traces (OTLP abaixo).
+    otelcol.receiver.otlp "default" {
+      grpc {
+        endpoint = "0.0.0.0:4317"
+      }
+      http {
+        endpoint = "0.0.0.0:4318"
+      }
+      output {
+        traces = [otelcol.processor.batch.default.input]
+      }
+    }
+
+    otelcol.processor.batch "default" {
+      output {
+        traces = [otelcol.exporter.otlp.tempo.input]
+      }
+    }
+
+    otelcol.exporter.otlp "tempo" {
+      client {
+        endpoint = "tempo.observe.svc.cluster.local:4317"
+        tls {
+          insecure = true
+        }
+      }
+    }

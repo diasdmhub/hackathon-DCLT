@@ -1,6 +1,7 @@
 package main
 
 import (
+        "context"
         "database/sql"
         "encoding/json"
         "fmt"
@@ -15,6 +16,15 @@ import (
         "github.com/aws/aws-sdk-go/service/sqs"
         _ "github.com/jackc/pgx/v4/stdlib"
         "github.com/joho/godotenv"
+        "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+        "go.opentelemetry.io/otel"
+        "go.opentelemetry.io/otel/attribute"
+        "go.opentelemetry.io/otel/codes"
+        "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+        "go.opentelemetry.io/otel/propagation"
+        "go.opentelemetry.io/otel/sdk/resource"
+        sdktrace "go.opentelemetry.io/otel/sdk/trace"
+        oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 type Donation struct {
@@ -48,13 +58,51 @@ func loggingMiddleware(next http.Handler) http.Handler {
                 rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
                 next.ServeHTTP(rec, r)
                 if r.URL.Path != "/health" {
-                        log.Printf("%s %s -> %d%s", r.Method, r.URL.Path, rec.status, rec.detail)
+                        // trace_id correlaciona a linha de log com o trace no Tempo; fica vazio quando o tracing está desativado
+                        traceRef := ""
+                        if sc := oteltrace.SpanContextFromContext(r.Context()); sc.IsValid() {
+                                traceRef = " trace_id=" + sc.TraceID().String()
+                        }
+                        log.Printf("%s %s -> %d%s%s", r.Method, r.URL.Path, rec.status, rec.detail, traceRef)
                 }
         })
 }
 
+// initTracer configura o TracerProvider global para exportar spans via OTLP.
+// Retorna nil (tracing desativado) quando OTEL_EXPORTER_OTLP_ENDPOINT não está
+// definida ou OTEL_SDK_DISABLED=true, pois o SDK Go não honra essas variáveis
+// sozinho como fazem os SDKs com auto-instrumentação.
+func initTracer(ctx context.Context) *sdktrace.TracerProvider {
+        if os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") == "" || os.Getenv("OTEL_SDK_DISABLED") == "true" {
+                return nil
+        }
+
+        exporter, err := otlptracehttp.New(ctx)
+        if err != nil {
+                log.Printf("Tracing desativado - erro ao criar o exporter OTLP: %v", err)
+                return nil
+        }
+
+        tp := sdktrace.NewTracerProvider(
+                sdktrace.WithBatcher(exporter),
+                sdktrace.WithResource(resource.Default()), // resource.Default lê OTEL_SERVICE_NAME do ambiente
+        )
+        otel.SetTracerProvider(tp)
+        otel.SetTextMapPropagator(propagation.TraceContext{})
+        log.Println("Tracing OTLP ativado (donation-service).")
+        return tp
+}
+
 func main() {
         _ = godotenv.Load()
+
+        if tp := initTracer(context.Background()); tp != nil {
+                defer func() {
+                        if err := tp.Shutdown(context.Background()); err != nil {
+                                log.Printf("Erro ao encerrar o tracer: %v", err)
+                        }
+                }()
+        }
 
         port := os.Getenv("PORT")
         if port == "" {
@@ -91,8 +139,17 @@ func main() {
         mux.HandleFunc("/health", app.HealthHandler)
         mux.HandleFunc("/donations", app.DonationHandler)
 
+        // otelhttp cria o span de servidor e injeta o contexto do trace na requisição;
+        // /health fica de fora para não poluir o Tempo com as sondas de liveness/readiness
+        handler := otelhttp.NewHandler(loggingMiddleware(mux), "http.server",
+                otelhttp.WithFilter(func(r *http.Request) bool { return r.URL.Path != "/health" }),
+                otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+                        return r.Method + " " + r.URL.Path
+                }),
+        )
+
         log.Printf("donation-service rodando na porta %s", port)
-        log.Fatal(http.ListenAndServe(":"+port, loggingMiddleware(mux)))
+        log.Fatal(http.ListenAndServe(":"+port, handler))
 }
 
 func (a *App) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -119,19 +176,32 @@ func (a *App) DonationHandler(w http.ResponseWriter, r *http.Request) {
                 }
 
                 d.Status = "APPROVED"  // Simulação de gateway de pagamento
-                err := a.DB.QueryRow(
+
+                // Span filho do INSERT com os dados de negócio da doação
+                ctx, span := otel.Tracer("donation-service").Start(r.Context(), "INSERT donations",
+                        oteltrace.WithAttributes(
+                                attribute.Int("donation.ngo_id", d.NgoID),
+                                attribute.Float64("donation.amount", d.Amount),
+                                attribute.String("donation.donor_name", d.DonorName),
+                        ))
+                err := a.DB.QueryRowContext(ctx,
                         "INSERT INTO donations (ngo_id, amount, donor_name, status) VALUES ($1, $2, $3, $4) RETURNING id, created_at",
                         d.NgoID, d.Amount, d.DonorName, d.Status,
                 ).Scan(&d.ID, &d.CreatedAt)
 
                 if err != nil {
+                        span.RecordError(err)
+                        span.SetStatus(codes.Error, "erro ao salvar doação")
+                        span.End()
                         log.Printf("Erro ao salvar doação: %v", err)
                         http.Error(w, `{"error":"Erro interno"}`, http.StatusInternalServerError)
                         return
                 }
+                span.End()
 
                 if a.SqsSvc != nil {
-                        go a.sendNotificationEvent(d)
+                        // WithoutCancel mantém o contexto do trace vivo após a resposta ser enviada
+                        go a.sendNotificationEvent(context.WithoutCancel(r.Context()), d)
                 }
 
                 w.WriteHeader(http.StatusCreated)
@@ -142,7 +212,7 @@ func (a *App) DonationHandler(w http.ResponseWriter, r *http.Request) {
         }
 
         if r.Method == http.MethodGet {
-                rows, err := a.DB.Query("SELECT id, ngo_id, amount, donor_name, status, created_at FROM donations ORDER BY id DESC")
+                rows, err := a.DB.QueryContext(r.Context(), "SELECT id, ngo_id, amount, donor_name, status, created_at FROM donations ORDER BY id DESC")
                 if err != nil {
                         http.Error(w, `{"error":"Erro interno"}`, http.StatusInternalServerError)
                         return
@@ -172,13 +242,20 @@ func (a *App) DonationHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, `{"error":"Método não permitido"}`, http.StatusMethodNotAllowed)
 }
 
-func (a *App) sendNotificationEvent(d Donation) {
+func (a *App) sendNotificationEvent(ctx context.Context, d Donation) {
+        // Span próprio para o despacho assíncrono do evento (fire-and-forget)
+        ctx, span := otel.Tracer("donation-service").Start(ctx, "SQS SendMessage",
+                oteltrace.WithSpanKind(oteltrace.SpanKindProducer))
+        defer span.End()
+
         body, _ := json.Marshal(d)
-        _, err := a.SqsSvc.SendMessage(&sqs.SendMessageInput{
+        _, err := a.SqsSvc.SendMessageWithContext(ctx, &sqs.SendMessageInput{
                 MessageBody: aws.String(string(body)),
                 QueueUrl:    aws.String(a.SqsQueueURL),
         })
         if err != nil {
+                span.RecordError(err)
+                span.SetStatus(codes.Error, "falha ao despachar evento SQS")
                 log.Printf("Falha ao despachar evento SQS: %v", err)
         }
 }

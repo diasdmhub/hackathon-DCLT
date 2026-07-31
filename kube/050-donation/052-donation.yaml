@@ -50,6 +50,14 @@ spec:
           envFrom:
             - secretRef:
                 name: donation-env
+          # Tracing OTLP exportado ao Alloy (namespace observe), que roteia ao Tempo
+          env:
+            - name: OTEL_SERVICE_NAME
+              value: donation-service
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://alloy.observe.svc.cluster.local:4318
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: http/protobuf
           resources:
             requests:
               cpu: 50m

@@ -2,3 +2,7 @@ Flask>=2.2.2
 gunicorn>=20.1.0
 python-dotenv>=0.21.0
 boto3>=1.26.50
+opentelemetry-distro>=0.50b0
+opentelemetry-exporter-otlp-proto-http>=1.29.0
+opentelemetry-instrumentation-flask>=0.50b0
+opentelemetry-instrumentation-botocore>=0.50b0
