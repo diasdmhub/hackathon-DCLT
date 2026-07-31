@@ -11,9 +11,9 @@ import (
 //      "strconv"  // importa strconv, mas não usa em lugar algum. Causa erro de compilação.
         "time"
 
-        "github.com/aws/aws-sdk-go/aws"
-        "github.com/aws/aws-sdk-go/aws/session"
-        "github.com/aws/aws-sdk-go/service/sqs"
+        "github.com/aws/aws-sdk-go-v2/aws"
+        "github.com/aws/aws-sdk-go-v2/config"
+        "github.com/aws/aws-sdk-go-v2/service/sqs"
         _ "github.com/jackc/pgx/v4/stdlib"
         "github.com/joho/godotenv"
         "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -38,7 +38,7 @@ type Donation struct {
 
 type App struct {
         DB          *sql.DB
-        SqsSvc      *sqs.SQS
+        SqsSvc      *sqs.Client
         SqsQueueURL string
 }
 
@@ -120,16 +120,19 @@ func main() {
         }
         log.Println("Conectado ao PostgreSQL (donation-service).")
 
-        var sqsSvc *sqs.SQS
+        var sqsSvc *sqs.Client
         queueURL := os.Getenv("AWS_SQS_URL")
         region := os.Getenv("AWS_REGION")
         if queueURL != "" && region != "" {
-        cfg := &aws.Config{Region: aws.String(region)}
-        if endpoint := os.Getenv("AWS_ENDPOINT_URL"); endpoint != "" {
-            cfg.Endpoint = aws.String(endpoint) // permite apontar para um emulador local (ex: ElasticMQ) em vez da AWS real
-        }
-        sess, _ := session.NewSession(cfg)
-                sqsSvc = sqs.New(sess)
+                awsCfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
+                if err != nil {
+                        log.Fatalf("Erro ao carregar configuração AWS: %v", err)
+                }
+                sqsSvc = sqs.NewFromConfig(awsCfg, func(o *sqs.Options) {
+                        if endpoint := os.Getenv("AWS_ENDPOINT_URL"); endpoint != "" {
+                                o.BaseEndpoint = aws.String(endpoint) // permite apontar para um emulador local (ex: ElasticMQ) em vez da AWS real
+                        }
+                })
                 log.Println("Integração com AWS SQS ativada.")
         }
 
@@ -249,7 +252,7 @@ func (a *App) sendNotificationEvent(ctx context.Context, d Donation) {
         defer span.End()
 
         body, _ := json.Marshal(d)
-        _, err := a.SqsSvc.SendMessageWithContext(ctx, &sqs.SendMessageInput{
+        _, err := a.SqsSvc.SendMessage(ctx, &sqs.SendMessageInput{
                 MessageBody: aws.String(string(body)),
                 QueueUrl:    aws.String(a.SqsQueueURL),
         })
