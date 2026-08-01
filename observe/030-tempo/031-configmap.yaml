@@ -55,6 +55,16 @@ data:
           processors:
             - service-graphs
             - span-metrics
+          # Dimensão extra em traces_spanmetrics_calls_total: sem isso, o único
+          # sinal de erro disponível nas métricas é o status do span (OTel só
+          # marca span de servidor como erro em 5xx - ver semconv HTTPServer.Status).
+          # Com http.response.status_code como label (vira http_response_status_code
+          # no Prometheus), os paineis conseguem tratar 4xx como erro também, sem
+          # alterar o status do span em si.
+          processor:
+            span_metrics:
+              dimensions:
+                - http.response.status_code
 
     # Desativa o envio de estatísticas anônimas à Grafana Labs
     usage_report:
