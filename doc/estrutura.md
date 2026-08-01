@@ -74,6 +74,22 @@ Stack completa rodando (Prometheus, Grafana, Loki e/ou Alloy) e instrumentação
 
 <BR>
 
+## SRE
+
+<BR>
+
+## FinOps
+
+<BR>
+
+## ITSM e AIOps
+
+<BR>
+
+## Multicloud, Segurança e Disaster Recovery (DR)
+
+<BR>
+
 | [⬆️ Top](#estrutura-de-disciplinas---hackathon-solidarytech) |
 | --- |
 
