@@ -1220,65 +1220,6 @@
         }
       }
     },
-    "panel-41": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "cfts5iiz9ff9cd"
-                    },
-                    "group": "tempo",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "limit": 20,
-                      "metricsQueryType": "range",
-                      "query": "{ resource.service.name = \"donation-service\" && (status = error || span.http.response.status_code >= 400) }",
-                      "queryType": "traceql",
-                      "serviceMapUseNativeHistograms": false,
-                      "tableType": "traces"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": []
-          }
-        },
-        "description": "",
-        "id": 41,
-        "links": [],
-        "title": "donation-service: traces com erro (mais recentes)",
-        "vizConfig": {
-          "group": "traces",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "options": {
-              "spanFilters": {
-                "adhocFilters": [],
-                "criticalPathOnly": false,
-                "matchesOnly": false
-              }
-            }
-          },
-          "version": "13.1.1"
-        }
-      }
-    },
     "panel-5": {
       "kind": "Panel",
       "spec": {
@@ -2194,7 +2135,7 @@
                         "filter": "kubernetes_cluster"
                       },
                       "item": {
-                        "filter": "/Namespace \\[solidarytech\\] Deployment \\[(ngo|donation|volunteer)\\]: Replicas available/"
+                        "filter": "/Namespace \\[solidarytech\\] Pod \\[(ngo|donation|volunteer).*\\]: Containers restarts/"
                       },
                       "itemTag": {
                         "filter": ""
@@ -2240,7 +2181,7 @@
         "description": "Cai para 0 durante rollout do Flux Image Automation ou falha do pod - sinal de indisponibilidade do serviço.",
         "id": 64,
         "links": [],
-        "title": "SolidaryTech - réplicas disponíveis (ngo/donation/volunteer)",
+        "title": "SolidaryTech - Containers restarts (ngo/donation/volunteer)",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -2559,21 +2500,8 @@
                         "name": "panel-40"
                       },
                       "height": 8,
-                      "width": 12,
+                      "width": 24,
                       "x": 0,
-                      "y": 0
-                    }
-                  },
-                  {
-                    "kind": "GridLayoutItem",
-                    "spec": {
-                      "element": {
-                        "kind": "ElementReference",
-                        "name": "panel-41"
-                      },
-                      "height": 8,
-                      "width": 12,
-                      "x": 12,
                       "y": 0
                     }
                   }
@@ -2712,7 +2640,7 @@
       "1d"
     ],
     "fiscalYearStartMonth": 0,
-    "from": "now-1h",
+    "from": "now-3h",
     "hideTimepicker": false,
     "timezone": "browser",
     "to": "now"
