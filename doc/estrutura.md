@@ -11,11 +11,13 @@ Abaixo são descritas algumas das disciplinas utilizadas neste projeto.
 
 ## Fundamentos DevOps
 
+O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a seguir.
+
 - **Infraestrutura como Código (IaC)** - Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) via Terraform.
 
 <BR>
 
-### **Container e Kubernetes** - Monolito local
+### **Container**
 
 - Dockerfiles otimizados para o _build_ dos 3 microserviços e implantação no Kubernetes.
     - Os microserviços e acessórios utilizam imagens reduzidas, como `alpine`.
@@ -26,22 +28,32 @@ Abaixo são descritas algumas das disciplinas utilizadas neste projeto.
 
 <BR>
 
-### 2. GitOps
+### 2. CI e DevSecOps
 
-🔶 **2.1 Gitea e GitHub com pipeline de CI** - Pipeline de CI para os 3 microsserviços do SolidaryTech, cobrindo aspectos de qualidade e segurança de código, teste de integração de ponta a ponta contra a stack real, seguidos de build, scan e publicação de imagens no Docker Hub.
+Trata-se de um modelo onde o Git é a fonte de verdade e o próprio cluster K8s puxa as mudanças. Esse formato mantém o ambiente em um estado desejado de forma declarativa trazendo mais flexibilidade e portabilidade.
 
-Dois workflows equivalentes ([`.gitea/workflows/ci-cd.yaml`][cigitea] e [`.github/workflows/ci-cd.yaml`][cigithub]), com três estágios sequenciais:
+🔶 **Gitea e GitHub com pipeline de CI** - Pipeline de CI para os 3 microsserviços do SolidaryTech, cobrindo aspectos de qualidade e segurança de código, teste de integração de ponta a ponta contra a stack real, seguidos de build, scan e publicação de [imagens no Docker Hub][dockerhub].
+
+O pipeline (ci-cd.yaml, espelhado em GitHub Actions e Gitea Actions) e o Flux formam
+  duas metades de um mesmo fluxo GitOps, com :
+
+Os dois workflows equivalentes ([`.gitea/workflows/ci-cd.yaml`][cigitea] e [`.github/workflows/ci-cd.yaml`][cigithub]) possuem uma divisão de responsabilidades clara com três estágios sequenciais:
 
 1. **SAST/SCA por serviço**: lint (_golangci-lint ou ruff_), SCA de dependências via Trivy (_bloqueia CRITICAL_), e SAST (_gosec/bandit, não bloqueante_).
 2. **_Smoke test_ de ponta a ponta**: sobe a stack real via docker compose e executa o script `build/scripts/smoke-test.sh` contra os três serviços (_incluindo checagem da fila no ElasticMQ_).
-3. **Build, scan de imagem e push**: build de cada imagem, novo scan Trivy agora na imagem final, login e push para o Docker Hub (_`diasdmhub/{ngo,donation,volunteer}`_), com tag versionada por SHA e latest quando a branch é `main`.
+3. **Build, scan de imagem e push**: construção de cada imagem, novo scan Trivy na imagem final e push para o Docker Hub (_`diasdmhub/{ngo,donation,volunteer}`_), com tag versionada por timestamp UTC (_para o Flux Image Automation_) e _latest_ quando a branch é `main`.
 
-🔶 **2.2 FluxCD para CD** - O cluster kubernetes é integrado com o [FluxCD][fluxcd] para gerenciar automaticamente o _deploy_ dos serviços através do "Kustomize". São declarados 3 conciliações por meio de manifestos do Kubernetes, trazendo mais flexibilidade e portabilidade:
+<BR>
+
+### 3. Gitops (CD)
+
+🔶 **FluxCD** - O cluster é gerenciado inteiramente pelo FluxCD, a partir das definições em [`clusters/kubeadm-local/`][fluxcd] a fim de fazer o _deploy_ dos serviços. Ele detecta quando novas tags são publicadas e faz o _commit_ na branch `main`. O ciclo se fecha com o Kustomization dos serviços que aplicam a nova imagem no cluster.
+
+São declarados 3 conciliações com manifestos do Kubernetes:
 
 1. [`kube/`][kube] - Manifestos da SolidaryTech.
 2. [`observe/`][observe] - Manifestos de serviços de monitoração e observabilidade.
 3. [`image-automation/`][imageauto] - Manifestos para atualização de imagens dos serviços.
-4. [`clusters/kubeadm-local/`] - Manifestos para a integração do FluxCD.
 
 <BR>
 
@@ -56,6 +68,12 @@ Dois workflows equivalentes ([`.gitea/workflows/ci-cd.yaml`][cigitea] e [`.githu
 
 <BR>
 
+### 4. Observabilidade e APM
+
+Stack completa rodando (Prometheus, Grafana, Loki e/ou Alloy) e instrumentação dos códigos no APM (Tempo) com Distributed Tracing.
+
+<BR>
+
 | [⬆️ Top](#estrutura-de-disciplinas---hackathon-solidarytech) |
 | --- |
 
@@ -65,3 +83,4 @@ Dois workflows equivalentes ([`.gitea/workflows/ci-cd.yaml`][cigitea] e [`.githu
 [kube]: /kube/
 [observe]: /observe/
 [imageauto]: /image-automation/
+[dockerhub]: https://hub.docker.com/u/diasdmhub
