@@ -1,0 +1,60 @@
+server:
+  http_listen_port: 3200
+
+# Recebe traces via OTLP gRPC, encaminhados pelo Alloy (único ponto de
+# entrada de telemetria; os microserviços não falam com o Tempo diretamente)
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+
+# Mesma retenção adotada no Loki (168h = 7 dias). No Tempo 3.x o bloco
+# "compactor" deixou de existir; a compactação/retenção é feita pelo
+# backend-scheduler/backend-worker.
+backend_scheduler:
+  provider:
+    compaction:
+      compaction:
+        block_retention: 168h
+
+# Deriva métricas de RED (service-graphs, span-metrics) de cada trace
+# recebido e as envia (remote_write) ao Prometheus do observe/, que
+# alimenta o Service Graph / Node Graph do Grafana
+metrics_generator:
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus.observe.svc.cluster.local:9090/api/v1/write
+
+# Processadores do metrics-generator ficam desativados por padrão;
+# habilitados aqui via overrides globais (não há multi-tenant neste cluster)
+overrides:
+  defaults:
+    metrics_generator:
+      processors:
+        - service-graphs
+        - span-metrics
+      # Dimensão extra em traces_spanmetrics_calls_total: sem isso, o único
+      # sinal de erro disponível nas métricas é o status do span (OTel só
+      # marca span de servidor como erro em 5xx - ver semconv HTTPServer.Status).
+      # Com http.response.status_code como label (vira http_response_status_code
+      # no Prometheus), os paineis conseguem tratar 4xx como erro também, sem
+      # alterar o status do span em si.
+      processor:
+        span_metrics:
+          dimensions:
+            - http.response.status_code
+
+# Desativa o envio de estatísticas anônimas à Grafana Labs
+usage_report:
+  reporting_enabled: false

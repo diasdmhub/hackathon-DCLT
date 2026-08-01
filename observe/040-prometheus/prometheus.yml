@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+# Backend mínimo, dedicado a receber (remote_write) as métricas de
+# RED/service-graph geradas pelo metrics-generator do Tempo; não faz
+# scraping de outros alvos - métricas de infraestrutura continuam no
+# Zabbix, fora deste repositório.
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
