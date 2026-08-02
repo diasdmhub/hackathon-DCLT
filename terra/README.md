@@ -37,37 +37,31 @@ evitar cobrança contínua.
 
 O backend S3 (`terraform.tf`) exige que o bucket e a tabela de lock já
 existam antes do primeiro `terraform init` - não é possível criá-los com o
-mesmo Terraform que os usa como backend.
-
-```bash
-aws s3api create-bucket \
-  --bucket solidarytech-terraform-state \
-  --region us-east-1
-
-aws s3api put-bucket-versioning \
-  --bucket solidarytech-terraform-state \
-  --versioning-configuration Status=Enabled
-
-aws dynamodb create-table \
-  --table-name solidarytech-terraform-lock \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST \
-  --region us-east-1
-```
-
-Se o nome do bucket já estiver em uso por outra conta (nomes de bucket S3
-são globalmente únicos), ajuste o `bucket` em `terraform.tf` antes de
-prosseguir.
-
-## Uso
+mesmo Terraform que os usa como backend. `init.sh` automatiza isso (é
+idempotente - pode ser reexecutado sem erro se o bucket/tabela já existirem):
 
 ```bash
 cd terra
 cp terraform.tfvars.example terraform.tfvars
 # edite terraform.tfvars, principalmente db_password
 
-terraform init
+./init.sh
+```
+
+Nomes de bucket S3 são globalmente únicos entre todas as contas AWS - por
+isso `init.sh` usa o prefixo `fiap-solidarytech-terraform-*`, não só
+`solidarytech-terraform-*`. **Os nomes em `init.sh` e no bloco `backend "s3"`
+de `terraform.tf` precisam ser exatamente os mesmos** (blocos de backend não
+aceitam variáveis, então o valor em `terraform.tf` é literal); se ajustar um,
+ajuste o outro. Um 403 do tipo `Unable to access object "terraform.tfstate"
+in S3 bucket "..."` ao rodar `terraform init` é o sintoma desse descompasso -
+a AWS responde 403 em vez de 404 tanto para bucket sem permissão quanto para
+bucket que nem existe (ou pertence a outra conta), então a mensagem não
+distingue as duas causas.
+
+## Uso
+
+```bash
 terraform plan
 terraform apply
 

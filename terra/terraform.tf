@@ -22,10 +22,10 @@ terraform {
   # então o nome do bucket é literal aqui; ajuste se já estiver em uso por
   # outra conta (nomes de bucket S3 são globalmente únicos).
   backend "s3" {
-    bucket         = "solidarytech-terraform-state"
+    bucket         = "fiap-solidarytech-terraform-state"
     key            = "terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "solidarytech-terraform-lock"
+    dynamodb_table = "fiap-solidarytech-terraform-lock"
     encrypt        = true
   }
 }
