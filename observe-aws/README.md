@@ -1,4 +1,7 @@
-# observe-aws/
+| [↩️ Voltar](../) |
+| --- |
+
+# Observabilidade da AWS
 
 Equivalente a `observe/` (Loki + Alloy + Tempo + Prometheus locais) para o
 ambiente EKS, mas usando o **Grafana Cloud** como backend de métricas, logs
@@ -79,3 +82,6 @@ Flux próprio (`clusters/eks-aws/` ou nome equivalente) com uma
 Kustomization apontando para `./observe-aws` (e outra para `./kube`, e
 outra para `./image-automation`). Isso ainda não existe neste repositório -
 ver a resposta sobre Flux no EKS na conversa que motivou este diretório.
+
+| [⬆️ Top](#observabilidade-da-aws) |
+| --- |

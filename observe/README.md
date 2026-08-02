@@ -1,7 +1,7 @@
 | [↩️ Voltar](../) |
 | --- |
 
-# Observabilidade
+# Observabilidade do ambiente local
 
 > ⚠️ **_Em construção_**
 
@@ -158,5 +158,5 @@ Correção aplicada na template: `delay: 1h` explícito no item prototype (métr
 
 <BR>
 
-| [⬆️ Top](#observabilidade) |
+| [⬆️ Top](#observabilidade-do-ambiente-local) |
 | --- |
