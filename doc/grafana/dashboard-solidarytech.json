@@ -21,7 +21,7 @@
     }
   ],
   "cursorSync": "Crosshair",
-  "editable": true,
+  "editable": false,
   "elements": {
     "panel-1": {
       "kind": "Panel",
@@ -293,19 +293,19 @@
                   "axisCenteredZero": false,
                   "axisColorMode": "text",
                   "axisLabel": "",
-                  "axisPlacement": "auto",
+                  "axisPlacement": "right",
                   "barAlignment": 0,
                   "barWidthFactor": 0.6,
                   "drawStyle": "line",
-                  "fillOpacity": 10,
-                  "gradientMode": "none",
+                  "fillOpacity": 0,
+                  "gradientMode": "opacity",
                   "hideFrom": {
                     "legend": false,
                     "tooltip": false,
                     "viz": false
                   },
                   "insertNulls": false,
-                  "lineInterpolation": "linear",
+                  "lineInterpolation": "smooth",
                   "lineWidth": 1,
                   "pointSize": 5,
                   "scaleDistribution": {
@@ -328,10 +328,6 @@
                     {
                       "color": "green",
                       "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 80
                     }
                   ]
                 },
@@ -345,11 +341,14 @@
                 "multiLane": false
               },
               "legend": {
-                "calcs": [],
-                "displayMode": "list",
+                "calcs": [
+                  "lastNotNull",
+                  "max"
+                ],
+                "displayMode": "table",
                 "enableFacetedFilter": false,
                 "overflow": "ellipsis",
-                "placement": "bottom",
+                "placement": "right",
                 "showLegend": true
               },
               "tooltip": {
@@ -399,7 +398,7 @@
         "links": [],
         "title": "Taxa de erro por serviço (%)",
         "vizConfig": {
-          "group": "timeseries",
+          "group": "barchart",
           "kind": "VizConfig",
           "spec": {
             "fieldConfig": {
@@ -412,30 +411,17 @@
                   "axisCenteredZero": false,
                   "axisColorMode": "text",
                   "axisLabel": "",
-                  "axisPlacement": "auto",
-                  "barAlignment": 0,
-                  "barWidthFactor": 0.6,
-                  "drawStyle": "line",
-                  "fillOpacity": 10,
-                  "gradientMode": "none",
+                  "axisPlacement": "right",
+                  "fillOpacity": 80,
+                  "gradientMode": "opacity",
                   "hideFrom": {
                     "legend": false,
                     "tooltip": false,
                     "viz": false
                   },
-                  "insertNulls": false,
-                  "lineInterpolation": "linear",
                   "lineWidth": 1,
-                  "pointSize": 5,
                   "scaleDistribution": {
                     "type": "linear"
-                  },
-                  "showPoints": "auto",
-                  "showValues": false,
-                  "spanNulls": false,
-                  "stacking": {
-                    "group": "A",
-                    "mode": "none"
                   },
                   "thresholdsStyle": {
                     "mode": "off"
@@ -448,10 +434,6 @@
                     {
                       "color": "green",
                       "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 80
                     }
                   ]
                 },
@@ -460,23 +442,27 @@
               "overrides": []
             },
             "options": {
-              "annotations": {
-                "clustering": -1,
-                "multiLane": false
-              },
+              "barRadius": 0,
+              "barWidth": 0.97,
+              "fullHighlight": false,
+              "groupWidth": 0.7,
               "legend": {
                 "calcs": [],
-                "displayMode": "list",
-                "enableFacetedFilter": false,
+                "displayMode": "table",
                 "overflow": "ellipsis",
-                "placement": "bottom",
+                "placement": "right",
                 "showLegend": true
               },
+              "orientation": "auto",
+              "showValue": "auto",
+              "stacking": "none",
               "tooltip": {
                 "hideZeros": false,
                 "mode": "single",
                 "sort": "none"
-              }
+              },
+              "xTickLabelRotation": 0,
+              "xTickLabelSpacing": 100
             }
           },
           "version": "13.1.1"
@@ -614,7 +600,32 @@
                 },
                 "unit": "s"
               },
-              "overrides": []
+              "overrides": [
+                {
+                  "__systemRef": "hideSeriesFrom",
+                  "matcher": {
+                    "id": "byNames",
+                    "options": {
+                      "mode": "exclude",
+                      "names": [
+                        "donation-service p50"
+                      ],
+                      "prefix": "All except:",
+                      "readOnly": true
+                    }
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.hideFrom",
+                      "value": {
+                        "legend": false,
+                        "tooltip": true,
+                        "viz": true
+                      }
+                    }
+                  ]
+                }
+              ]
             },
             "options": {
               "annotations": {
@@ -741,8 +752,11 @@
                     "group": "loki",
                     "kind": "DataQuery",
                     "spec": {
+                      "direction": "backward",
+                      "editorMode": "code",
                       "expr": "sum(count_over_time({namespace=\"solidarytech\", container=\"ngo\"} |~ \"POST /ngos -> 201\" [$__interval]))",
-                      "legendFormat": "ONGs cadastradas"
+                      "legendFormat": "ONGs cadastradas",
+                      "queryType": "range"
                     },
                     "version": "v0"
                   },
@@ -760,8 +774,11 @@
                     "group": "loki",
                     "kind": "DataQuery",
                     "spec": {
+                      "direction": "backward",
+                      "editorMode": "code",
                       "expr": "sum(count_over_time({namespace=\"solidarytech\", container=\"volunteer\"} |~ \"POST /volunteers -> 201\" [$__interval]))",
-                      "legendFormat": "Voluntários cadastrados"
+                      "legendFormat": "Voluntários cadastrados",
+                      "queryType": "range"
                     },
                     "version": "v0"
                   },
@@ -779,8 +796,11 @@
                     "group": "loki",
                     "kind": "DataQuery",
                     "spec": {
+                      "direction": "backward",
+                      "editorMode": "code",
                       "expr": "sum(count_over_time({namespace=\"solidarytech\", container=\"donation\"} |~ \"POST /donations -> 201\" [$__interval]))",
-                      "legendFormat": "Doações"
+                      "legendFormat": "Doações",
+                      "queryType": "range"
                     },
                     "version": "v0"
                   },
@@ -810,7 +830,7 @@
                   "axisCenteredZero": false,
                   "axisColorMode": "text",
                   "axisLabel": "",
-                  "axisPlacement": "auto",
+                  "axisPlacement": "right",
                   "barAlignment": 0,
                   "barWidthFactor": 0.6,
                   "drawStyle": "bars",
@@ -845,10 +865,6 @@
                     {
                       "color": "green",
                       "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 80
                     }
                   ]
                 },
@@ -862,11 +878,13 @@
                 "multiLane": false
               },
               "legend": {
-                "calcs": [],
-                "displayMode": "list",
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "displayMode": "table",
                 "enableFacetedFilter": false,
                 "overflow": "ellipsis",
-                "placement": "bottom",
+                "placement": "right",
                 "showLegend": true
               },
               "tooltip": {
@@ -898,8 +916,11 @@
                     "group": "loki",
                     "kind": "DataQuery",
                     "spec": {
+                      "direction": "backward",
+                      "editorMode": "code",
                       "expr": "sum(sum_over_time({namespace=\"solidarytech\", container=\"donation\"} |~ \"POST /donations -> 201\" | regexp \"valor=(?P<valor>[0-9]+\\\\.[0-9]+)\" | unwrap valor [$__interval]))",
-                      "legendFormat": "Valor arrecadado"
+                      "legendFormat": "Valor arrecadado",
+                      "queryType": "range"
                     },
                     "version": "v0"
                   },
@@ -929,7 +950,7 @@
                   "axisCenteredZero": false,
                   "axisColorMode": "text",
                   "axisLabel": "",
-                  "axisPlacement": "auto",
+                  "axisPlacement": "right",
                   "barAlignment": 0,
                   "barWidthFactor": 0.6,
                   "drawStyle": "bars",
@@ -1544,7 +1565,7 @@
                   "axisCenteredZero": false,
                   "axisColorMode": "text",
                   "axisLabel": "",
-                  "axisPlacement": "auto",
+                  "axisPlacement": "right",
                   "barAlignment": 0,
                   "barWidthFactor": 0.6,
                   "drawStyle": "line",
@@ -1667,6 +1688,7 @@
                         "filter": ""
                       },
                       "queryType": "0",
+                      "resultFormat": "time_series",
                       "schema": 12,
                       "table": {
                         "skipEmptyValues": false
@@ -1707,7 +1729,7 @@
                   "axisCenteredZero": false,
                   "axisColorMode": "text",
                   "axisLabel": "",
-                  "axisPlacement": "auto",
+                  "axisPlacement": "right",
                   "barAlignment": 0,
                   "barWidthFactor": 0.6,
                   "drawStyle": "line",
@@ -1744,10 +1766,6 @@
                     {
                       "color": "green",
                       "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 80
                     }
                   ]
                 },
@@ -1830,6 +1848,7 @@
                         "filter": ""
                       },
                       "queryType": "0",
+                      "resultFormat": "time_series",
                       "schema": 12,
                       "table": {
                         "skipEmptyValues": false
@@ -1870,7 +1889,7 @@
                   "axisCenteredZero": false,
                   "axisColorMode": "text",
                   "axisLabel": "",
-                  "axisPlacement": "auto",
+                  "axisPlacement": "right",
                   "barAlignment": 0,
                   "barWidthFactor": 0.6,
                   "drawStyle": "line",
@@ -1882,7 +1901,7 @@
                     "viz": false
                   },
                   "insertNulls": false,
-                  "lineInterpolation": "linear",
+                  "lineInterpolation": "smooth",
                   "lineWidth": 1,
                   "pointSize": 5,
                   "scaleDistribution": {
@@ -1905,10 +1924,6 @@
                     {
                       "color": "green",
                       "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 80
                     }
                   ]
                 },
@@ -2196,7 +2211,7 @@
                   "axisCenteredZero": false,
                   "axisColorMode": "text",
                   "axisLabel": "",
-                  "axisPlacement": "auto",
+                  "axisPlacement": "right",
                   "barAlignment": 0,
                   "barWidthFactor": 0.6,
                   "drawStyle": "line",
