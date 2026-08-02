@@ -139,5 +139,24 @@ Os painéis de RED (`Taxa de erro por serviço (%)`, `donation-service: requisi�
 
 <BR>
 
+## Template Zabbix
+
+[`doc/zabbix/template-solidarytech-by-http.yaml`](/doc/zabbix/template-solidarytech-by-http.yaml) é a template "SolidaryTech by HTTP" (exportação Zabbix 7.4, importável via **Data collection → Templates → Import**), com macros `{$ST.PORT.NGO}`/`{$ST.PORT.DONATION}`/`{$ST.PORT.VOLUNTEER}` (padrão 8081/8082/8083) e `{$ST.HTTP.SCHEMA}` (padrão `http`), resolvidas sobre `{HOST.CONN}` do host ao qual a template for vinculada. Ela cobre dois tipos de métrica:
+
+- **Saúde**: um item HTTP agent por serviço (`SolidaryTech Health NGO/Donation/Volunteer Service`, chaves `st.health[ngo|donation|volunteer]`) consultando `GET /health`. Cada um tem três passos de pré-processamento: JSONPath (`$.status`, extrai o campo `status` do corpo `{"status":"ok","service":"..."}`), Replace (`STR_REPLACE`, converte o texto `ok` no inteiro `1` — necessário para que o `value_type: UNSIGNED` do item receba um valor puramente numérico, já que um Replace direto sobre o corpo JSON inteiro deixaria texto ao redor do `1`) e Discard unchanged with heartbeat (5m, evita gravar histórico redundante enquanto o serviço permanece saudável). Um `valuemap` "Health Status" traduz `1`/qualquer outro valor para `Ok`/`Unavailable` na UI.
+- **Negócio**: itens dependentes (`type: DEPENDENT`) que reaproveitam o corpo já obtido por um item HTTP agent "lista" (`st.ngos.list` via `GET /ngos`, `st.donations.list` via `GET /donations`), evitando pollings redundantes ao mesmo endpoint. A partir de `st.ngos.list`: `SolidaryTech NGO Count` (`$.length()`). A partir de `st.donations.list`: `SolidaryTech Donation Count` (`$.length()`) e `SolidaryTech Donations Total Amount` (`$[*].amount.sum()`). Para voluntários por ONG, a regra de descoberta `SolidaryTech NGO Discovery` também é `DEPENDENT` de `st.ngos.list` (via `lld_macro_paths` mapeando `{#NGO.ID}`/`{#NGO.NAME}` a `$.id`/`$.name`, sem chamada HTTP extra) e cria um item prototype `SolidaryTech Volunteers Count: {#NGO.NAME}` por ONG descoberta; esse prototype precisa ser HTTP agent (não dependente), pois o volunteer-service só expõe `GET /volunteers/<ngo_id>` por ONG individual, sem endpoint que liste voluntários de todas as ONGs de uma vez.
+
+### Incidente: CrashLoopBackOff do volunteer-service causado pelo item prototype de voluntários por ONG
+
+O item prototype `SolidaryTech Volunteers Count: {#NGO.NAME}` foi originalmente criado sem `delay` explícito (herdando o padrão de 1m do Zabbix). Com 156 ONGs cadastradas no banco (`SELECT count(*) FROM ngos` no host `psql`), a discovery rule criou 156 itens, cada um chamando `GET /volunteers/<ngo_id>` a cada minuto. Cada chamada dispara um `Scan` não indexado no DynamoDB (comentário no próprio `volunteer-service/app.py`: "simplificado... não seria adequado para produção"), e `Dockerfile-volunteer` sobe o serviço com `gunicorn --bind 0.0.0.0:8083 volunteer:app` sem `--workers`/`--threads`, ou seja, um único worker `sync` processando uma requisição por vez.
+
+O resultado, confirmado nos logs e eventos do pod (`kubectl logs --previous`, `kubectl describe pod`): as ~156 chamadas de `/volunteers/<id>` ficavam enfileiradas sequencialmente (~0,5 a 0,7s cada, ~90 a 110s no total) atrás do único worker, o que impedia a liveness probe (`GET /health`, `timeout=2s`, `period=10s`, `failureThreshold=3`) de ser respondida a tempo. Após 3 falhas consecutivas (~30s), o kubelet matava o container, gerando o `CrashLoopBackOff`.
+
+Correção aplicada na template: `delay: 1h` explícito no item prototype (métrica de negócio, não precisa de granularidade de minuto). Isso reduz a frequência do problema, mas não o elimina por completo (156 chamadas seriais ainda ocupam ~1,5 a 2 minutos, uma vez por hora); a correção definitiva é dar concorrência ao `volunteer-service` (`--workers`/`--threads` no `gunicorn`, em `build/Dockerfile-volunteer`), para que a liveness probe nunca fique atrás de um Scan lento. Essa mudança de imagem ainda não foi aplicada — depende de rebuild/push/deploy e foi deixada para decisão explícita.
+
+**Importante**: esse arquivo é só a fonte da template; a correção do `delay` só passa a valer depois de reimportar a template no Zabbix (ou ajustar manualmente o item já vinculado ao host). Até lá, o `SolidaryTech NGO Discovery` continua gerando carga no ritmo antigo no Zabbix em produção.
+
+<BR>
+
 | [⬆️ Top](#observabilidade) |
 | --- |

@@ -1,0 +1,220 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 26b0b8ed7f8c4a0e9c7c2a0c9d6c5a11
+      name: Templates/Applications
+  templates:
+    - uuid: 2ea320b75f2d4e8e8048fcd790d1fbf8
+      template: 'SolidaryTech by HTTP'
+      name: 'SolidaryTech by HTTP'
+      description: 'Monitors the SolidaryTech services with HTTP checks'
+      vendor:
+        name: diasdm
+        version: 7.4.12
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: c9b60496ed1546f48ade9c4885481640
+          name: 'SolidaryTech Donations Total Amount'
+          type: DEPENDENT
+          key: st.donations.amount.sum
+          history: 30d
+          value_type: FLOAT
+          trends: 180d
+          units: $
+          description: 'Sum of the amount field across all donations.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$[*].amount.sum()'
+          master_item:
+            key: st.donations.list
+          tags:
+            - tag: Donation
+              value: total
+        - uuid: 1398d861196a4bbe934204cb8f302493
+          name: 'SolidaryTech Donation Count'
+          type: DEPENDENT
+          key: st.donations.count
+          history: 30d
+          trends: 180d
+          description: 'Number of donations registered in the platform.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.length()
+          master_item:
+            key: st.donations.list
+          tags:
+            - tag: Donation
+              value: count
+        - uuid: b64a5497720a4efbb5918b8c2252eda4
+          name: 'SolidaryTech Donations List'
+          type: HTTP_AGENT
+          key: st.donations.list
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          description: 'Raw donation list, polled once and reused by the dependent donation count and total amount items below'
+          timeout: 10s
+          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.DONATION}/donations'
+          tags:
+            - tag: Donation
+              value: list
+        - uuid: 3d369ce4a6004a76ae9c139ddd869f30
+          name: 'SolidaryTech Health Donation Service'
+          type: HTTP_AGENT
+          key: 'st.health[donation]'
+          history: 7d
+          trends: 90d
+          description: 'Health check for the Donation service'
+          valuemap:
+            name: 'Health Status'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+            - type: STR_REPLACE
+              parameters:
+                - ok
+                - '1'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 5m
+          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.DONATION}/health'
+          tags:
+            - tag: Service
+              value: donation
+        - uuid: 6035b4f1a6f7454cabb792d1af55b636
+          name: 'SolidaryTech Health NGO Service'
+          type: HTTP_AGENT
+          key: 'st.health[ngo]'
+          history: 7d
+          trends: 90d
+          description: 'Health check for the NGO service'
+          valuemap:
+            name: 'Health Status'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+            - type: STR_REPLACE
+              parameters:
+                - ok
+                - '1'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 5m
+          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.NGO}/health'
+          tags:
+            - tag: Service
+              value: ngo
+        - uuid: f462aeae03924616814ad09a6722aeaa
+          name: 'SolidaryTech Health Volunteer Service'
+          type: HTTP_AGENT
+          key: 'st.health[volunteer]'
+          history: 7d
+          trends: 90d
+          description: 'Health check for the Volunteer service'
+          valuemap:
+            name: 'Health Status'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+            - type: STR_REPLACE
+              parameters:
+                - ok
+                - '1'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 5m
+          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.VOLUNTEER}/health'
+          tags:
+            - tag: Service
+              value: volunteer
+        - uuid: 8d181575dce64c468a2452d5abb79be3
+          name: 'SolidaryTech NGO Count'
+          type: DEPENDENT
+          key: st.ngos.count
+          history: 7d
+          trends: 90d
+          description: 'Number of NGOs registered in the platform'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.length()
+          master_item:
+            key: st.ngos.list
+          tags:
+            - tag: NGO
+              value: count
+        - uuid: 16eaa05a66a4469098384a6bee47bced
+          name: 'SolidaryTech NGOs List'
+          type: HTTP_AGENT
+          key: st.ngos.list
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          description: 'Raw NGO list, polled once and reused by the dependent NGO count item and by the NGO discovery rule below'
+          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.NGO}/ngos'
+          tags:
+            - tag: NGO
+              value: list
+      discovery_rules:
+        - uuid: 3cffea3fc5094d69ae38021eca4bd773
+          name: 'SolidaryTech NGO Discovery'
+          type: DEPENDENT
+          key: st.ngos.discovery
+          lifetime_type: DELETE_IMMEDIATELY
+          description: 'Discovers the NGOs currently registered'
+          item_prototypes:
+            - uuid: 798aae440b7e4f17913e90c210a7176c
+              name: 'SolidaryTech Volunteers Count for {#ST.NGO.NAME}'
+              type: HTTP_AGENT
+              key: 'st.volunteers.count[{#ST.NGO.ID}]'
+              delay: 1h
+              history: 14d
+              trends: 180d
+              description: 'Number of volunteers registered for NGO {#ST.NGO.NAME} (id {#ST.NGO.ID})'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.length()
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.VOLUNTEER}/volunteers/{#ST.NGO.ID}'
+              tags:
+                - tag: NGO
+                  value: '{#ST.NGO.ID}'
+                - tag: Volunteer
+                  value: count
+          master_item:
+            key: st.ngos.list
+          lld_macro_paths:
+            - lld_macro: '{#ST.NGO.ID}'
+              path: $.id
+            - lld_macro: '{#ST.NGO.NAME}'
+              path: $.name
+      macros:
+        - macro: '{$ST.HTTP.SCHEMA}'
+          value: http
+          description: 'HTTP service schema (http or https)'
+        - macro: '{$ST.PORT.DONATION}'
+          value: '8082'
+          description: 'Donation service TCP port'
+        - macro: '{$ST.PORT.NGO}'
+          value: '8081'
+          description: 'NGO service TCP port'
+        - macro: '{$ST.PORT.VOLUNTEER}'
+          value: '8083'
+          description: 'Volunteer service TCP port'
+      valuemaps:
+        - uuid: c3b65a2c5a424aad92bf3229ba560374
+          name: 'Health Status'
+          mappings:
+            - value: '1'
+              newvalue: Ok
+            - type: DEFAULT
+              newvalue: Unavailable
