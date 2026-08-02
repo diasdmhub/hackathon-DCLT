@@ -21,7 +21,7 @@
     }
   ],
   "cursorSync": "Crosshair",
-  "editable": false,
+  "editable": true,
   "elements": {
     "panel-1": {
       "kind": "Panel",
@@ -2447,7 +2447,7 @@
         {
           "kind": "RowsLayoutRow",
           "spec": {
-            "collapse": false,
+            "collapse": true,
             "layout": {
               "kind": "GridLayout",
               "spec": {
@@ -2487,7 +2487,7 @@
         {
           "kind": "RowsLayoutRow",
           "spec": {
-            "collapse": false,
+            "collapse": true,
             "layout": {
               "kind": "GridLayout",
               "spec": {
@@ -2514,7 +2514,7 @@
         {
           "kind": "RowsLayoutRow",
           "spec": {
-            "collapse": false,
+            "collapse": true,
             "layout": {
               "kind": "GridLayout",
               "spec": {
@@ -2541,7 +2541,7 @@
         {
           "kind": "RowsLayoutRow",
           "spec": {
-            "collapse": false,
+            "collapse": true,
             "layout": {
               "kind": "GridLayout",
               "spec": {
@@ -2640,7 +2640,7 @@
       "1d"
     ],
     "fiscalYearStartMonth": 0,
-    "from": "now-3h",
+    "from": "now-24h",
     "hideTimepicker": false,
     "timezone": "browser",
     "to": "now"

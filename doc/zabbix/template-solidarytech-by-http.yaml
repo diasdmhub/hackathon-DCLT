@@ -14,10 +14,39 @@ zabbix_export:
       groups:
         - name: Templates/Applications
       items:
-        - uuid: c9b60496ed1546f48ade9c4885481640
-          name: 'SolidaryTech Donations Total Amount'
+        - uuid: 1398d861196a4bbe934204cb8f302493
+          name: 'SolidaryTech Donation Count'
           type: DEPENDENT
-          key: st.donations.amount.sum
+          key: 'st.donation[count]'
+          history: 30d
+          trends: 180d
+          description: 'Number of donations registered in the platform.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.length()
+          master_item:
+            key: 'st.donation[list]'
+          tags:
+            - tag: Donation
+              value: count
+        - uuid: b64a5497720a4efbb5918b8c2252eda4
+          name: 'SolidaryTech Donation List'
+          type: HTTP_AGENT
+          key: 'st.donation[list]'
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          description: 'Raw donation list, polled once and reused by the dependent donation count and total amount items below'
+          timeout: 10s
+          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.DONATION}/donations'
+          tags:
+            - tag: Donation
+              value: list
+        - uuid: c9b60496ed1546f48ade9c4885481640
+          name: 'SolidaryTech Donation Total Amount'
+          type: DEPENDENT
+          key: 'st.donation[sum]'
           history: 30d
           value_type: FLOAT
           trends: 180d
@@ -28,39 +57,10 @@ zabbix_export:
               parameters:
                 - '$[*].amount.sum()'
           master_item:
-            key: st.donations.list
+            key: 'st.donation[list]'
           tags:
             - tag: Donation
               value: total
-        - uuid: 1398d861196a4bbe934204cb8f302493
-          name: 'SolidaryTech Donation Count'
-          type: DEPENDENT
-          key: st.donations.count
-          history: 30d
-          trends: 180d
-          description: 'Number of donations registered in the platform.'
-          preprocessing:
-            - type: JSONPATH
-              parameters:
-                - $.length()
-          master_item:
-            key: st.donations.list
-          tags:
-            - tag: Donation
-              value: count
-        - uuid: b64a5497720a4efbb5918b8c2252eda4
-          name: 'SolidaryTech Donations List'
-          type: HTTP_AGENT
-          key: st.donations.list
-          delay: 5m
-          history: '0'
-          value_type: TEXT
-          description: 'Raw donation list, polled once and reused by the dependent donation count and total amount items below'
-          timeout: 10s
-          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.DONATION}/donations'
-          tags:
-            - tag: Donation
-              value: list
         - uuid: 3d369ce4a6004a76ae9c139ddd869f30
           name: 'SolidaryTech Health Donation Service'
           type: HTTP_AGENT
@@ -136,7 +136,7 @@ zabbix_export:
         - uuid: 8d181575dce64c468a2452d5abb79be3
           name: 'SolidaryTech NGO Count'
           type: DEPENDENT
-          key: st.ngos.count
+          key: 'st.ngo[count]'
           history: 7d
           trends: 90d
           description: 'Number of NGOs registered in the platform'
@@ -145,14 +145,14 @@ zabbix_export:
               parameters:
                 - $.length()
           master_item:
-            key: st.ngos.list
+            key: 'st.ngo[list]'
           tags:
             - tag: NGO
               value: count
         - uuid: 16eaa05a66a4469098384a6bee47bced
           name: 'SolidaryTech NGOs List'
           type: HTTP_AGENT
-          key: st.ngos.list
+          key: 'st.ngo[list]'
           delay: 5m
           history: '0'
           value_type: TEXT
@@ -165,7 +165,7 @@ zabbix_export:
         - uuid: 3cffea3fc5094d69ae38021eca4bd773
           name: 'SolidaryTech NGO Discovery'
           type: DEPENDENT
-          key: st.ngos.discovery
+          key: 'st.ngo[discovery]'
           lifetime_type: DELETE_IMMEDIATELY
           description: 'Discovers the NGOs currently registered'
           item_prototypes:
@@ -191,7 +191,7 @@ zabbix_export:
                 - tag: Volunteer
                   value: count
           master_item:
-            key: st.ngos.list
+            key: 'st.ngo[list]'
           lld_macro_paths:
             - lld_macro: '{#ST.NGO.ID}'
               path: $.id
