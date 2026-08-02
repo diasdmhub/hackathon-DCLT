@@ -27,18 +27,18 @@ fi
 
 # 2.1 Cria S3 bucket
 aws s3api create-bucket \
-  --bucket solidarytech-terraform-state \
+  --bucket fiap-solidarytech-terraform-state \
   || true
 
 # 2.2 Habilita o versionamento do bucket
 aws s3api put-bucket-versioning \
-  --bucket solidarytech-terraform-state \
+  --bucket fiap-solidarytech-terraform-state \
   --versioning-configuration Status=Enabled \
   || true
 
 # 2.3 Habilita a criptografia do bucket
 aws s3api put-bucket-encryption \
-  --bucket solidarytech-terraform-state \
+  --bucket fiap-solidarytech-terraform-state \
   --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}' \
   || true
 
@@ -46,7 +46,7 @@ aws s3api put-bucket-encryption \
 
 # 3.1 Cria a tabela DynamoDB
 aws dynamodb create-table \
-  --table-name solidarytech-terraform-lock \
+  --table-name fiap-solidarytech-terraform-lock \
   --attribute-definitions AttributeName=LockID,AttributeType=S \
   --key-schema AttributeName=LockID,KeyType=HASH \
   --billing-mode PAY_PER_REQUEST \
