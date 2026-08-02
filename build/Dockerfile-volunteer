@@ -15,4 +15,4 @@ COPY ./volunteer-service/app.py ./volunteer.py
 # ----------- Run -----------
 EXPOSE 8083
 
-CMD [ "opentelemetry-instrument", "gunicorn", "--bind", "0.0.0.0:8083", "volunteer:app" ]
+CMD [ "opentelemetry-instrument", "gunicorn", "--bind", "0.0.0.0:8083", "--worker-class", "gthread", "--threads", "4", "volunteer:app" ]
