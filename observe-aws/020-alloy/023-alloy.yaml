@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: alloy
+  namespace: observe
+  labels:
+    app: alloy
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+spec:
+  selector:
+    matchLabels:
+      app: alloy
+  template:
+    metadata:
+      labels:
+        app: alloy
+        app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
+    spec:
+      serviceAccountName: alloy
+      containers:
+        - name: alloy
+          image: docker.io/grafana/alloy:latest
+          args:
+            - "run"
+            - "--server.http.listen-addr=0.0.0.0:12345"
+            - "--storage.path=/var/lib/alloy/data"
+            - "/etc/alloy/config.alloy"
+          envFrom:
+            # Credenciais/URLs do Grafana Cloud (GRAFANA_CLOUD_*), lidas em
+            # config.alloy via sys.env(). Secret criado fora do Flux - ver
+            # observe-aws/README.md.
+            - secretRef:
+                name: grafana-cloud-credentials
+          ports:
+            - containerPort: 12345
+            - containerPort: 4317
+            - containerPort: 4318
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+            - name: varlogpods
+              mountPath: /var/log/pods
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/alloy/data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 12345
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /-/ready
+              port: 12345
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: alloy-config
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: data
+          hostPath:
+            path: /var/lib/alloy/data
+            type: DirectoryOrCreate
+---
+# Ponto de entrada OTLP dos microserviços (traces), roteado pelo Alloy ao Tempo do Grafana Cloud
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+spec:
+  selector:
+    app: alloy
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318

@@ -1,0 +1,126 @@
+variable "name_prefix" {
+  description = "Prefixo do nome de todos os recursos AWS"
+  type        = string
+  default     = "solidarytech"
+}
+
+variable "aws_region" {
+  description = "Região da AWS"
+  type        = string
+  default     = "us-east-1"
+}
+
+# Variáveis da VPC
+#############################
+variable "subnet_prefix" {
+  description = "Os 2 primeiros octetos do CIDR da VPC"
+  type        = string
+  default     = "10.80"
+}
+
+variable "az_count" {
+  description = "Quantidade de AZs (mínimo 2)"
+  type        = number
+  default     = 2
+}
+
+# Variáveis do EKS
+#############################
+variable "eks_kubernetes_version" {
+  description = "Versão do Kubernetes do EKS (vazio usa a versão padrão atual da AWS)"
+  type        = string
+  default     = null
+}
+
+variable "eks_node_instance_types" {
+  description = "Tipos de instância EC2 do node group. m7i-flex.large é elegível ao free tier baseado em créditos (contas criadas a partir de 15/07/2025, até US$200/6 meses); ajuste para t3.micro/t3.small em conta mais antiga (free tier de 750h/mês por 12 meses)."
+  type        = list(string)
+  default     = ["m7i-flex.large"]
+}
+
+variable "eks_enable_prefix_delegation" {
+  description = "Habilita IPv4 Prefix Delegation no vpc-cni (mais IPs/pods por node, sem custo adicional)"
+  type        = bool
+  default     = true
+}
+
+variable "eks_node_desired_size" {
+  description = "Quantidade desejada de nodes do EKS"
+  type        = number
+  default     = 2
+}
+
+variable "eks_node_min_size" {
+  description = "Quantidade mínima de nodes do EKS"
+  type        = number
+  default     = 1
+}
+
+variable "eks_node_max_size" {
+  description = "Quantidade máxima de nodes do EKS"
+  type        = number
+  default     = 2
+}
+
+# Variáveis do RDS
+#############################
+variable "db_name" {
+  description = "Nome do database inicial no RDS"
+  type        = string
+  default     = "sol_db"
+}
+
+variable "db_username" {
+  description = "Usuário master do PostgreSQL"
+  type        = string
+  default     = "sol"
+}
+
+# DEFINA O VALOR REAL NO terraform.tfvars (não versionado)
+variable "db_password" {
+  description = "Senha do usuário master do RDS"
+  type        = string
+  sensitive   = true
+}
+
+variable "rds_instance_class" {
+  description = "Classe da instância RDS"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+# Variáveis do DynamoDB
+#############################
+variable "dynamodb_table_name" {
+  description = "Nome da tabela DynamoDB de voluntários"
+  type        = string
+  default     = "SolidaryTechVolunteers"
+}
+
+# Variáveis do SQS
+#############################
+variable "sqs_queue_name" {
+  description = "Nome (sufixo) da fila SQS de eventos de doação"
+  type        = string
+  default     = "donation-events"
+}
+
+# Variáveis do IAM/IRSA
+#############################
+variable "k8s_namespace" {
+  description = "Namespace Kubernetes onde os serviços rodam"
+  type        = string
+  default     = "solidarytech"
+}
+
+variable "donation_service_account" {
+  description = "Nome da ServiceAccount do donation-service (a ser criada em kube/ com a anotação IRSA)"
+  type        = string
+  default     = "donation-service"
+}
+
+variable "volunteer_service_account" {
+  description = "Nome da ServiceAccount do volunteer-service (a ser criada em kube/ com a anotação IRSA)"
+  type        = string
+  default     = "volunteer-service"
+}
