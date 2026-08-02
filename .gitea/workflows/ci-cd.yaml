@@ -14,27 +14,115 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------
+  # 0. Detecta quais serviços tiveram arquivos alterados e monta, a partir
+  #    disso, a matriz dinâmica de "sast-sca" e "build-and-push" (para
+  #    rodarem só para os serviços afetados, não os 3 a cada mudança em
+  #    um só). Este workflow só é disparado por workflow_dispatch, que
+  #    não tem diff para comparar, então força a matriz completa sempre -
+  #    o filtro só reduz builds de fato no workflow do GitHub (ci-cd.yaml),
+  #    que também dispara por push.
+  #
+  #    Matriz dinâmica em vez de um "if:" no job com strategy.matrix: o
+  #    contexto `matrix` não existe no `if:` de nível de job (é avaliado
+  #    antes da expansão da matriz - só existe dentro de steps/dentro da
+  #    matriz já expandida), então o único jeito correto de pular
+  #    combinações inteiras da matriz é a própria matriz já nascer sem
+  #    elas (via `fromJSON` num output deste job), não excluí-las depois.
+  # ---------------------------------------------------------------------
+  detect-changes:
+    name: Detectar serviços alterados
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      sast_matrix: ${{ steps.matrix.outputs.sast }}
+      build_matrix: ${{ steps.matrix.outputs.build }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Filtrar caminhos alterados
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          base: ${{ github.ref }}
+          filters: |
+            shared: &shared
+              - build/docker-compose.yaml
+              - 'build/.env_*'
+              - build/Dockerfile-psql
+              - build/Dockerfile-elasticmq
+              - 'build/scripts/**'
+              - '.github/workflows/**'
+              - '.gitea/workflows/**'
+            ngo:
+              - *shared
+              - 'build/ngo-service/**'
+              - build/Dockerfile-ngo
+            donation:
+              - *shared
+              - 'build/donation-service/**'
+              - build/Dockerfile-donation
+            volunteer:
+              - *shared
+              - 'build/volunteer-service/**'
+              - build/Dockerfile-volunteer
+
+      - name: Montar matrizes dinâmicas
+        id: matrix
+        env:
+          NGO_CHANGED: ${{ steps.filter.outputs.ngo }}
+          DONATION_CHANGED: ${{ steps.filter.outputs.donation }}
+          VOLUNTEER_CHANGED: ${{ steps.filter.outputs.volunteer }}
+        run: |
+          set -eo pipefail
+
+          # workflow_dispatch não passa por push/pull_request, então o
+          # paths-filter acima não tem o que comparar - força os 3
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            NGO_CHANGED=true; DONATION_CHANGED=true; VOLUNTEER_CHANGED=true
+          fi
+
+          sast_entries=()
+          build_entries=()
+
+          if [ "$NGO_CHANGED" = "true" ]; then
+            sast_entries+=('{"service":"ngo","language":"python","code_dir":"build/ngo-service"}')
+            build_entries+=('{"service":"ngo","dockerfile":"build/Dockerfile-ngo","dockerhub_repo":"diasdmhub/ngo"}')
+          fi
+          if [ "$DONATION_CHANGED" = "true" ]; then
+            sast_entries+=('{"service":"donation","language":"go","code_dir":"build/donation-service"}')
+            build_entries+=('{"service":"donation","dockerfile":"build/Dockerfile-donation","dockerhub_repo":"diasdmhub/donation"}')
+          fi
+          if [ "$VOLUNTEER_CHANGED" = "true" ]; then
+            sast_entries+=('{"service":"volunteer","language":"python","code_dir":"build/volunteer-service"}')
+            build_entries+=('{"service":"volunteer","dockerfile":"build/Dockerfile-volunteer","dockerhub_repo":"diasdmhub/volunteer"}')
+          fi
+
+          join_array() {
+            local IFS=,
+            [ "$#" -eq 0 ] && { echo "[]"; return; }
+            echo "[$*]"
+          }
+
+          echo "sast=$(join_array "${sast_entries[@]}")" >> "$GITHUB_OUTPUT"
+          echo "build=$(join_array "${build_entries[@]}")" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------
   # 1. Lint + SAST (gosec/bandit) + SCA (Trivy filesystem), por serviço
   # ---------------------------------------------------------------------
   sast-sca:
     name: SAST/SCA - ${{ matrix.service }}
     runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.sast_matrix != '[]'
 
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - service: ngo
-            language: python
-            code_dir: build/ngo-service
-
-          - service: donation
-            language: go
-            code_dir: build/donation-service
-
-          - service: volunteer
-            language: python
-            code_dir: build/volunteer-service
+        include: ${{ fromJSON(needs.detect-changes.outputs.sast_matrix) }}
 
     steps:
       - name: Checkout code
@@ -179,24 +267,13 @@ jobs:
   build-and-push:
     name: Build - ${{ matrix.service }}
     runs-on: ubuntu-latest
-    needs: smoke-test
-    if: github.event_name != 'pull_request'
+    needs: [smoke-test, detect-changes]
+    if: github.event_name != 'pull_request' && needs.detect-changes.outputs.build_matrix != '[]'
 
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - service: ngo
-            dockerfile: build/Dockerfile-ngo
-            dockerhub_repo: diasdmhub/ngo
-
-          - service: donation
-            dockerfile: build/Dockerfile-donation
-            dockerhub_repo: diasdmhub/donation
-
-          - service: volunteer
-            dockerfile: build/Dockerfile-volunteer
-            dockerhub_repo: diasdmhub/volunteer
+        include: ${{ fromJSON(needs.detect-changes.outputs.build_matrix) }}
 
     steps:
       - name: Checkout code
