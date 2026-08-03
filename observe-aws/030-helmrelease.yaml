@@ -57,8 +57,11 @@ spec:
         # segredo (é só a URL, específica da região do seu stack), por isso
         # fica aqui e não no Secret. Ex.: https://otlp-gateway-prod-us-east-0.grafana.net/otlp
         url: "https://otlp-gateway-prod-sa-east-1.grafana.net/otlp"
+        # Métricas ficam desligadas neste destino de propósito - ver
+        # selfReporting abaixo, que é a única fonte de métricas que
+        # sobraria habilitada sem isso.
         metrics:
-          enabled: true
+          enabled: false
         logs:
           enabled: true
         traces:
@@ -85,6 +88,11 @@ spec:
     applicationObservability:
       enabled: true
       collector: alloy-receiver
+      # Nenhum dos 3 microsserviços emite métricas OTLP hoje (só logs e
+      # traces - ver CLAUDE.md); desligar evita exigir um destino "capaz de
+      # métricas" só para um pipeline que nunca recebe nada.
+      metrics:
+        enabled: false
       receivers:
         otlp:
           grpc:
@@ -97,6 +105,15 @@ spec:
     clusterMetrics:
       enabled: false
     hostMetrics:
+      enabled: false
+
+    # Ligado por padrão no chart: cada Alloy reporta métricas operacionais
+    # próprias (duração de avaliação de componentes etc.) a cada 60s para
+    # qualquer destino "capaz de métricas". Com 4 pods de Alloy, isso sozinho
+    # já estourou o rate limit do tier gratuito do Grafana Cloud (429 -
+    # err-mimir-tenant-max-request-rate) mesmo sem nenhuma métrica de
+    # aplicação real fluindo. Não precisamos dessa telemetria interna.
+    selfReporting:
       enabled: false
 
     # Cada feature acima precisa de um coletor (instância do Alloy) próprio
