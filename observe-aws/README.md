@@ -15,60 +15,49 @@ nem EBS envolvidos aqui.
 
 | | `observe/` (kubeadm-local) | `observe-aws/` (EKS) |
 |---|---|---|
-| Coleta | Alloy artesanal (manifestos deste repo) | Chart oficial `grafana/k8s-monitoring`, gerenciado por um `HelmRelease` do Flux |
+| Coleta | Alloy artesanal (manifestos deste repo), gerenciado pelo Flux | Chart oficial `grafana/k8s-monitoring` (inclui Alloy), instalado manualmente com `helm install`/`helm upgrade` |
 | Logs | Alloy → Loki local | Alloy (do chart) → Grafana Cloud, via OTLP |
 | Traces | Alloy → Tempo local | Alloy (do chart) → Grafana Cloud, via OTLP |
 | Métricas | Prometheus local, só recebendo remote_write do metrics-generator do Tempo | Nenhuma - `clusterMetrics`/`hostMetrics` do chart ficam desabilitados de propósito (métricas de cluster continuam com o Zabbix, ver `CLAUDE.md`) |
 | Storage local (PVC/EBS) | Loki, Tempo e Prometheus têm PVC | Nenhum |
+| Gerenciamento do chart | Flux (`HelmRepository`+`HelmRelease`) | Manual (`helm install`, fora do Flux) |
 
-## Por que um HelmRelease em vez do Alloy artesanal de `observe/`
+## Por que manual, e não um HelmRelease do Flux
 
-A primeira versão deste diretório copiava o DaemonSet/RBAC do Alloy de
-`observe/` com um `config.alloy` diferente (exportando para o Grafana Cloud
-via variáveis de ambiente). Foi substituída pelo chart oficial
-`grafana/k8s-monitoring` porque:
+Uma versão anterior deste diretório gerenciava o chart `grafana/k8s-
+monitoring` 100% via Flux (`HelmRepository` + `HelmRelease`, com um Secret
+`grafana-cloud-credentials` aplicado à parte). Na prática, os dados não
+chegavam ao Grafana Cloud como esperado com essa configuração.
 
-- É exatamente o que o assistente "Connect a Kubernetes cluster" do Grafana
-  Cloud gera como `helm install` - só que aqui, gerenciado 100% pelo Flux
-  (`010-helmrepository.yaml` + `030-helmrelease.yaml`), sem precisar rodar
-  `helm install` manualmente em nenhum momento.
-- O chart já resolve, com um único destino `otlp`, o que antes exigia 3
-  destinos separados (URLs de push do Loki, do Tempo e do Prometheus) no
-  `config.alloy` antigo - o Grafana Cloud aceita métricas, logs e traces
-  numa única URL de "OTLP Gateway" com a mesma credencial.
+O Grafana Cloud é desenhado para uma conexão manual: o assistente "Connect a
+Kubernetes cluster" da própria UI (**Connections → Add new connection →
+Kubernetes**) gera um `helm install` já pronto, com a URL/credenciais do seu
+stack embutidas ali mesmo. É esse comando que deve ser executado - uma única
+vez por cluster - em vez de reconstruído manualmente num `HelmRelease`
+versionado neste repo.
 
-O `helm-controller` do Flux já vem instalado desde o bootstrap (mesmo
-`gotk-components.yaml` que instala `source-controller`/`kustomize-
-controller`, usado tanto por `kubeadm-local` quanto por `eks-aws`), então
-nenhum componente novo precisa ser adicionado ao cluster para isso
-funcionar.
+O que o Flux continua gerenciando aqui é só o `Namespace` (`000-namespace.yaml`),
+mesmo padrão idempotente usado em `kube-aws/000-namespace.yaml` - sem risco,
+já que criar um namespace não tem estado para divergir. O chart em si (que já
+inclui o Alloy, via Alloy Operator) fica fora do Flux.
 
-## Credenciais do Grafana Cloud
+## Passo manual (uma vez por cluster)
 
-O Secret `grafana-cloud-credentials` **não é gerenciado pelo Flux** - é uma
-credencial real (token do Grafana Cloud), diferente do
-`AWS_ACCESS_KEY_ID=test` fake versionado em `kube/` para os emuladores
-locais, e não deve ir para o git.
+1. No Grafana Cloud: **seu stack → Connections → Add new connection →
+   Kubernetes**. Preencha o nome do cluster (`solidarytech-eks-cluster`) e
+   selecione ao menos logs e traces (métricas de cluster não são necessárias
+   aqui - ver tabela acima).
+2. Copie o comando `helm install`/`helm upgrade` gerado pelo assistente
+   (já inclui `helm repo add grafana ...`, `--namespace observe` e os valores
+   de autenticação do seu stack).
+3. Rode esse comando contra o cluster EKS, depois que o namespace `observe`
+   existir (Flux já cria via `000-namespace.yaml`, ou o próprio comando com
+   `--create-namespace` caso rode antes).
+4. Se o token expirar ou for rotacionado, gere um novo comando na mesma tela
+   e rode `helm upgrade` novamente - o Flux não participa desse ciclo.
 
-1. Copie `secret.example.yaml` para `secret.yaml` (já coberto pelo
-   `.gitignore` da raiz do repositório).
-2. Preencha `username` (Instance ID do seu stack) e `password` (o token da
-   Access Policy) - instruções de onde encontrar cada um estão nos
-   comentários do próprio arquivo.
-3. Aplique manualmente, uma vez, depois que o namespace `observe` existir:
-   ```bash
-   kubectl apply -f observe-aws/secret.yaml
-   ```
-
-Se o token expirar ou for rotacionado, repita o passo 3 - o Flux não
-precisa saber disso.
-
-**Falta preencher também** a URL do OTLP Gateway em
-`030-helmrelease.yaml` (`destinations.grafanaCloud.url`, hoje `"CHANGE_ME"`)
-- não é sensível (é só a URL do seu stack, não uma credencial), por isso
-fica no HelmRelease versionado em vez do Secret. Pegue o valor em **Grafana
-Cloud → seu stack → Connections → Add new connection → OpenTelemetry
-(OTLP)**.
+Não versionar esse comando/script neste repo: ele traz o token do Grafana
+Cloud embutido, então deve ficar só na máquina de quem aplica.
 
 ## Free tier do Grafana Cloud
 
@@ -81,7 +70,12 @@ Grafana Cloud, não um recurso do `terra/`).
 
 ## Flux
 
-`clusters/eks-aws/observe-kustomization.yaml` já aponta para `./observe-aws` (e `clusters/eks-aws/solidarytech-kustomization.yaml` para `./kube-aws` - ver `kube-aws/README.md`). Falta rodar o bootstrap do Flux nesse cluster (`flux bootstrap ...` com `--path=./clusters/eks-aws`) para que `flux-system/` seja gerado e essas Kustomizations passem a ser reconciliadas de fato - ver `clusters/eks-aws/`.
+`clusters/eks-aws/observe-kustomization.yaml` aponta para `./observe-aws`
+(hoje só o `Namespace`) - e `clusters/eks-aws/solidarytech-kustomization.yaml`
+para `./kube-aws` (ver `kube-aws/README.md`). Falta rodar o bootstrap do Flux
+nesse cluster (`flux bootstrap ...` com `--path=./clusters/eks-aws`) para que
+`flux-system/` seja gerado e essas Kustomizations passem a ser reconciliadas
+de fato - ver `clusters/eks-aws/`.
 
 Este cluster não roda a Kustomization `image-automation`: ela já reconcilia `./kube` a partir do `kubeadm-local` e faz commit+push direto na branch `main`; rodá-la também no EKS faria dois Flux checarem o Docker Hub e tentarem commitar a mesma atualização de tag em paralelo.
 

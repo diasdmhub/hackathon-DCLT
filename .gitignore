@@ -48,10 +48,6 @@ docker-compose.override.yml
 .env
 .env.*
 
-# Real Grafana Cloud credentials (observe-aws/) - only the .example.yaml
-# template is versioned; see observe-aws/README.md
-observe-aws/secret.yaml
-
 # Real RDS connection string (kube-aws/) - only the *-secret.example.yaml
 # templates are versioned; see kube-aws/README.md
 kube-aws/**/*-secret.yaml

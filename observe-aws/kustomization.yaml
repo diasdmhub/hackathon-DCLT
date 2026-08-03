@@ -1,13 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Ambiente AWS: o namespace "observe" recebe um único HelmRelease (chart
-# oficial grafana/k8s-monitoring, via Flux) que substitui o Loki/Tempo/
-# Prometheus locais do observe/ - o Grafana Cloud já inclui armazenamento de
-# métricas, logs e traces, então nenhum PVC/StatefulSet é necessário aqui.
-# Ver observe-aws/README.md.
+# Ambiente AWS: o Flux só gerencia o namespace "observe" aqui. O chart
+# grafana/k8s-monitoring (Alloy + coletores, apontando para o Grafana Cloud)
+# é instalado manualmente, uma única vez, com o comando `helm install` que o
+# próprio Grafana Cloud fornece na sua UI - não é gerenciado pelo Flux. Ver
+# observe-aws/README.md.
 
 resources:
   - 000-namespace.yaml
-  - 010-helmrepository.yaml
-  - 030-helmrelease.yaml
