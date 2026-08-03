@@ -10,8 +10,7 @@ kind: Kustomization
 # Os Secrets *-env (ngo-env, donation-env, volunteer-env) não entram aqui de
 # propósito: contêm a string de conexão real do RDS e são aplicados
 # manualmente, fora do Flux, a partir dos *-secret.example.yaml deste
-# diretório - mesma convenção do Secret grafana-cloud-credentials em
-# observe-aws/.
+# diretório.
 
 resources:
   - 000-namespace.yaml
