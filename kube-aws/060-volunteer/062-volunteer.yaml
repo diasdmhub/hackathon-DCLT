@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: volunteer
+  namespace: solidarytech
+  labels:
+    app: volunteer
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: volunteer
+  template:
+    metadata:
+      labels:
+        app: volunteer
+        app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
+    spec:
+      serviceAccountName: volunteer-service
+      containers:
+        - name: volunteer
+          # Não gerenciada pelo Flux Image Automation neste cluster (só
+          # habilitado em kubeadm-local - ver clusters/eks-aws/), por isso
+          # :latest em vez de uma tag de timestamp fixa.
+          image: docker.io/diasdmhub/volunteer:latest
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - secretRef:
+                name: volunteer-env
+          # Tracing OTLP exportado ao Alloy (namespace observe), que roteia ao Tempo
+          env:
+            - name: OTEL_SERVICE_NAME
+              value: volunteer-service
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://alloy.observe.svc.cluster.local:4318
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: http/protobuf
+            - name: OTEL_TRACES_EXPORTER
+              value: otlp
+            - name: OTEL_METRICS_EXPORTER
+              value: none
+            - name: OTEL_LOGS_EXPORTER
+              value: none
+            # Exclui as sondas de liveness/readiness dos traces
+            - name: OTEL_PYTHON_EXCLUDED_URLS
+              value: /health
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: volunteer
+  namespace: solidarytech
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+spec:
+  type: LoadBalancer
+  selector:
+    app: volunteer
+  ports:
+    - port: 8083
+      targetPort: 8083

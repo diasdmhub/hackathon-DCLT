@@ -74,14 +74,11 @@ ambiente de hackathon, a cota gratuita deve ser suficiente; não há
 provisionamento de infraestrutura AWS associado a isso (é conta/cota do
 Grafana Cloud, não um recurso do `terra/`).
 
-## Pendência: Flux precisa apontar para cá
+## Flux
 
-Assim como `kube/` e `observe/` são aplicados hoje pelas Kustomizations em
-`clusters/kubeadm-local/`, o cluster EKS vai precisar de um bootstrap do
-Flux próprio (`clusters/eks-aws/` ou nome equivalente) com uma
-Kustomization apontando para `./observe-aws` (e outra para `./kube`, e
-outra para `./image-automation`). Isso ainda não existe neste repositório -
-ver a resposta sobre Flux no EKS na conversa que motivou este diretório.
+`clusters/eks-aws/observe-kustomization.yaml` já aponta para `./observe-aws` (e `clusters/eks-aws/solidarytech-kustomization.yaml` para `./kube-aws` - ver `kube-aws/README.md`). Falta rodar o bootstrap do Flux nesse cluster (`flux bootstrap ...` com `--path=./clusters/eks-aws`) para que `flux-system/` seja gerado e essas Kustomizations passem a ser reconciliadas de fato - ver `clusters/eks-aws/`.
+
+Este cluster não roda a Kustomization `image-automation`: ela já reconcilia `./kube` a partir do `kubeadm-local` e faz commit+push direto na branch `main`; rodá-la também no EKS faria dois Flux checarem o Docker Hub e tentarem commitar a mesma atualização de tag em paralelo.
 
 | [⬆️ Top](#observabilidade-da-aws) |
 | --- |

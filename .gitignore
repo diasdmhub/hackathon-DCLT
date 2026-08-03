@@ -52,6 +52,10 @@ docker-compose.override.yml
 # template is versioned; see observe-aws/README.md
 observe-aws/secret.yaml
 
+# Real RDS connection string (kube-aws/) - only the *-secret.example.yaml
+# templates are versioned; see kube-aws/README.md
+kube-aws/**/*-secret.yaml
+
 # General ignores
 .git
 dist
