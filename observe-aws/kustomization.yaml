@@ -1,25 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Ambiente AWS: mesmo Alloy (RBAC/DaemonSet copiados de observe/020-alloy;
-# Kustomize não permite referenciar arquivos fora da árvore deste diretório,
-# então são cópias, não links), mas com um config.alloy diferente (exporta
-# para o Grafana Cloud) e sem Loki/Tempo/Prometheus locais - o Grafana Cloud
-# já inclui armazenamento de métricas, logs e traces, então nenhum
-# PVC/StatefulSet é necessário aqui. Ver observe-aws/README.md.
+# Ambiente AWS: o namespace "observe" recebe um único HelmRelease (chart
+# oficial grafana/k8s-monitoring, via Flux) que substitui o Loki/Tempo/
+# Prometheus locais do observe/ - o Grafana Cloud já inclui armazenamento de
+# métricas, logs e traces, então nenhum PVC/StatefulSet é necessário aqui.
+# Ver observe-aws/README.md.
 
 resources:
   - 000-namespace.yaml
-  - 020-alloy/021-rbac.yaml
-  - 020-alloy/023-alloy.yaml
-
-configMapGenerator:
-  - name: alloy-config
-    namespace: observe
-    files:
-      - config.alloy=config.alloy
-    options:
-      labels:
-        app.kubernetes.io/part-of: solidarytech
-        Project: SolidaryTech
-        Environment: dev
+  - 010-helmrepository.yaml
+  - 030-helmrelease.yaml

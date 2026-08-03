@@ -15,34 +15,33 @@ nem EBS envolvidos aqui.
 
 | | `observe/` (kubeadm-local) | `observe-aws/` (EKS) |
 |---|---|---|
-| Logs | Alloy → Loki local | Alloy → Loki do Grafana Cloud |
-| Traces | Alloy → Tempo local | Alloy → Tempo do Grafana Cloud (OTLP/HTTP) |
-| Métricas | Prometheus local, só recebendo remote_write do metrics-generator do Tempo | Pipeline OTLP → Prometheus remote_write para o Mimir do Grafana Cloud (hoje sem uso real - ver observação abaixo) |
+| Coleta | Alloy artesanal (manifestos deste repo) | Chart oficial `grafana/k8s-monitoring`, gerenciado por um `HelmRelease` do Flux |
+| Logs | Alloy → Loki local | Alloy (do chart) → Grafana Cloud, via OTLP |
+| Traces | Alloy → Tempo local | Alloy (do chart) → Grafana Cloud, via OTLP |
+| Métricas | Prometheus local, só recebendo remote_write do metrics-generator do Tempo | Nenhuma - `clusterMetrics`/`hostMetrics` do chart ficam desabilitados de propósito (métricas de cluster continuam com o Zabbix, ver `CLAUDE.md`) |
 | Storage local (PVC/EBS) | Loki, Tempo e Prometheus têm PVC | Nenhum |
 
-O RBAC e o DaemonSet do Alloy em `020-alloy/` são cópias dos de `observe/`
-(o Kustomize não permite referenciar arquivos fora da árvore do diretório
-atual) com uma diferença: o container ganha `envFrom` apontando para o
-Secret `grafana-cloud-credentials`, e o `config.alloy` montado é outro
-(`observe-aws/config.alloy`, não `observe/020-alloy/config.alloy`).
+## Por que um HelmRelease em vez do Alloy artesanal de `observe/`
 
-## Observação sobre métricas
+A primeira versão deste diretório copiava o DaemonSet/RBAC do Alloy de
+`observe/` com um `config.alloy` diferente (exportando para o Grafana Cloud
+via variáveis de ambiente). Foi substituída pelo chart oficial
+`grafana/k8s-monitoring` porque:
 
-Hoje nenhum dos 3 microsserviços emite métricas customizadas (só logs e
-traces - ver `CLAUDE.md`). O pipeline `otelcol.receiver.otlp` → ... →
-`prometheus.remote_write` em `config.alloy` existe pronto para quando isso
-mudar, mas por ora fica praticamente ocioso.
+- É exatamente o que o assistente "Connect a Kubernetes cluster" do Grafana
+  Cloud gera como `helm install` - só que aqui, gerenciado 100% pelo Flux
+  (`010-helmrepository.yaml` + `030-helmrelease.yaml`), sem precisar rodar
+  `helm install` manualmente em nenhum momento.
+- O chart já resolve, com um único destino `otlp`, o que antes exigia 3
+  destinos separados (URLs de push do Loki, do Tempo e do Prometheus) no
+  `config.alloy` antigo - o Grafana Cloud aceita métricas, logs e traces
+  numa única URL de "OTLP Gateway" com a mesma credencial.
 
-As métricas RED/service-graph que o Tempo local gerava via
-`metrics_generator` (customizado em `observe/030-tempo/config.yaml` para
-também contar 4xx - ver `CLAUDE.md`) deixam de existir como estão hoje: o
-Tempo do Grafana Cloud tem seu próprio metrics-generator/Application
-Observability, mas normalmente sem o mesmo nível de customização via YAML
-que um Tempo self-hosted permite. Vale conferir nas configurações do seu
-stack do Grafana Cloud (Tempo > Application Observability ou Service Graph)
-se dá para reproduzir o mesmo comportamento de contar 4xx - se não der, é
-uma perda de funcionalidade a aceitar ao migrar para o Grafana Cloud, não
-algo que este Kustomization resolve.
+O `helm-controller` do Flux já vem instalado desde o bootstrap (mesmo
+`gotk-components.yaml` que instala `source-controller`/`kustomize-
+controller`, usado tanto por `kubeadm-local` quanto por `eks-aws`), então
+nenhum componente novo precisa ser adicionado ao cluster para isso
+funcionar.
 
 ## Credenciais do Grafana Cloud
 
@@ -53,17 +52,23 @@ locais, e não deve ir para o git.
 
 1. Copie `secret.example.yaml` para `secret.yaml` (já coberto pelo
    `.gitignore` da raiz do repositório).
-2. Preencha os valores reais - instruções de onde encontrar cada um estão
-   nos comentários do próprio arquivo (Grafana Cloud > Connections > Add
-   new connection, para as URLs/usernames; Administration > Access
-   Policies, para o token).
-3. Aplique manualmente, uma vez, depois que o cluster/namespace existir:
+2. Preencha `username` (Instance ID do seu stack) e `password` (o token da
+   Access Policy) - instruções de onde encontrar cada um estão nos
+   comentários do próprio arquivo.
+3. Aplique manualmente, uma vez, depois que o namespace `observe` existir:
    ```bash
    kubectl apply -f observe-aws/secret.yaml
    ```
 
 Se o token expirar ou for rotacionado, repita o passo 3 - o Flux não
 precisa saber disso.
+
+**Falta preencher também** a URL do OTLP Gateway em
+`030-helmrelease.yaml` (`destinations.grafanaCloud.url`, hoje `"CHANGE_ME"`)
+- não é sensível (é só a URL do seu stack, não uma credencial), por isso
+fica no HelmRelease versionado em vez do Secret. Pegue o valor em **Grafana
+Cloud → seu stack → Connections → Add new connection → OpenTelemetry
+(OTLP)**.
 
 ## Free tier do Grafana Cloud
 

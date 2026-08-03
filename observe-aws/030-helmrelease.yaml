@@ -1,0 +1,113 @@
+# Substitui o Alloy artesanal (antigo 020-alloy/ + config.alloy) pelo chart
+# oficial grafana/k8s-monitoring, gerenciado 100% via Flux (HelmRepository +
+# HelmRelease) - sem `helm install` manual. Ver observe-aws/README.md.
+#
+# Todo o `values:` abaixo foi validado localmente antes de commitar
+# (helm pull grafana/k8s-monitoring --version 4.3.2 --untar, depois
+# helm template com estes mesmos valores) - não é um values.yaml genérico
+# copiado da documentação. Alguns pontos não óbvios que esse teste revelou:
+#   - `destinations` é um map (chave = nome escolhido), não uma lista -
+#     mudou entre as versões 3.x e 4.x do chart.
+#   - A partir da v4, o chart usa um "Alloy Operator": os recursos reais
+#     (Deployment/DaemonSet/Service) só existem depois que o operator
+#     reconcilia um CRD `Alloy` (grupo collectors.grafana.com) - não
+#     aparecem só de rodar `helm template`/`kustomize build`.
+#   - Cada feature (applicationObservability, podLogsViaOpenTelemetry)
+#     precisa de um `collector:` explícito quando há mais de um coletor
+#     declarado - não existe auto-atribuição.
+#   - O coletor de logs (otelcol.receiver.filelog) exige
+#     `stabilityLevel: public-preview` - o padrão do chart (`generally-
+#     available`) rejeita esse componente.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  # O nome do release define o prefixo dos recursos do chart, incluindo o
+  # Service (criado pelo Alloy Operator a partir do CRD `Alloy` abaixo) que
+  # recebe OTLP dos 3 microsserviços: grafana-k8s-monitoring-alloy-receiver.
+  name: grafana-k8s-monitoring
+  namespace: observe
+spec:
+  interval: 30m0s
+  install:
+    crds: Create
+  upgrade:
+    crds: CreateReplace
+  chart:
+    spec:
+      chart: k8s-monitoring
+      version: "4.3.2"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: observe
+  values:
+    cluster:
+      name: solidarytech-eks-cluster
+
+    # Único destino: o OTLP Gateway do Grafana Cloud aceita métricas, logs e
+    # traces em uma única URL/credencial (mais simples que os 3 destinos
+    # separados - Loki/Tempo/Prometheus - usados no config.alloy antigo).
+    # Só o Grafana Cloud aceita OTLP via HTTP hoje, não gRPC - daí protocol: http.
+    destinations:
+      grafanaCloud:
+        type: otlp
+        protocol: http
+        # URL do "OTLP Gateway" do seu stack - Grafana Cloud > seu stack >
+        # Connections > Add new connection > OpenTelemetry (OTLP). Não é
+        # segredo (é só a URL, específica da região do seu stack), por isso
+        # fica aqui e não no Secret. Ex.: https://otlp-gateway-prod-us-east-0.grafana.net/otlp
+        url: "https://otlp-gateway-prod-sa-east-1.grafana.net/otlp"
+        metrics:
+          enabled: true
+        logs:
+          enabled: true
+        traces:
+          enabled: true
+        auth:
+          type: basic
+          # usernameKey/passwordKey ficam nos valores padrão do chart
+          # ("username"/"password") - ver Secret grafana-cloud-credentials
+          # em observe-aws/secret.example.yaml.
+        secret:
+          create: false
+          name: grafana-cloud-credentials
+          namespace: observe
+
+    # Logs dos pods, roteados via OTLP (mesmo pipeline usado para métricas/
+    # traces acima) em vez do protocolo Loki nativo.
+    podLogsViaOpenTelemetry:
+      enabled: true
+      collector: alloy-logs
+
+    # Recebe os traces OTLP dos 3 microsserviços - ver kube-aws/*/*.yaml,
+    # OTEL_EXPORTER_OTLP_ENDPOINT aponta para
+    # http://grafana-k8s-monitoring-alloy-receiver.observe.svc.cluster.local:4318
+    applicationObservability:
+      enabled: true
+      collector: alloy-receiver
+      receivers:
+        otlp:
+          grpc:
+            enabled: true
+          http:
+            enabled: true
+
+    # Métricas de cluster/host (kube-state-metrics, node-exporter etc.) não
+    # são o objetivo aqui - o Zabbix já cobre isso (ver CLAUDE.md).
+    clusterMetrics:
+      enabled: false
+    hostMetrics:
+      enabled: false
+
+    # Cada feature acima precisa de um coletor (instância do Alloy) próprio
+    # - sem isso o chart falha a validação ("At least one collector should
+    # be enabled"). `otel-receiver` só abre as portas 4317/4318; o resto da
+    # configuração do receiver vem de applicationObservability acima.
+    collectors:
+      alloy-receiver:
+        presets: [otel-receiver]
+        alloy: {}
+      alloy-logs:
+        presets: [filesystem-log-reader, daemonset]
+        alloy:
+          stabilityLevel: public-preview
