@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Equivalente a kube/ para o cluster EKS: mesmos 3 microsserviços, mas sem
+# Postgres/ElasticMQ/DynamoDB Local (o Terraform em terra/ já provisiona
+# RDS, SQS e DynamoDB reais) e com ServiceAccounts IRSA em vez das
+# credenciais AWS falsas usadas para os emuladores locais. Ver
+# kube-aws/README.md.
+#
+# Os Secrets *-env (ngo-env, donation-env, volunteer-env) não entram aqui de
+# propósito: contêm a string de conexão real do RDS e são aplicados
+# manualmente, fora do Flux, a partir dos *-secret.example.yaml deste
+# diretório - mesma convenção do Secret grafana-cloud-credentials em
+# observe-aws/.
+
+resources:
+  - 000-namespace.yaml
+  - 005-serviceaccounts.yaml
+  - 040-ngo/042-ngo.yaml
+  - 050-donation/052-donation.yaml
+  - 060-volunteer/062-volunteer.yaml
