@@ -1,11 +1,11 @@
 | [↩️ Voltar](./) |
 | --- |
 
-# Roteiro de implementação inicial do cluster AWS
+# Roteiro de implementação inicial do cluster K8s na AWS
 
 > ⚠️ **_Em construção_**
 
-Sequência mínima para provisionar o ambiente EKS do zero e deixá-lo sob gestão do FluxCD, com logs/traces chegando ao Grafana Cloud. Detalhes e justificativas de cada etapa estão em `terra/README.md`, `kube-aws/README.md` e `observe-aws/README.md`; este roteiro só reúne os comandos na ordem correta.
+Sequência mínima para implementar o ambiente EKS do zero e deixá-lo sob gestão do FluxCD, com logs e traces enviados ao Grafana Cloud. Detalhes e justificativas de cada etapa estão em `terra/README.md`, `kube-aws/README.md` e `observe-aws/README.md`; este roteiro só reúne os comandos na ordem correta.
 
 <BR>
 
@@ -51,11 +51,12 @@ flux check --pre
 export GITHUB_TOKEN=<seu-personal-access-token>
 
 flux bootstrap github \
-  --owner=diasdmhub \
-  --repository=hackathon-DCLT \
-  --branch=main \
-  --path=./clusters/eks-aws \
-  --personal
+    --owner=diasdmhub \
+    --repository=hackathon-DCLT \
+    --branch=main \
+    --path=./clusters/eks-aws \
+    --personal \
+    --token-auth
 ```
 
 Isso gera `clusters/eks-aws/flux-system/` (instala os controllers, cria o `GitRepository` apontando para este repositório e o `Kustomization` raiz) e faz commit + push direto na branch `main`. A partir daí, as duas `Kustomization`s já declaradas em `clusters/eks-aws/` passam a reconciliar de fato:
@@ -114,7 +115,7 @@ cd terra
 ./destroy.sh
 ```
 
-| [⬆️ Top](#roteiro-de-implementação-inicial-do-cluster-aws) |
+| [⬆️ Top](#roteiro-de-implementação-inicial-do-cluster-k8s-na-aws) |
 | --- |
 
 [fluxcli]: https://fluxcd.io/flux/installation/#install-the-flux-cli
