@@ -89,4 +89,4 @@ if [ "$skip_k8s_cleanup" -eq 0 ]; then
 fi
 
 log "4) terraform destroy"
-terraform destroy
+terraform destroy -auto-approve
