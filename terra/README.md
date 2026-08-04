@@ -73,6 +73,49 @@ $(terraform output -raw configure_kubectl 2>/dev/null) || \
 `terraform.tfvars` nunca deve ser commitado (já coberto pelo `.gitignore` da
 raiz do repositório, que ignora `*.tfvars`).
 
+## Destruição do ambiente (`terraform destroy`)
+
+Os 3 microsserviços expõem `Service` `type: LoadBalancer` (`kube-aws/040-ngo/`,
+`050-donation/`, `060-volunteer/`), que fazem o EKS criar um Classic ELB (e a
+ENI associada a ele) fora do state do Terraform - esses recursos nunca são
+gerenciados pelo Terraform, só o `aws_eks_cluster`. Se o cluster for destruído
+antes desses `Service`s serem removidos, o ELB e a ENI ficam órfãos na VPC e
+bloqueiam a exclusão das subnets: o `terraform destroy` falha por timeout ao
+tentar apagar a VPC, e apagar a ENI manualmente pelo console/CLI resulta em
+erro de permissão (`You do not have permission to access the specified
+resource`) mesmo como conta root, porque a ENI é "requester-managed" pela
+conta de serviço `amazon-elb`, não pela sua - ela só é liberada quando o
+próprio ELB é excluído.
+
+Use `terra/destroy.sh` em vez de `terraform destroy` direto - ele automatiza a
+ordem correta:
+
+```bash
+cd terra
+./destroy.sh
+```
+
+1. Suspende as Kustomizations do Flux (`solidarytech`, `observe`) no cluster,
+   para o Flux não recriar os recursos enquanto o script os remove.
+2. Apaga os manifests que elas sincronizam (`kubectl delete -k kube-aws/` e
+   `-k observe-aws/`), incluindo os 3 `Service` `LoadBalancer`, com o cluster
+   ainda no ar - é isso que aciona a exclusão dos ELBs e libera as ENIs.
+3. Aguarda (até 5 minutos) os ELBs órfãos desaparecerem da VPC antes de
+   continuar.
+4. Só então roda `terraform destroy`.
+
+Se o cluster já tiver sido destruído sem passar por esse fluxo (ex.: destroy
+manual anterior) e sobrarem ELBs/ENIs órfãos, o script detecta que o cluster
+está inacessível e pula direto para o `terraform destroy` - nesse caso, limpe
+os órfãos manualmente antes:
+
+```bash
+# nunca apague a ENI diretamente - apague o Load Balancer, que libera a ENI
+aws elb describe-load-balancers \
+  --query "LoadBalancerDescriptions[].{Name:LoadBalancerName,VPC:VPCId}"
+aws elb delete-load-balancer --load-balancer-name <nome-do-elb>
+```
+
 ## Pendências para o cluster ficar totalmente funcional
 
 Estes módulos provisionam a infraestrutura AWS, mas os ajustes abaixo em
