@@ -70,6 +70,43 @@ resource "aws_eks_cluster" "main" {
   depends_on = [aws_iam_role_policy_attachment.cluster_policy]
 }
 
+# Launch template só para forçar hop limit 2 no IMDS: o padrão da AWS (hop
+# limit 1) deixa a própria instância EC2 alcançar o metadata service, mas não
+# um pod nela rodando (um hop de rede a mais) - quebra o aws-load-balancer-controller,
+# que descobre o VPC ID via IMDS.
+resource "aws_launch_template" "nodes" {
+  name_prefix = "${var.name_prefix}-eks-node-"
+
+  # AMI AL2023 (ami_type padrão do node group) usa /dev/xvda como device do
+  # root volume. A EKS exige que o disk_size venha daqui quando launch_template
+  # é usado - não é mais aceito em aws_eks_node_group.disk_size nesse caso.
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size           = var.node_disk_size
+      volume_type           = "gp3"
+      encrypted             = true
+      delete_on_termination = true
+    }
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 2
+    http_tokens                 = "required"
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags          = { Name = "${var.name_prefix}-eks-nodes" }
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 # Node group gerenciado (dimensionamento conservador - ver variables.tf)
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
@@ -78,7 +115,11 @@ resource "aws_eks_node_group" "main" {
   subnet_ids      = var.private_subnet_ids
 
   instance_types = var.node_instance_types
-  disk_size      = var.node_disk_size
+
+  launch_template {
+    id      = aws_launch_template.nodes.id
+    version = aws_launch_template.nodes.latest_version
+  }
 
   scaling_config {
     desired_size = var.node_desired_size
