@@ -7,6 +7,8 @@ spec:
   interval: 5m0s
   path: ./kube-aws
   prune: true
+  dependsOn:
+    - name: lb-controller
   sourceRef:
     kind: GitRepository
     name: flux-system

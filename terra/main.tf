@@ -70,6 +70,33 @@ module "iam" {
   depends_on = [module.eks, module.sqs, module.dynamo]
 }
 
+# NLB única compartilhada pelos 3 microsserviços - depende da VPC (subnets
+# públicas) e do EKS (Security Group do cluster). Ver terra/modules/nlb e
+# kube-aws/README.md.
+module "nlb" {
+  source = "./modules/nlb"
+
+  name_prefix               = var.name_prefix
+  vpc_id                    = module.vpc.vpc_id
+  public_subnet_ids         = module.vpc.public_subnet_ids
+  cluster_security_group_id = module.eks.eks_cluster_security_group_id
+
+  depends_on = [module.vpc, module.eks]
+}
+
+# IAM/IRSA do AWS Load Balancer Controller - depende do OIDC provider do EKS
+module "lb_controller" {
+  source = "./modules/lb-controller"
+
+  name_prefix       = var.name_prefix
+  oidc_provider_arn = module.eks.eks_oidc_provider_arn
+  oidc_provider_url = module.eks.eks_oidc_provider_url
+  namespace         = var.lb_controller_namespace
+  service_account   = var.lb_controller_service_account
+
+  depends_on = [module.eks]
+}
+
 # Secrets (SSM Parameter Store) - depende dos valores gerados por rds/sqs/dynamo
 module "secrets" {
   source = "./modules/secrets"

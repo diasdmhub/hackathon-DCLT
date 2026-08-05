@@ -75,9 +75,30 @@ metadata:
     Project: SolidaryTech
     Environment: dev
 spec:
-  type: LoadBalancer
+  # ClusterIP, não LoadBalancer: a exposição externa é a NLB única
+  # provisionada por terra/modules/nlb, via TargetGroupBinding abaixo - ver
+  # kube-aws/README.md.
+  type: ClusterIP
   selector:
     app: donation
   ports:
     - port: 8082
       targetPort: 8082
+---
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: donation
+  namespace: solidarytech
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+spec:
+  serviceRef:
+    name: donation
+    port: 8082
+  # Nome determinístico ("${name_prefix}-donation-tg" em terra/modules/nlb) -
+  # dispensa copiar o ARN gerado pela AWS depois do terraform apply.
+  targetGroupName: solidarytech-donation-tg
+  targetType: ip

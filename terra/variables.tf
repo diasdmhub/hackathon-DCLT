@@ -124,3 +124,15 @@ variable "volunteer_service_account" {
   type        = string
   default     = "volunteer-service"
 }
+
+variable "lb_controller_namespace" {
+  description = "Namespace Kubernetes onde o AWS Load Balancer Controller roda"
+  type        = string
+  default     = "kube-system"
+}
+
+variable "lb_controller_service_account" {
+  description = "Nome da ServiceAccount do AWS Load Balancer Controller (a ser criada em lb-controller/ com a anotação IRSA)"
+  type        = string
+  default     = "aws-load-balancer-controller"
+}
