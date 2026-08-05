@@ -38,7 +38,7 @@ spec:
             - name: OTEL_SERVICE_NAME
               value: volunteer-service
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://grafana-k8s-monitoring-alloy-receiver.observe.svc.cluster.local:4318
+              value: http://grafana-cloud-alloy.observe.svc.cluster.local:4318
             - name: OTEL_EXPORTER_OTLP_PROTOCOL
               value: http/protobuf
             - name: OTEL_TRACES_EXPORTER
