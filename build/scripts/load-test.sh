@@ -105,7 +105,9 @@ create_ngo_valid() {
     body=$(fire ngo valido POST "$NGO_URL/ngos" \
       "{\"name\":\"$name\",\"email\":\"$email\",\"cause\":\"$cause\",\"city\":\"$city\"}")
     ngo_id=$(echo "$body" | jq -r '.id // empty' 2>/dev/null || true)
-    [ -n "$ngo_id" ] && echo "$ngo_id" >> "$NGO_IDS_FILE"
+    if [ -n "$ngo_id" ]; then
+        echo "$ngo_id" >> "$NGO_IDS_FILE"
+    fi
 }
 
 create_ngo_invalid() {
