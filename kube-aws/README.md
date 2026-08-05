@@ -17,6 +17,18 @@ vez dos emuladores locais.
 | Autenticação AWS (donation/volunteer) | `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` fixos (`test`/`test`), aceitos pelos emuladores | IRSA via ServiceAccount anotada (`005-serviceaccounts.yaml`), sem credenciais estáticas |
 | Exposição externa | 3x `Service` `LoadBalancer` compartilhando um IP fixo do MetalLB (`allow-shared-ip`), diferenciados por porta | `Service` `ClusterIP` + `TargetGroupBinding` por serviço, apontando para uma NLB única (`terra/modules/nlb`) |
 | Tag de imagem | Timestamp UTC, atualizada pelo Flux Image Automation | `:latest` - este cluster não roda a Kustomization `image-automation` (só `kubeadm-local`, para evitar dois Flux commitando a mesma alteração em `./kube`) |
+| Schema do banco | `docker-entrypoint-initdb.d` do `Dockerfile-psql` roda `db/init.sql` automaticamente na subida do container | Job `rds-init` (`020-rds-init/`) roda os mesmos `db/init.sql` contra o RDS - ver seção abaixo |
+
+## Inicialização do schema (RDS)
+
+O RDS provisionado por `terra/modules/rds` sobe como uma instância Postgres em branco - diferente do Compose, nada roda o `db/init.sql` do `ngo-service`/`donation-service` automaticamente nele. Sem isso, os Deployments sobem saudáveis (o `/health` não toca no banco), mas todo `INSERT`/`SELECT` falha com "relation does not exist".
+
+`020-rds-init/` cobre isso com um Job one-shot (`rds-init`) que roda `psql` com o schema das duas tabelas (via ConfigMap `rds-init-sql`, `021-configmap.yaml`) contra o `DATABASE_URL` do Secret `ngo-env` (RDS roda um único database compartilhado, `sol_db`, então o mesmo `DATABASE_URL` serve para os dois scripts). Os scripts são idempotentes (`CREATE TABLE IF NOT EXISTS`, `INSERT ... ON CONFLICT DO NOTHING`), então rodar de novo não tem efeito colateral.
+
+Pontos de atenção:
+- O ConfigMap é uma **cópia** de `build/ngo-service/db/init.sql` e `build/donation-service/db/init.sql`, não gerada a partir deles (o kustomize recusa arquivos fora da raiz do kustomization, mesmo dentro do mesmo repo). Se esses arquivos mudarem, atualize `021-configmap.yaml` junto.
+- Como o Job depende do Secret `ngo-env` (aplicado manualmente, fora do Flux - ver "Secrets" acima), ele só terá sucesso depois desse passo manual. Se o Job esgotar o `backoffLimit` (6 tentativas) antes disso, rode `kubectl delete job rds-init -n solidarytech` e force a reconciliação (`flux reconcile kustomization solidarytech`) depois de aplicar o Secret.
+- `kustomize.toolkit.fluxcd.io/ssa: IfNotPresent` faz o Flux não tentar recriar o Job já concluído a cada reconciliação (Jobs são imutáveis).
 
 Os `initContainers` `wait-for-psql`/`wait-for-elasticmq`/`wait-for-dynamodb` de `kube/` também não existem aqui: não há um Service local para esperar, e o RDS/SQS/DynamoDB já estão no ar antes do deploy (provisionados pelo Terraform).
 
