@@ -15,6 +15,8 @@ kind: Kustomization
 resources:
   - 000-namespace.yaml
   - 005-serviceaccounts.yaml
+  - 020-rds-init/021-configmap.yaml
+  - 020-rds-init/022-rds-init.yaml
   - 040-ngo/042-ngo.yaml
   - 050-donation/052-donation.yaml
   - 060-volunteer/062-volunteer.yaml

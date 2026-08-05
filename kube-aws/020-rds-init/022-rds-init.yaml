@@ -1,0 +1,61 @@
+# Job one-shot que aplica o schema (CREATE TABLE IF NOT EXISTS + seed
+# idempotente) do ngo-service e do donation-service contra o RDS real,
+# equivalente ao que o docker-entrypoint-initdb.d do Dockerfile-psql faz
+# automaticamente no Compose. O RDS provisionado por terra/modules/rds não
+# roda nenhum script de inicialização sozinho - sem este Job, os Deployments
+# sobem saudáveis (o /health não toca no banco), mas todo INSERT/SELECT
+# falha com "relation does not exist".
+#
+# O SQL vem do ConfigMap "rds-init-sql" (021-configmap.yaml) - ver o
+# comentário lá sobre por que é uma cópia, e não gerado a partir de
+# build/*-service/db/init.sql.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rds-init
+  namespace: solidarytech
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+  annotations:
+    # Jobs são imutáveis - sem isso, o Flux tentaria substituir o Job já
+    # concluído a cada reconciliação e falharia.
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: rds-init
+        app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: rds-init
+          # Mesma versão do Postgres usada em build/Dockerfile-psql
+          image: docker.io/library/postgres:18-alpine
+          envFrom:
+            # Reaproveita o DATABASE_URL do ngo-env (aplicado manualmente,
+            # fora do Flux - ver kube-aws/README.md): RDS roda um único
+            # database compartilhado (sol_db), então serve para os dois
+            # scripts.
+            - secretRef:
+                name: ngo-env
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+                -f /sql/ngo-init.sql \
+                -f /sql/donation-init.sql
+          volumeMounts:
+            - name: sql
+              mountPath: /sql
+              readOnly: true
+      volumes:
+        - name: sql
+          configMap:
+            name: rds-init-sql
