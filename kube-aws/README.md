@@ -15,7 +15,7 @@ vez dos emuladores locais.
 | Fila | ElasticMQ no próprio cluster (`020-elasticmq/`) | SQS real (`terra/modules/sqs`) |
 | Tabela de voluntários | DynamoDB Local no próprio cluster (`030-dynamodb/`) | DynamoDB real (`terra/modules/dynamo`) |
 | Autenticação AWS (donation/volunteer) | `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` fixos (`test`/`test`), aceitos pelos emuladores | IRSA via ServiceAccount anotada (`005-serviceaccounts.yaml`), sem credenciais estáticas |
-| Exposição externa | `Service` `LoadBalancer` com IP fixo do MetalLB | `Service` `LoadBalancer` padrão do EKS (Classic ELB com DNS dinâmico, sem `loadBalancerIP`) |
+| Exposição externa | 3x `Service` `LoadBalancer` compartilhando um IP fixo do MetalLB (`allow-shared-ip`), diferenciados por porta | `Service` `ClusterIP` + `TargetGroupBinding` por serviço, apontando para uma NLB única (`terra/modules/nlb`) |
 | Tag de imagem | Timestamp UTC, atualizada pelo Flux Image Automation | `:latest` - este cluster não roda a Kustomization `image-automation` (só `kubeadm-local`, para evitar dois Flux commitando a mesma alteração em `./kube`) |
 
 Os `initContainers` `wait-for-psql`/`wait-for-elasticmq`/`wait-for-dynamodb` de `kube/` também não existem aqui: não há um Service local para esperar, e o RDS/SQS/DynamoDB já estão no ar antes do deploy (provisionados pelo Terraform).
@@ -34,6 +34,30 @@ Os Secrets `ngo-env`, `donation-env` e `volunteer-env` **não são aplicados pel
    ```
 
 `AWS_SQS_URL` (em `donation-env`) e `AWS_DYNAMODB_TABLE` (em `volunteer-env`) já vêm preenchidos nos próprios `*-secret.example.yaml`, pois não são valores sensíveis.
+
+## Exposição externa: NLB única + TargetGroupBinding
+
+Equivalente ao IP fixo compartilhado via MetalLB (`allow-shared-ip`) usado
+em `kubeadm-local`: os 3 microsserviços são alcançados por um único
+endpoint (a mesma NLB, uma porta por serviço: 8081/8082/8083), em vez de 3
+Classic ELBs distintas (o que um `Service` `type: LoadBalancer` criaria
+neste cluster, um por serviço).
+
+A NLB, os 3 listeners e os 3 target groups são provisionados pelo Terraform
+(`terra/modules/nlb`), fora do ciclo de vida do `Service` - por isso os 3
+`Service` aqui são `type: ClusterIP`. Cada serviço tem também um
+`TargetGroupBinding` (`elbv2.k8s.aws/v1beta1`, ex.: `040-ngo/042-ngo.yaml`)
+que referencia o target group pelo nome determinístico gerado pelo Terraform
+(`targetGroupName: solidarytech-<serviço>-tg`) e o `Service` correspondente;
+é o [AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/)
+(instalado via `lb-controller/`, fora deste diretório) quem reconcilia esse
+CRD, registrando/removendo os IPs de pod no target group conforme os
+Deployments escalam.
+
+`clusters/eks-aws/solidarytech-kustomization.yaml` declara `dependsOn:
+lb-controller` para garantir que o controller (e o CRD `TargetGroupBinding`
+que o chart instala) já exista antes desses manifests serem aplicados - ver
+`lb-controller/README.md`.
 
 ## IRSA
 

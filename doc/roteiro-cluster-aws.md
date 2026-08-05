@@ -108,7 +108,7 @@ O namespace `observe` já existe nesse ponto (criado pela `Kustomization` `obser
 
 ## Referência: destruição do ambiente
 
-Use `terra/destroy.sh` em vez de `terraform destroy` direto — ele suspende as `Kustomization`s do Flux, remove os `Service` `LoadBalancer` (evita ENIs órfãs bloqueando a exclusão da VPC) e só então roda o destroy. Ver `terra/README.md` para o detalhamento.
+Use `terra/destroy.sh` em vez de `terraform destroy` direto - hoje é um wrapper fino sobre o destroy (a NLB única de `terra/modules/nlb` está no state do Terraform, sem risco de ENI órfã como um `Service` `LoadBalancer` teria). Ver `terra/README.md` para o detalhamento.
 
 ```bash
 cd terra

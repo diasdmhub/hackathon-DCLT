@@ -18,14 +18,16 @@ nenhum módulo de registry (ECR) foi criado aqui.
 | `dynamo` | Tabela `SolidaryTechVolunteers`, PROVISIONED 5/5 | Dentro do always-free tier (25 RCU/25 WCU/25GB, sem prazo) |
 | `sqs` | Fila standard de eventos de doação | Always-free até 1M requisições/mês, sem prazo |
 | `iam` | Roles IRSA (donation-service → SQS, volunteer-service → DynamoDB) | Sem custo |
+| `nlb` | Network Load Balancer única (3 listeners/target groups, um por serviço) | Sem free tier - cobra por hora + LCU |
+| `lb-controller` | Role IRSA do AWS Load Balancer Controller (kube-system) | Sem custo |
 | `secrets` | Parâmetros SSM Parameter Store (`SecureString`/`String`) | Camada Standard é gratuita |
 
 ### Custos que não têm free tier
 
-O EKS control plane e o NAT Gateway são cobrados desde o primeiro minuto,
-independentemente da idade da conta AWS. São os dois itens que mais pesam
-neste ambiente; destrua o cluster (`terraform destroy`) fora de uso para
-evitar cobrança contínua.
+O EKS control plane, o NAT Gateway e a NLB (`nlb`) são cobrados desde o
+primeiro minuto, independentemente da idade da conta AWS - são os itens que
+mais pesam neste ambiente; destrua o cluster (`terraform destroy`) fora de
+uso para evitar cobrança contínua.
 
 ## Pré-requisitos
 
@@ -75,45 +77,25 @@ raiz do repositório, que ignora `*.tfvars`).
 
 ## Destruição do ambiente (`terraform destroy`)
 
-Os 3 microsserviços expõem `Service` `type: LoadBalancer` (`kube-aws/040-ngo/`,
-`050-donation/`, `060-volunteer/`), que fazem o EKS criar um Classic ELB (e a
-ENI associada a ele) fora do state do Terraform - esses recursos nunca são
-gerenciados pelo Terraform, só o `aws_eks_cluster`. Se o cluster for destruído
-antes desses `Service`s serem removidos, o ELB e a ENI ficam órfãos na VPC e
-bloqueiam a exclusão das subnets: o `terraform destroy` falha por timeout ao
-tentar apagar a VPC, e apagar a ENI manualmente pelo console/CLI resulta em
-erro de permissão (`You do not have permission to access the specified
-resource`) mesmo como conta root, porque a ENI é "requester-managed" pela
-conta de serviço `amazon-elb`, não pela sua - ela só é liberada quando o
-próprio ELB é excluído.
+Os 3 microsserviços expõem `Service` `type: ClusterIP` (`kube-aws/040-ngo/`,
+`050-donation/`, `060-volunteer/`) e são alcançados de fora via uma NLB
+única (`terra/modules/nlb`), com o AWS Load Balancer Controller registrando
+os pods nos target groups através de `TargetGroupBinding` - ver
+`kube-aws/README.md`. Diferente de um `Service` `type: LoadBalancer` (que
+faria o EKS criar uma Classic ELB fora do state do Terraform, arriscando
+ENIs órfãs bloqueando a exclusão da VPC), a NLB aqui é o recurso `aws_lb` de
+`terra/modules/nlb`: está no state do Terraform, então `terraform destroy` já
+apaga NLB, listeners, target groups e a regra de Security Group na ordem
+certa, sem passo manual.
 
-Use `terra/destroy.sh` em vez de `terraform destroy` direto - ele automatiza a
-ordem correta:
+Ainda assim, use `terra/destroy.sh` em vez de `terraform destroy` direto -
+hoje é só um wrapper fino (`terraform destroy -auto-approve`), mantido como
+o ponto de entrada documentado caso a destruição volte a precisar de algum
+passo extra:
 
 ```bash
 cd terra
 ./destroy.sh
-```
-
-1. Suspende as Kustomizations do Flux (`solidarytech`, `observe`) no cluster,
-   para o Flux não recriar os recursos enquanto o script os remove.
-2. Apaga os manifests que elas sincronizam (`kubectl delete -k kube-aws/` e
-   `-k observe-aws/`), incluindo os 3 `Service` `LoadBalancer`, com o cluster
-   ainda no ar - é isso que aciona a exclusão dos ELBs e libera as ENIs.
-3. Aguarda (até 5 minutos) os ELBs órfãos desaparecerem da VPC antes de
-   continuar.
-4. Só então roda `terraform destroy`.
-
-Se o cluster já tiver sido destruído sem passar por esse fluxo (ex.: destroy
-manual anterior) e sobrarem ELBs/ENIs órfãos, o script detecta que o cluster
-está inacessível e pula direto para o `terraform destroy` - nesse caso, limpe
-os órfãos manualmente antes:
-
-```bash
-# nunca apague a ENI diretamente - apague o Load Balancer, que libera a ENI
-aws elb describe-load-balancers \
-  --query "LoadBalancerDescriptions[].{Name:LoadBalancerName,VPC:VPCId}"
-aws elb delete-load-balancer --load-balancer-name <nome-do-elb>
 ```
 
 ## Pendências para o cluster ficar totalmente funcional

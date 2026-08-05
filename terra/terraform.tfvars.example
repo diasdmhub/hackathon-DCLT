@@ -32,3 +32,7 @@ sqs_queue_name       = "donation-events"
 k8s_namespace              = "solidarytech"
 donation_service_account   = "donation-service"
 volunteer_service_account  = "volunteer-service"
+
+# IAM/IRSA - ServiceAccount do AWS Load Balancer Controller (lb-controller/)
+lb_controller_namespace       = "kube-system"
+lb_controller_service_account = "aws-load-balancer-controller"

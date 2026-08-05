@@ -29,6 +29,16 @@ output "iam_outputs" {
   value       = module.iam
 }
 
+output "nlb_outputs" {
+  description = "Outputs do módulo nlb (DNS/ARN da NLB e ARN do target group de cada serviço)"
+  value       = module.nlb
+}
+
+output "lb_controller_outputs" {
+  description = "Outputs do módulo lb-controller (ARN da role IRSA do AWS Load Balancer Controller)"
+  value       = module.lb_controller
+}
+
 output "secrets_outputs" {
   description = "Outputs do módulo secrets (nomes dos parâmetros SSM)"
   value       = module.secrets
