@@ -143,6 +143,6 @@ variable "lb_controller_service_account" {
 # propósito, para não abrir Loki/Tempo/Prometheus (sem autenticação própria)
 # para 0.0.0.0/0 por engano.
 variable "observe_allowed_cidrs" {
-  description = "CIDRs autorizados a alcançar Loki/Tempo/Prometheus (observe-aws/) pela NLB - normalmente o IP público de onde o Grafana externo consulta"
+  description = "CIDRs, IPs ou nomes de domínio autorizados a alcançar Loki/Tempo/Prometheus (observe-aws/) pela NLB - normalmente o IP público (fixo ou via um domínio DDNS) de onde o Grafana externo consulta. Domínios são resolvidos via DNS a cada terraform apply (ver terra/dns.tf)."
   type        = list(string)
 }

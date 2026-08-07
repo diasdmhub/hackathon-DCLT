@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/tls"
       version = "~> 4.3"
     }
+    dns = {
+      source  = "hashicorp/dns"
+      version = "~> 3.4"
+    }
   }
 
   # Backend remoto no S3, com lock via DynamoDB. O bucket e a tabela precisam
@@ -33,6 +37,8 @@ terraform {
 provider "aws" {
   region = var.aws_region
 }
+
+provider "dns" {}
 
 provider "kubernetes" {
   host                   = module.eks.eks_cluster_endpoint
