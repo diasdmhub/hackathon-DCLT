@@ -160,3 +160,9 @@ variable "zabbix_server_host" {
   description = "Hostname ou IP do seu Zabbix server externo, acessível na porta 10051 - vira zabbixProxy.ZBX_SERVER_HOST no chart"
   type        = string
 }
+
+variable "zabbix_version" {
+  description = "Versão major.minor do Zabbix Proxy/Agent2 (ex: \"7.4\") - vira a tag de imagem \"ol-<versão>-latest\" (zabbixImageTag no chart, variante Oracle Linux). O chart zabbix-community/helm-zabbix só traz por padrão a versão LTS (7.0) via zabbixImageTag; para usar uma versão non-LTS é preciso sobrescrever essa tag manualmente, ver comentário do values.yaml do chart. Precisa bater com a versão do Zabbix server externo (var.zabbix_server_host) - um proxy mais novo que o server não se conecta."
+  type        = string
+  default     = "7.4"
+}

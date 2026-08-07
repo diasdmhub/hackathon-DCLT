@@ -20,3 +20,8 @@ variable "zabbix_server_host" {
   description = "Hostname/IP do Zabbix server externo (porta 10051)"
   type        = string
 }
+
+variable "zabbix_version" {
+  description = "Versão major.minor do Zabbix Proxy/Agent2 (ex: \"7.4\") - monta a tag de imagem \"ol-<versão>-latest\" (zabbixImageTag no chart)"
+  type        = string
+}
