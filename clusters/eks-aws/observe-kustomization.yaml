@@ -7,6 +7,11 @@ spec:
   interval: 5m0s
   path: ./observe-aws
   prune: true
+  # Loki/Tempo/Prometheus usam TargetGroupBinding (ver observe-aws/README.md),
+  # mesmo motivo do dependsOn em solidarytech-kustomization.yaml: o CRD
+  # TargetGroupBinding só existe depois que o lb-controller reconcilia.
+  dependsOn:
+    - name: lb-controller
   sourceRef:
     kind: GitRepository
     name: flux-system

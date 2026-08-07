@@ -12,3 +12,8 @@ output "target_group_arns" {
   description = "ARN do target group de cada serviço (ngo/donation/volunteer) - usar no targetGroupARN dos TargetGroupBinding em kube-aws/"
   value       = { for k, tg in aws_lb_target_group.services : k => tg.arn }
 }
+
+output "observe_target_group_arns" {
+  description = "ARN do target group de cada backend de observabilidade (loki/tempo/prometheus) - usar no targetGroupARN dos TargetGroupBinding em observe-aws/"
+  value       = { for k, tg in aws_lb_target_group.observe : k => tg.arn }
+}

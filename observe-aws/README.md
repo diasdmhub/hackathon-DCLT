@@ -4,80 +4,95 @@
 # Observabilidade da AWS
 
 Equivalente a `observe/` (Loki + Alloy + Tempo + Prometheus locais) para o
-ambiente EKS, mas usando o **Grafana Cloud** como backend de métricas, logs
-e traces - sem Loki, Tempo nem Prometheus rodando no cluster, então sem PVC
-nem EBS envolvidos aqui.
+ambiente EKS - mesma stack self-hosted, gerenciada pelo Flux, em vez do
+Grafana Cloud.
 
 `observe/` continua existindo e válido como está, para o cluster
 `kubeadm-local`. Nada neste diretório o altera.
+
+## Histórico: por que não Grafana Cloud
+
+Uma versão anterior deste diretório usava o Grafana Cloud como backend
+(chart `grafana/k8s-monitoring`, instalado manualmente com `helm install`).
+Na prática, configurar essa conexão se mostrou trabalhoso e frágil: a
+documentação do Grafana Cloud nem sempre corresponde à nomenclatura atual da
+UI, e o assistente de "Connect a Kubernetes cluster" também diverge em
+alguns pontos - sem ganho líquido sobre simplesmente rodar a mesma stack já
+validada em `observe/`. Este diretório foi reescrito para espelhar
+`observe/`, com Loki/Tempo/Prometheus rodando no próprio cluster EKS, sob o
+Flux, como já acontece em `kubeadm-local`.
 
 ## O que muda em relação a `observe/`
 
 | | `observe/` (kubeadm-local) | `observe-aws/` (EKS) |
 |---|---|---|
-| Coleta | Alloy artesanal (manifestos deste repo), gerenciado pelo Flux | Chart oficial `grafana/k8s-monitoring` (inclui Alloy), instalado manualmente com `helm install`/`helm upgrade` |
-| Logs | Alloy → Loki local | Alloy (do chart) → Grafana Cloud, via OTLP |
-| Traces | Alloy → Tempo local | Alloy (do chart) → Grafana Cloud, via OTLP |
-| Métricas | Prometheus local, só recebendo remote_write do metrics-generator do Tempo | Nenhuma - `clusterMetrics`/`hostMetrics` do chart ficam desabilitados de propósito (métricas de cluster continuam com o Zabbix, ver `CLAUDE.md`) |
-| Storage local (PVC/EBS) | Loki, Tempo e Prometheus têm PVC | Nenhum |
-| Gerenciamento do chart | Flux (`HelmRepository`+`HelmRelease`) | Manual (`helm install`, fora do Flux) |
+| Storage local (PVC) | `storageClassName: local-path` | `storageClassName: gp3` (default provisionada por `terra/modules/eks`, via EBS CSI) |
+| Exposição externa (Loki/Tempo/Prometheus) | `Service` `type: LoadBalancer`, IP fixo compartilhado do MetalLB (`allow-shared-ip`) | `Service` `type: ClusterIP` + `TargetGroupBinding` por backend, na mesma NLB única de `kube-aws/` (`terra/modules/nlb`) |
+| Ingress dessas portas (3100/3200/9090) | Rede local, sem regra de firewall neste repo | Security Group do EKS, restrito a `observe_allowed_cidrs` (`terra/terraform.tfvars`) - **não** `0.0.0.0/0`, já que Loki/Tempo/Prometheus não têm autenticação própria |
+| Tudo o mais (Deployments, configs do Loki/Tempo/Prometheus, DaemonSet do Alloy, RBAC) | idêntico | idêntico |
 
-## Por que manual, e não um HelmRelease do Flux
+## Exposição externa: NLB única + TargetGroupBinding
 
-Uma versão anterior deste diretório gerenciava o chart `grafana/k8s-
-monitoring` 100% via Flux (`HelmRepository` + `HelmRelease`, com um Secret
-`grafana-cloud-credentials` aplicado à parte). Na prática, os dados não
-chegavam ao Grafana Cloud como esperado com essa configuração.
+Mesmo modelo de `kube-aws/` (ver `kube-aws/README.md`): os 3 backends
+(`loki`, `tempo`, `prometheus`) são `Service` `type: ClusterIP`, e cada um
+tem um `TargetGroupBinding` referenciando por nome determinístico
+(`targetGroupName: solidarytech-<backend>-tg`) um target group provisionado
+por `terra/modules/nlb`, na mesma NLB dos 3 microsserviços - portas
+3100/3200/9090 adicionadas como novos listeners, sem criar uma NLB separada.
 
-O Grafana Cloud é desenhado para uma conexão manual: o assistente "Connect a
-Kubernetes cluster" da própria UI (**Connections → Add new connection →
-Kubernetes**) gera um `helm install` já pronto, com a URL/credenciais do seu
-stack embutidas ali mesmo. É esse comando que deve ser executado - uma única
-vez por cluster - em vez de reconstruído manualmente num `HelmRelease`
-versionado neste repo.
+Diferente das portas de aplicação (8081/8082/8083, abertas a `0.0.0.0/0`),
+a regra de Security Group dessas 3 portas é restrita a
+`var.observe_allowed_cidrs` (`terra/variables.tf`, sem default de propósito
+- defina o CIDR real, tipicamente o IP público de onde o seu Grafana externo
+consulta, em `terra/terraform.tfvars`). Loki, Tempo e Prometheus não têm
+autenticação própria; abrir essas portas para a internet exporia logs,
+traces e métricas de negócio a qualquer IP.
 
-O que o Flux continua gerenciando aqui é só o `Namespace` (`000-namespace.yaml`),
-mesmo padrão idempotente usado em `kube-aws/000-namespace.yaml` - sem risco,
-já que criar um namespace não tem estado para divergir. O chart em si (que já
-inclui o Alloy, via Alloy Operator) fica fora do Flux.
+`clusters/eks-aws/observe-kustomization.yaml` declara `dependsOn:
+lb-controller`, pelo mesmo motivo de `solidarytech-kustomization.yaml`: o
+CRD `TargetGroupBinding` precisa existir antes desses manifests serem
+aplicados.
 
-## Passo manual (uma vez por cluster)
+## Configuração no Grafana
 
-1. No Grafana Cloud: **seu stack → Connections → Add new connection →
-   Kubernetes**. Preencha o nome do cluster (`solidarytech-eks-cluster`) e
-   selecione ao menos logs e traces (métricas de cluster não são necessárias
-   aqui - ver tabela acima).
-2. Copie o comando `helm install`/`helm upgrade` gerado pelo assistente
-   (já inclui `helm repo add grafana ...`, `--namespace observe` e os valores
-   de autenticação do seu stack).
-3. Rode esse comando contra o cluster EKS, depois que o namespace `observe`
-   existir (Flux já cria via `000-namespace.yaml`, ou o próprio comando com
-   `--create-namespace` caso rode antes).
-4. Se o token expirar ou for rotacionado, gere um novo comando na mesma tela
-   e rode `helm upgrade` novamente - o Flux não participa desse ciclo.
+O Grafana continua externo ao cluster (mesmo modelo de `observe/`), mas
+aponta para o DNS name da NLB (`terraform output nlb_dns_name` em `terra/`,
+ou o mesmo DNS já usado pelos 3 microsserviços) em vez do IP do MetalLB:
 
-Não versionar esse comando/script neste repo: ele traz o token do Grafana
-Cloud embutido, então deve ficar só na máquina de quem aplica.
+- Loki: `http://<nlb_dns_name>:3100`
+- Tempo: `http://<nlb_dns_name>:3200`
+- Prometheus: `http://<nlb_dns_name>:9090`
 
-## Free tier do Grafana Cloud
+O restante da configuração (Service Graph, derived field de `trace_id`,
+dashboard modelo) é idêntico ao descrito em `doc/observabilidade.md` para o
+cluster local - só a URL dos datasources muda.
 
-O plano gratuito do Grafana Cloud inclui uma cota mensal sempre-grátis de
-métricas, logs e traces (os limites exatos variam e mudam com o tempo -
-confira no seu stack em Billing/Usage). Para o volume gerado por este
-ambiente de hackathon, a cota gratuita deve ser suficiente; não há
-provisionamento de infraestrutura AWS associado a isso (é conta/cota do
-Grafana Cloud, não um recurso do `terra/`).
+## Traces
+
+Mesma instrumentação de `observe/` (ver `doc/observabilidade.md`): os 3
+microsserviços exportam OTLP para o Alloy deste cluster
+(`http://alloy.observe.svc.cluster.local:4318`, configurado via
+`OTEL_EXPORTER_OTLP_ENDPOINT` nos Deployments de `kube-aws/`), que roteia
+logs ao Loki e traces ao Tempo local.
+
+## Métricas de infraestrutura (Zabbix)
+
+Métricas de cluster/host (CPU, memória, load, estado dos nodes/deployments)
+não passam por este diretório - ver `zabbix/README.md` para a stack de
+Zabbix Proxy + Agent2 deste cluster, equivalente ao Zabbix Agent
+pré-existente usado em `kubeadm-local`.
 
 ## Flux
 
-`clusters/eks-aws/observe-kustomization.yaml` aponta para `./observe-aws`
-(hoje só o `Namespace`) - e `clusters/eks-aws/solidarytech-kustomization.yaml`
-para `./kube-aws` (ver `kube-aws/README.md`). Falta rodar o bootstrap do Flux
-nesse cluster (`flux bootstrap ...` com `--path=./clusters/eks-aws`) para que
-`flux-system/` seja gerado e essas Kustomizations passem a ser reconciliadas
-de fato - ver `clusters/eks-aws/`.
+`clusters/eks-aws/observe-kustomization.yaml` aponta para `./observe-aws` e
+reconcilia todo este diretório (namespace, PVCs, Deployments, DaemonSet do
+Alloy, Services e `TargetGroupBinding`) - nada aqui é aplicado manualmente,
+diferente do fluxo antigo do Grafana Cloud.
 
-Este cluster não roda a Kustomization `image-automation`: ela já reconcilia `./kube` a partir do `kubeadm-local` e faz commit+push direto na branch `main`; rodá-la também no EKS faria dois Flux checarem o Docker Hub e tentarem commitar a mesma atualização de tag em paralelo.
+Este cluster não roda a Kustomization `image-automation`: ela já reconcilia
+`./kube` a partir do `kubeadm-local` e faz commit+push direto na branch
+`main`; rodá-la também no EKS faria dois Flux checarem o Docker Hub e
+tentarem commitar a mesma atualização de tag em paralelo.
 
 | [⬆️ Top](#observabilidade-da-aws) |
 | --- |

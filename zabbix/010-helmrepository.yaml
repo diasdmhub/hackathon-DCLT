@@ -1,0 +1,21 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: zabbix-community
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  url: https://zabbix-community.github.io/helm-zabbix
+---
+# prometheus-community/kube-state-metrics: alimenta os itens/templates
+# nativos de Kubernetes do Zabbix (ver 021-helmrelease-kube-state-metrics.yaml
+# e zabbix/README.md). Chart consolidado e amplamente usado - não relacionado
+# ao Prometheus provisionado em observe-aws/.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: prometheus-community
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  url: https://prometheus-community.github.io/helm-charts

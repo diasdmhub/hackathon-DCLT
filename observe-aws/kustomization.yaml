@@ -1,11 +1,63 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Ambiente AWS: o Flux só gerencia o namespace "observe" aqui. O chart
-# grafana/k8s-monitoring (Alloy + coletores, apontando para o Grafana Cloud)
-# é instalado manualmente, uma única vez, com o comando `helm install` que o
-# próprio Grafana Cloud fornece na sua UI - não é gerenciado pelo Flux. Ver
-# observe-aws/README.md.
+# Sem kustomization.yaml aqui, o Flux gera um implicitamente (inclui todo
+# YAML solto do diretório) e nenhuma alteração num ConfigMap referenciado
+# por nome fixo (ex.: tempo-config) reinicia o Deployment que o monta.
+# O configMapGenerator resolve isso: sufixa o nome do ConfigMap com um
+# hash do conteúdo e reescreve a referência no Deployment/DaemonSet
+# automaticamente, então qualquer edição de config dispara um rollout
+# nativo do Kubernetes, sem annotation de checksum para manter manualmente.
+# Mesmo padrão de observe/kustomization.yaml (kubeadm-local).
 
 resources:
   - 000-namespace.yaml
+  - 010-loki/012-pvc.yaml
+  - 010-loki/013-loki.yaml
+  - 020-alloy/021-rbac.yaml
+  - 020-alloy/023-alloy.yaml
+  - 030-tempo/032-pvc.yaml
+  - 030-tempo/033-tempo.yaml
+  - 040-prometheus/042-pvc.yaml
+  - 040-prometheus/043-prometheus.yaml
+
+configMapGenerator:
+  - name: loki-config
+    namespace: observe
+    files:
+      - config.yaml=010-loki/config.yaml
+    options:
+      labels:
+        app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
+
+  - name: alloy-config
+    namespace: observe
+    files:
+      - config.alloy=020-alloy/config.alloy
+    options:
+      labels:
+        app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
+
+  - name: tempo-config
+    namespace: observe
+    files:
+      - config.yaml=030-tempo/config.yaml
+    options:
+      labels:
+        app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
+
+  - name: prometheus-config
+    namespace: observe
+    files:
+      - prometheus.yml=040-prometheus/prometheus.yml
+    options:
+      labels:
+        app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
