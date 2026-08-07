@@ -143,3 +143,23 @@ resource "aws_security_group_rule" "observe_ingress" {
   cidr_blocks       = var.observe_allowed_cidrs
   description       = "NLB para ${each.key} (observabilidade, ${each.value.port}) - restrito a observe_allowed_cidrs"
 }
+
+# Regra à parte, liberando o CIDR da VPC (não a internet): o health check da
+# própria NLB para targets type=ip parte das ENIs da NLB nas subnets
+# públicas (var.public_subnet_ids), com IP de origem dentro da VPC - não do
+# IP externo em observe_allowed_cidrs. Sem esta regra, a Security Group
+# derruba o próprio health check (não o tráfego do Grafana), a NLB nunca
+# marca o target como saudável, e a porta parece inacessível de fora mesmo
+# com o pod rodando normalmente (sintoma: TargetHealth "unhealthy" /
+# Target.FailedHealthChecks apesar do TargetGroupBinding reconciliar OK).
+resource "aws_security_group_rule" "observe_health_check_ingress" {
+  for_each = local.observe_services
+
+  security_group_id = var.cluster_security_group_id
+  type              = "ingress"
+  from_port         = each.value.port
+  to_port           = each.value.port
+  protocol          = "tcp"
+  cidr_blocks       = [var.vpc_cidr]
+  description       = "Health check da NLB para ${each.key} (${each.value.port}) - origem interna à VPC, separado de observe_allowed_cidrs"
+}
