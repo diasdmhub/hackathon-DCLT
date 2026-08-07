@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+  namespace: observe
+  labels:
+    app: loki
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      labels:
+        app: loki
+        app.kubernetes.io/part-of: solidarytech
+        Project: SolidaryTech
+        Environment: dev
+    spec:
+      securityContext:
+        fsGroup: 10001
+      containers:
+        - name: loki
+          image: docker.io/grafana/loki:latest
+          args: ["-config.file=/etc/loki/config.yaml"]
+          ports:
+            - containerPort: 3100
+            - containerPort: 9096
+          volumeMounts:
+            - name: config
+              mountPath: /etc/loki
+            - name: data
+              mountPath: /loki
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3100
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 3100
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: loki-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: loki-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+spec:
+  # ClusterIP, não LoadBalancer: a exposição externa é a NLB única
+  # provisionada por terra/modules/nlb, via TargetGroupBinding abaixo - ver
+  # observe-aws/README.md.
+  type: ClusterIP
+  selector:
+    app: loki
+  ports:
+    - name: http
+      port: 3100
+      targetPort: 3100
+---
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: loki
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: dev
+spec:
+  serviceRef:
+    name: loki
+    port: 3100
+  # Nome determinístico ("${name_prefix}-loki-tg" em terra/modules/nlb) -
+  # dispensa copiar o ARN gerado pela AWS depois do terraform apply.
+  targetGroupName: solidarytech-loki-tg
+  targetType: ip

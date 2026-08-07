@@ -136,3 +136,13 @@ variable "lb_controller_service_account" {
   type        = string
   default     = "aws-load-balancer-controller"
 }
+
+# Variáveis da NLB (observabilidade)
+#############################
+# DEFINA O VALOR REAL NO terraform.tfvars (não versionado) - sem default de
+# propósito, para não abrir Loki/Tempo/Prometheus (sem autenticação própria)
+# para 0.0.0.0/0 por engano.
+variable "observe_allowed_cidrs" {
+  description = "CIDRs autorizados a alcançar Loki/Tempo/Prometheus (observe-aws/) pela NLB - normalmente o IP público de onde o Grafana externo consulta"
+  type        = list(string)
+}

@@ -12,6 +12,17 @@ locals {
     donation  = { port = 8082 }
     volunteer = { port = 8083 }
   }
+
+  # Backends de observabilidade (observe-aws/), expostos na mesma NLB para o
+  # Grafana externo consultar - equivalente ao IP fixo compartilhado do
+  # MetalLB usado em kubeadm-local (ver doc/observabilidade.md), mas
+  # restritos por var.observe_allowed_cidrs em vez de 0.0.0.0/0, já que Loki/
+  # Tempo/Prometheus não têm autenticação própria.
+  observe_services = {
+    loki       = { port = 3100, health_path = "/ready" }
+    tempo      = { port = 3200, health_path = "/ready" }
+    prometheus = { port = 9090, health_path = "/-/ready" }
+  }
 }
 
 resource "aws_lb" "solidarytech" {
@@ -76,4 +87,58 @@ resource "aws_security_group_rule" "nlb_ingress" {
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
   description       = "NLB para ${each.key}-service (${each.value.port})"
+}
+
+# Target groups/listeners de observe-aws/ (Loki, Tempo, Prometheus), na mesma
+# NLB dos 3 microsserviços - registrados via TargetGroupBinding, como os
+# demais (ver observe-aws/README.md).
+resource "aws_lb_target_group" "observe" {
+  for_each = local.observe_services
+
+  name        = "${var.name_prefix}-${each.key}-tg"
+  port        = each.value.port
+  protocol    = "TCP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+
+  health_check {
+    protocol            = "HTTP"
+    path                = each.value.health_path
+    port                = "traffic-port"
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    interval            = 15
+    timeout             = 5
+    matcher             = "200"
+  }
+
+  tags = { Name = "${var.name_prefix}-${each.key}-tg" }
+}
+
+resource "aws_lb_listener" "observe" {
+  for_each = local.observe_services
+
+  load_balancer_arn = aws_lb.solidarytech.arn
+  port              = each.value.port
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.observe[each.key].arn
+  }
+}
+
+# Regra de ingress separada dos 3 serviços de aplicação: restrita a
+# var.observe_allowed_cidrs (não 0.0.0.0/0), pois Loki/Tempo/Prometheus não
+# têm autenticação própria.
+resource "aws_security_group_rule" "observe_ingress" {
+  for_each = local.observe_services
+
+  security_group_id = var.cluster_security_group_id
+  type              = "ingress"
+  from_port         = each.value.port
+  to_port           = each.value.port
+  protocol          = "tcp"
+  cidr_blocks       = var.observe_allowed_cidrs
+  description       = "NLB para ${each.key} (observe-aws, ${each.value.port}) - restrito a observe_allowed_cidrs"
 }

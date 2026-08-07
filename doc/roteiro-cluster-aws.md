@@ -5,7 +5,7 @@
 
 > ⚠️ **_Em construção_**
 
-Sequência mínima para implementar o ambiente EKS do zero e deixá-lo sob gestão do FluxCD, com logs e traces enviados ao Grafana Cloud. Detalhes e justificativas de cada etapa estão em `terra/README.md`, `kube-aws/README.md` e `observe-aws/README.md`; este roteiro só reúne os comandos na ordem correta.
+Sequência mínima para implementar o ambiente EKS do zero e deixá-lo sob gestão do FluxCD, com logs, traces e métricas de negócio no Loki/Tempo/Prometheus self-hosted deste cluster e métricas de infraestrutura no seu Zabbix externo. Detalhes e justificativas de cada etapa estão em `terra/README.md`, `kube-aws/README.md`, `observe-aws/README.md` e `zabbix/README.md`; este roteiro só reúne os comandos na ordem correta.
 
 <BR>
 
@@ -15,7 +15,8 @@ Sequência mínima para implementar o ambiente EKS do zero e deixá-lo sob gest�
 - [`flux` CLI][fluxcli] instalado (usado tanto para o bootstrap quanto para validar a instalação).
 - `kubectl` e `helm`.
 - Um **Personal Access Token do GitHub** com escopo `repo` (e `admin:public_key`/`admin:org` se o repositório for de uma organização), exportado como `GITHUB_TOKEN` — é com ele que o `flux bootstrap github` autentica e faz commit das definições em `clusters/eks-aws/flux-system/`.
-- Uma conta no Grafana Cloud (plano gratuito é suficiente para o volume deste ambiente).
+- O CIDR público de onde o seu Grafana externo vai consultar Loki/Tempo/Prometheus (para `observe_allowed_cidrs` em `terra/terraform.tfvars` - ver passo 1).
+- Um Zabbix server já em operação, acessível pela internet na porta 10051 (para `zabbixProxy.ZBX_SERVER_HOST` em `zabbix/020-helmrelease-zabbix.yaml` - ver passo 5).
 
 <BR>
 
@@ -24,7 +25,9 @@ Sequência mínima para implementar o ambiente EKS do zero e deixá-lo sob gest�
 ```bash
 cd terra
 cp terraform.tfvars.example terraform.tfvars
-# edite terraform.tfvars, principalmente db_password
+# edite terraform.tfvars, principalmente db_password e observe_allowed_cidrs
+# (CIDR público de onde o Grafana externo vai consultar Loki/Tempo/Prometheus -
+# ver observe-aws/README.md; não deixe o valor de exemplo)
 
 ./init.sh   # cria bucket S3 + tabela DynamoDB do backend remoto (idempotente)
 
@@ -59,10 +62,12 @@ flux bootstrap github \
     --token-auth
 ```
 
-Isso gera `clusters/eks-aws/flux-system/` (instala os controllers, cria o `GitRepository` apontando para este repositório e o `Kustomization` raiz) e faz commit + push direto na branch `main`. A partir daí, as duas `Kustomization`s já declaradas em `clusters/eks-aws/` passam a reconciliar de fato:
+Isso gera `clusters/eks-aws/flux-system/` (instala os controllers, cria o `GitRepository` apontando para este repositório e o `Kustomization` raiz) e faz commit + push direto na branch `main`. A partir daí, as `Kustomization`s já declaradas em `clusters/eks-aws/` passam a reconciliar de fato:
 
-- `solidarytech` → `./kube-aws`
-- `observe` → `./observe-aws`
+- `lb-controller` → `./lb-controller`
+- `solidarytech` → `./kube-aws` (depende de `lb-controller`)
+- `observe` → `./observe-aws` (depende de `lb-controller`)
+- `zabbix` → `./zabbix`
 
 ```bash
 flux get kustomizations
@@ -90,19 +95,35 @@ kubectl apply -f kube-aws/060-volunteer/061-secret.yaml
 
 <BR>
 
-## 4. Conectar o cluster ao Grafana Cloud
+## 4. Configurar o Grafana externo
 
-Etapa manual, fora do Flux — ver `observe-aws/README.md` para o porquê.
-
-1. No Grafana Cloud: **seu stack → Connections → Add new connection → Kubernetes**. Informe o nome do cluster (`solidarytech-eks-cluster`) e selecione ao menos logs e traces.
-2. Copie o comando `helm install` gerado pelo assistente (já inclui `helm repo add grafana ...`, `--namespace observe` e as credenciais do seu stack) e rode-o contra o cluster:
+Loki, Tempo e Prometheus já sobem sozinhos com a `Kustomization` `observe` do
+passo 2 - nenhum passo manual de instalação aqui, diferente do fluxo antigo
+do Grafana Cloud. Falta só cadastrar os 3 datasources no seu Grafana
+externo, apontando para o DNS name da NLB:
 
 ```bash
-# comando gerado pelo Grafana Cloud - não versionar, contém token embutido
-helm install ... --namespace observe ...
+terraform output -raw nlb_dns_name   # em terra/
 ```
 
-O namespace `observe` já existe nesse ponto (criado pela `Kustomization` `observe` no passo 2). Se o token expirar ou for rotacionado, gere um novo comando na mesma tela e rode `helm upgrade`.
+- Loki: `http://<nlb_dns_name>:3100`
+- Tempo: `http://<nlb_dns_name>:3200`
+- Prometheus: `http://<nlb_dns_name>:9090`
+
+Ver `observe-aws/README.md` para o restante da configuração (Service Graph,
+derived field de `trace_id`, dashboard modelo).
+
+<BR>
+
+## 5. Conectar o cluster ao seu Zabbix
+
+Etapa manual, fora do Flux, no lado do **Zabbix server** — ver
+`zabbix/README.md` para o passo a passo completo (criar o Proxy, ajustar
+`ZBX_SERVER_HOST` em `zabbix/020-helmrelease-zabbix.yaml`, importar as
+templates nativas "Kubernetes nodes by HTTP"/"Kubernetes cluster state by
+HTTP" usando o token da ServiceAccount `zabbix-k8s-reader`). A stack em si
+(Zabbix Proxy + Agent2 + kube-state-metrics) já sobe sozinha com a
+`Kustomization` `zabbix` do passo 2.
 
 <BR>
 

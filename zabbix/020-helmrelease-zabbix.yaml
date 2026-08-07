@@ -1,0 +1,69 @@
+# Zabbix Proxy (modo ativo) + Zabbix Agent2 (DaemonSet), via o chart
+# zabbix-community/helm-zabbix - ver zabbix/README.md para o desenho
+# completo e os passos manuais no lado do seu Zabbix server.
+#
+# Só proxy + agent ficam habilitados: zabbixServer/zabbixWeb/
+# zabbixWebService/postgresql continuam desligados de propósito, já que o
+# Zabbix server, o frontend web e o banco já existem fora deste cluster (o
+# mesmo Zabbix pré-existente usado por kubeadm-local, ver CLAUDE.md).
+#
+# Fluxo de dados: zabbix-agent2 (DaemonSet, um por node) -> zabbix-proxy
+# (dentro do cluster, modo ativo) -> Zabbix server externo, porta 10051.
+# Só o proxy sai do cluster (outbound, via NAT Gateway); nada entra - ao
+# contrário da exposição de Loki/Tempo/Prometheus em observe-aws/, este
+# diretório não usa a NLB nem TargetGroupBinding.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zabbix
+  namespace: zabbix
+spec:
+  interval: 30m0s
+  releaseName: zabbix
+  chart:
+    spec:
+      chart: zabbix
+      version: "7.1.0"
+      sourceRef:
+        kind: HelmRepository
+        name: zabbix-community
+        namespace: flux-system
+  values:
+    zabbixServer:
+      enabled: false
+    postgresql:
+      enabled: false
+    zabbixWeb:
+      enabled: false
+    zabbixWebService:
+      enabled: false
+
+    zabbixProxy:
+      enabled: true
+      # 0 = proxy ativo: a conexão com o Zabbix server sai sempre daqui de
+      # dentro (porta 10051), sem exigir nenhuma regra de ingress no EKS.
+      ZBX_PROXYMODE: 0
+      # Precisa bater com o nome do objeto "Proxy" criado manualmente no seu
+      # Zabbix server (Data collection -> Proxies) - ver zabbix/README.md.
+      ZBX_HOSTNAME: "CHANGE_ME-solidarytech-eks-proxy"
+      # Hostname/IP do seu Zabbix server externo.
+      ZBX_SERVER_HOST: "CHANGE_ME"
+      ZBX_SERVER_PORT: 10051
+
+    zabbixAgent:
+      enabled: true
+      # DaemonSet (um agent por node do EKS), não sidecar do proxy - métrica
+      # de host (CPU/memória/load) por node, equivalente ao Zabbix Agent
+      # pré-existente em kubeadm-local.
+      runAsSidecar: false
+      runAsDaemonSet: true
+      hostNetwork: true
+      hostRootFsMount: true
+      # Checks ativos: o agent conecta no proxy (nunca o contrário), então
+      # não é preciso um Host por node com IP de pod fixo no Zabbix.
+      ZBX_PASSIVE_ALLOW: false
+      ZBX_ACTIVE_ALLOW: true
+      # Nome do Service do zabbix-proxy gerado pelo chart:
+      # "<releaseName>-zabbix-proxy" = "zabbix-zabbix-proxy" (release "zabbix").
+      ZBX_SERVER_HOST: "zabbix-zabbix-proxy"
+      ZBX_ACTIVESERVERS: "zabbix-zabbix-proxy"
