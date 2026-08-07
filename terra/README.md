@@ -18,9 +18,21 @@ nenhum módulo de registry (ECR) foi criado aqui.
 | `dynamo` | Tabela `SolidaryTechVolunteers`, PROVISIONED 5/5 | Dentro do always-free tier (25 RCU/25 WCU/25GB, sem prazo) |
 | `sqs` | Fila standard de eventos de doação | Always-free até 1M requisições/mês, sem prazo |
 | `iam` | Roles IRSA (donation-service → SQS, volunteer-service → DynamoDB) | Sem custo |
-| `nlb` | Network Load Balancer única (3 listeners/target groups, um por serviço) | Sem free tier - cobra por hora + LCU |
+| `nlb` | Network Load Balancer única (3 listeners/target groups por serviço + 3 para observabilidade) | Sem free tier - cobra por hora + LCU |
 | `lb-controller` | Role IRSA do AWS Load Balancer Controller (kube-system) | Sem custo |
 | `secrets` | Parâmetros SSM Parameter Store (`SecureString`/`String`) | Camada Standard é gratuita |
+
+### Resolução de domínio em `observe_allowed_cidrs`
+
+A regra de Security Group que libera Loki/Tempo/Prometheus (`observe-aws/`)
+para o Grafana externo aceita, em `observe_allowed_cidrs`
+(`terra/terraform.tfvars`), um CIDR, um IP solto ou um nome de domínio -
+útil para quem consulta a partir de um IP dinâmico associado a um domínio
+DDNS. Domínios são resolvidos via DNS (provider `hashicorp/dns`,
+`terra/dns.tf`) a cada `terraform plan`/`apply` e viram um `/32` com o
+primeiro endereço retornado; como a resolução só acontece nesse momento, um
+IP que mude entre um apply e outro só é refletido na regra no próximo
+`terraform apply`.
 
 ### Custos que não têm free tier
 

@@ -15,7 +15,7 @@ Sequência mínima para implementar o ambiente EKS do zero e deixá-lo sob gest�
 - [`flux` CLI][fluxcli] instalado (usado tanto para o bootstrap quanto para validar a instalação).
 - `kubectl` e `helm`.
 - Um **Personal Access Token do GitHub** com escopo `repo` (e `admin:public_key`/`admin:org` se o repositório for de uma organização), exportado como `GITHUB_TOKEN` — é com ele que o `flux bootstrap github` autentica e faz commit das definições em `clusters/eks-aws/flux-system/`.
-- O CIDR público de onde o seu Grafana externo vai consultar Loki/Tempo/Prometheus (para `observe_allowed_cidrs` em `terra/terraform.tfvars` - ver passo 1).
+- O CIDR, IP ou domínio público de onde o seu Grafana externo vai consultar Loki/Tempo/Prometheus (para `observe_allowed_cidrs` em `terra/terraform.tfvars` - ver passo 1; um domínio, ex. de um DDNS para IP dinâmico, é resolvido via DNS a cada `terraform apply`).
 - Um Zabbix server já em operação, acessível pela internet na porta 10051 (para `zabbixProxy.ZBX_SERVER_HOST` em `zabbix/020-helmrelease-zabbix.yaml` - ver passo 5).
 
 <BR>
@@ -26,8 +26,9 @@ Sequência mínima para implementar o ambiente EKS do zero e deixá-lo sob gest�
 cd terra
 cp terraform.tfvars.example terraform.tfvars
 # edite terraform.tfvars, principalmente db_password e observe_allowed_cidrs
-# (CIDR público de onde o Grafana externo vai consultar Loki/Tempo/Prometheus -
-# ver observe-aws/README.md; não deixe o valor de exemplo)
+# (CIDR, IP ou domínio de onde o Grafana externo vai consultar
+# Loki/Tempo/Prometheus - ver observe-aws/README.md; não deixe o valor de
+# exemplo)
 
 ./init.sh   # cria bucket S3 + tabela DynamoDB do backend remoto (idempotente)
 

@@ -80,7 +80,7 @@ module "nlb" {
   vpc_id                    = module.vpc.vpc_id
   public_subnet_ids         = module.vpc.public_subnet_ids
   cluster_security_group_id = module.eks.eks_cluster_security_group_id
-  observe_allowed_cidrs     = var.observe_allowed_cidrs
+  observe_allowed_cidrs     = local.observe_allowed_cidrs_resolved
 
   depends_on = [module.vpc, module.eks]
 }

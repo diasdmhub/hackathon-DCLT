@@ -43,10 +43,17 @@ por `terra/modules/nlb`, na mesma NLB dos 3 microsserviços - portas
 Diferente das portas de aplicação (8081/8082/8083, abertas a `0.0.0.0/0`),
 a regra de Security Group dessas 3 portas é restrita a
 `var.observe_allowed_cidrs` (`terra/variables.tf`, sem default de propósito
-- defina o CIDR real, tipicamente o IP público de onde o seu Grafana externo
-consulta, em `terra/terraform.tfvars`). Loki, Tempo e Prometheus não têm
-autenticação própria; abrir essas portas para a internet exporia logs,
+- defina o CIDR, IP ou domínio real, tipicamente de onde o seu Grafana
+externo consulta, em `terra/terraform.tfvars`). Loki, Tempo e Prometheus não
+têm autenticação própria; abrir essas portas para a internet exporia logs,
 traces e métricas de negócio a qualquer IP.
+
+Cada entrada de `observe_allowed_cidrs` pode ser um CIDR, um IP solto (vira
+`/32`) ou um nome de domínio - útil para quem consulta a partir de um IP
+dinâmico associado a um domínio DDNS. Domínios são resolvidos via DNS
+(provider `hashicorp/dns`, `terra/dns.tf`) a cada `terraform plan`/`apply`;
+se o IP por trás do domínio mudar entre um apply e outro, a regra só
+acompanha no próximo `terraform apply`.
 
 `clusters/eks-aws/observe-kustomization.yaml` declara `dependsOn:
 lb-controller`, pelo mesmo motivo de `solidarytech-kustomization.yaml`: o
