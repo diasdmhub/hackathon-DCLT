@@ -19,6 +19,6 @@ variable "cluster_security_group_id" {
 }
 
 variable "observe_allowed_cidrs" {
-  description = "CIDRs autorizados a alcançar Loki/Tempo/Prometheus (observe-aws/) pela NLB. Diferente das 3 portas de aplicação (0.0.0.0/0): esses backends não têm autenticação própria, então o ingress fica restrito a esta lista (ex.: o IP público de onde o Grafana externo consulta) em vez de aberto à internet."
+  description = "CIDRs autorizados a alcançar Loki/Tempo/Prometheus (terra/modules/{loki,tempo,prometheus}) pela NLB. Diferente das 3 portas de aplicação (0.0.0.0/0): esses backends não têm autenticação própria, então o ingress fica restrito a esta lista (ex.: o IP público de onde o Grafana externo consulta) em vez de aberto à internet."
   type        = list(string)
 }

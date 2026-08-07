@@ -34,14 +34,19 @@ output "nlb_outputs" {
   value       = module.nlb
 }
 
-output "lb_controller_outputs" {
-  description = "Outputs do módulo lb-controller (ARN da role IRSA do AWS Load Balancer Controller)"
-  value       = module.lb_controller
+output "lb_iam_outputs" {
+  description = "Outputs do módulo lb-iam (ARN da role IRSA do AWS Load Balancer Controller)"
+  value       = module.lb_iam
 }
 
 output "secrets_outputs" {
   description = "Outputs do módulo secrets (nomes dos parâmetros SSM)"
   value       = module.secrets
+}
+
+output "zabbix_outputs" {
+  description = "Outputs do módulo zabbix (namespace e nome do Secret com o token da ServiceAccount zabbix-k8s-reader)"
+  value       = module.zabbix
 }
 
 output "configure_kubectl" {

@@ -5,7 +5,7 @@
 # sempre: 8081/8082/8083), cada um encaminhando para o target group
 # correspondente. Os alvos (IPs de pod) são registrados pelo AWS Load
 # Balancer Controller via TargetGroupBinding, não pelo ciclo de vida do
-# Service - ver kube-aws/README.md e terra/modules/lb-controller.
+# Service - ver kube-aws/README.md e terra/modules/lb.
 locals {
   services = {
     ngo       = { port = 8081 }
@@ -13,11 +13,12 @@ locals {
     volunteer = { port = 8083 }
   }
 
-  # Backends de observabilidade (observe-aws/), expostos na mesma NLB para o
-  # Grafana externo consultar - equivalente ao IP fixo compartilhado do
-  # MetalLB usado em kubeadm-local (ver doc/observabilidade.md), mas
-  # restritos por var.observe_allowed_cidrs em vez de 0.0.0.0/0, já que Loki/
-  # Tempo/Prometheus não têm autenticação própria.
+  # Backends de observabilidade (terra/modules/{loki,tempo,prometheus}),
+  # expostos na mesma NLB para o Grafana externo consultar - equivalente ao
+  # IP fixo compartilhado do MetalLB usado em kubeadm-local (ver
+  # doc/observabilidade.md), mas restritos por var.observe_allowed_cidrs em
+  # vez de 0.0.0.0/0, já que Loki/Tempo/Prometheus não têm autenticação
+  # própria.
   observe_services = {
     loki       = { port = 3100, health_path = "/ready" }
     tempo      = { port = 3200, health_path = "/ready" }
@@ -89,9 +90,9 @@ resource "aws_security_group_rule" "nlb_ingress" {
   description       = "NLB para ${each.key}-service (${each.value.port})"
 }
 
-# Target groups/listeners de observe-aws/ (Loki, Tempo, Prometheus), na mesma
-# NLB dos 3 microsserviços - registrados via TargetGroupBinding, como os
-# demais (ver observe-aws/README.md).
+# Target groups/listeners de observabilidade (Loki, Tempo, Prometheus - ver
+# terra/modules/{loki,tempo,prometheus}), na mesma NLB dos 3 microsserviços -
+# registrados via TargetGroupBinding, como os demais.
 resource "aws_lb_target_group" "observe" {
   for_each = local.observe_services
 
@@ -140,5 +141,5 @@ resource "aws_security_group_rule" "observe_ingress" {
   to_port           = each.value.port
   protocol          = "tcp"
   cidr_blocks       = var.observe_allowed_cidrs
-  description       = "NLB para ${each.key} (observe-aws, ${each.value.port}) - restrito a observe_allowed_cidrs"
+  description       = "NLB para ${each.key} (observabilidade, ${each.value.port}) - restrito a observe_allowed_cidrs"
 }

@@ -85,9 +85,11 @@ module "nlb" {
   depends_on = [module.vpc, module.eks]
 }
 
-# IAM/IRSA do AWS Load Balancer Controller - depende do OIDC provider do EKS
-module "lb_controller" {
-  source = "./modules/lb-controller"
+# IAM/IRSA do AWS Load Balancer Controller - depende do OIDC provider do EKS.
+# Nome "lb-iam" (não "lb-controller"): este módulo só cuida da role IRSA, o
+# controller em si (lado Kubernetes) é o módulo "lb" abaixo.
+module "lb_iam" {
+  source = "./modules/lb-iam"
 
   name_prefix       = var.name_prefix
   oidc_provider_arn = module.eks.eks_oidc_provider_arn
@@ -96,6 +98,31 @@ module "lb_controller" {
   service_account   = var.lb_controller_service_account
 
   depends_on = [module.eks]
+}
+
+# AWS Load Balancer Controller em si (ServiceAccount + HelmRelease) - antes
+# em lb-controller/ via Flux, movido para o Terraform pelo mesmo motivo do
+# resto da observabilidade (ver terra/README.md). Só a role IRSA
+# (module.lb_iam acima) continua um módulo separado.
+module "lb" {
+  source = "./modules/lb"
+
+  namespace       = var.lb_controller_namespace
+  service_account = var.lb_controller_service_account
+  role_arn        = module.lb_iam.role_arn
+  cluster_name    = module.eks.eks_cluster_name
+  aws_region      = var.aws_region
+
+  depends_on = [module.eks, module.lb_iam]
+}
+
+# module.lb_controller foi renomeado para module.lb_iam (mesmo recurso,
+# nome mais preciso: este módulo só provisiona a role IRSA, não o
+# controller em si) - moved block evita destroy/recreate da role já
+# aplicada em contas AWS reais.
+moved {
+  from = module.lb_controller
+  to   = module.lb_iam
 }
 
 # Secrets (SSM Parameter Store) - depende dos valores gerados por rds/sqs/dynamo
@@ -109,4 +136,75 @@ module "secrets" {
   dynamodb_table_name = module.dynamo.dynamodb_table_name
 
   depends_on = [module.rds, module.sqs, module.dynamo]
+}
+
+# Observabilidade e métricas de infraestrutura, aplicadas direto pelo
+# Terraform (providers helm/kubernetes/kubectl) em vez do FluxCD - ver
+# "Observabilidade via Terraform" em terra/README.md para o porquê. Só os
+# microsserviços (kube-aws/) e o AWS Load Balancer Controller
+# (lb-controller/) continuam sob Flux.
+resource "kubernetes_namespace_v1" "observe" {
+  metadata {
+    name = "observe"
+    labels = {
+      "app.kubernetes.io/part-of" = "solidarytech"
+      "Project"                   = "SolidaryTech"
+      "Environment"               = "dev"
+    }
+  }
+
+  depends_on = [module.eks]
+}
+
+module "zabbix" {
+  source = "./modules/zabbix"
+
+  name_prefix        = var.name_prefix
+  zabbix_hostname    = var.zabbix_hostname
+  zabbix_server_host = var.zabbix_server_host
+
+  depends_on = [module.eks]
+}
+
+# loki/tempo/prometheus dependem de module.lb (não só do namespace/nlb):
+# seus recursos TargetGroupBinding (kubectl_manifest) exigem o CRD que o
+# AWS Load Balancer Controller instala - com essa dependência explícita no
+# grafo do Terraform, um único `terraform apply` já basta (o controller é
+# criado antes desses TargetGroupBinding, sem depender do Flux ou de um
+# segundo apply) - ver terra/README.md.
+module "loki" {
+  source = "./modules/loki"
+
+  namespace        = kubernetes_namespace_v1.observe.metadata[0].name
+  target_group_arn = module.nlb.observe_target_group_arns["loki"]
+
+  depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
+}
+
+module "tempo" {
+  source = "./modules/tempo"
+
+  namespace        = kubernetes_namespace_v1.observe.metadata[0].name
+  target_group_arn = module.nlb.observe_target_group_arns["tempo"]
+
+  depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
+}
+
+module "prometheus" {
+  source = "./modules/prometheus"
+
+  namespace        = kubernetes_namespace_v1.observe.metadata[0].name
+  target_group_arn = module.nlb.observe_target_group_arns["prometheus"]
+
+  depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
+}
+
+# Alloy só depende do namespace (sem TargetGroupBinding - ver
+# terra/modules/alloy).
+module "alloy" {
+  source = "./modules/alloy"
+
+  namespace = kubernetes_namespace_v1.observe.metadata[0].name
+
+  depends_on = [kubernetes_namespace_v1.observe]
 }

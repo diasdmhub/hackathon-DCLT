@@ -16,7 +16,7 @@ variable "oidc_provider_url" {
 # Assim como donation-service/volunteer-service em terra/modules/iam, esta
 # role IRSA precisa de uma ServiceAccount Kubernetes com o mesmo
 # namespace/nome e a anotação eks.amazonaws.com/role-arn - ver
-# lb-controller/000-serviceaccount.yaml.
+# terra/modules/lb, que cria essa ServiceAccount.
 variable "namespace" {
   description = "Namespace Kubernetes onde o AWS Load Balancer Controller roda"
   type        = string

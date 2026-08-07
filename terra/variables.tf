@@ -132,7 +132,7 @@ variable "lb_controller_namespace" {
 }
 
 variable "lb_controller_service_account" {
-  description = "Nome da ServiceAccount do AWS Load Balancer Controller (a ser criada em lb-controller/ com a anotação IRSA)"
+  description = "Nome da ServiceAccount do AWS Load Balancer Controller (criada pelo módulo terra/modules/lb, com a anotação IRSA)"
   type        = string
   default     = "aws-load-balancer-controller"
 }
@@ -143,6 +143,20 @@ variable "lb_controller_service_account" {
 # propósito, para não abrir Loki/Tempo/Prometheus (sem autenticação própria)
 # para 0.0.0.0/0 por engano.
 variable "observe_allowed_cidrs" {
-  description = "CIDRs, IPs ou nomes de domínio autorizados a alcançar Loki/Tempo/Prometheus (observe-aws/) pela NLB - normalmente o IP público (fixo ou via um domínio DDNS) de onde o Grafana externo consulta. Domínios são resolvidos via DNS a cada terraform apply (ver terra/dns.tf)."
+  description = "CIDRs, IPs ou nomes de domínio autorizados a alcançar Loki/Tempo/Prometheus (terra/modules/{loki,tempo,prometheus}) pela NLB - normalmente o IP público (fixo ou via um domínio DDNS) de onde o Grafana externo consulta. Domínios são resolvidos via DNS a cada terraform apply (ver terra/dns.tf)."
   type        = list(string)
+}
+
+# Variáveis do Zabbix (terra/modules/zabbix)
+#############################
+# DEFINA OS VALORES REAIS NO terraform.tfvars (não versionado) - identificam
+# sua infraestrutura pessoal de Zabbix, por isso sem default.
+variable "zabbix_hostname" {
+  description = "Nome do objeto \"Proxy\" criado manualmente no seu Zabbix server (Data collection -> Proxies, modo Active) - vira zabbixProxy.ZBX_HOSTNAME no chart"
+  type        = string
+}
+
+variable "zabbix_server_host" {
+  description = "Hostname ou IP do seu Zabbix server externo, acessível na porta 10051 - vira zabbixProxy.ZBX_SERVER_HOST no chart"
+  type        = string
 }
