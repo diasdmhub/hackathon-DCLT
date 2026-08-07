@@ -47,6 +47,23 @@ primeiro endereço retornado; como a resolução só acontece nesse momento, um
 IP que mude entre um apply e outro só é refletido na regra no próximo
 `terraform apply`.
 
+### Health check da NLB nas portas de observabilidade precisa do CIDR da VPC, não só de `observe_allowed_cidrs`
+
+`observe_allowed_cidrs` restringe quem de **fora** alcança Loki/Tempo/Prometheus,
+mas o **health check da própria NLB** não vem de fora - para targets
+`type = "ip"`, ele parte das ENIs da NLB nas subnets públicas
+(`var.public_subnet_ids`), com IP de origem dentro da VPC. Por isso
+`terra/modules/nlb/nlb.tf` tem duas regras de Security Group separadas
+nessas 3 portas: `observe_ingress` (`observe_allowed_cidrs`, o Grafana
+externo) e `observe_health_check_ingress` (`var.vpc_cidr`, só para o health
+check). Sem a segunda, o `TargetGroupBinding` reconcilia normalmente (o pod
+está registrado), mas `aws elbv2 describe-target-health` mostra
+`unhealthy`/`Target.FailedHealthChecks` porque a Security Group derruba o
+próprio probe da NLB - sintoma indistinguível de fora de "porta bloqueada",
+mas a causa é a falta dessa regra, não `observe_allowed_cidrs` estar errado.
+As 3 portas de aplicação (`nlb_ingress`) nunca tiveram esse problema porque
+já são `0.0.0.0/0`.
+
 ### Custos que não têm free tier
 
 O EKS control plane, o NAT Gateway e a NLB (`nlb`) são cobrados desde o
