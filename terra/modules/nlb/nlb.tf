@@ -161,5 +161,5 @@ resource "aws_security_group_rule" "observe_health_check_ingress" {
   to_port           = each.value.port
   protocol          = "tcp"
   cidr_blocks       = [var.vpc_cidr]
-  description       = "Health check da NLB para ${each.key} (${each.value.port}) - origem interna à VPC, separado de observe_allowed_cidrs"
+  description       = "Health check da NLB para ${each.key} (${each.value.port}) - origem interna na VPC, separado de observe_allowed_cidrs"
 }
