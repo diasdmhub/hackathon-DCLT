@@ -33,18 +33,28 @@ cp terraform.tfvars.example terraform.tfvars
 
 ./init.sh   # cria bucket S3 + tabela DynamoDB do backend remoto (idempotente)
 
+# Só na primeira vez, contra um backend/cluster totalmente novo: os
+# providers kubernetes/helm/kubectl (usados abaixo) autenticam com outputs
+# do cluster EKS, que ainda não existem num state vazio - crie só o cluster
+# primeiro. Ver "Uso" em terra/README.md para o porquê (limitação clássica
+# de Terraform+EKS, não algo específico deste repositório).
+terraform apply -target=module.eks
+
 terraform plan
 terraform apply
 ```
 
-Este único `apply` cria a VPC/EKS/RDS/etc., instala o AWS Load Balancer
-Controller (`terra/modules/lb`), e já aplica Loki/Tempo/Alloy/Prometheus
+Esse segundo `apply` (já num state com o cluster criado) cria o resto -
+RDS/DynamoDB/SQS/IAM/NLB/etc., instala o AWS Load Balancer Controller
+(`terra/modules/lb`), e já aplica Loki/Tempo/Alloy/Prometheus
 (`terra/modules/{loki,tempo,alloy,prometheus}`) e o Zabbix Proxy/Agent2/kube-state-metrics
 (`terra/modules/zabbix`) direto no cluster, via os providers `helm`/`kubernetes`/`kubectl`
 — nenhum desses passa pelo Flux, ver `terra/README.md` para o porquê. A
 ordem entre eles (controller antes dos `TargetGroupBinding` de
 Loki/Tempo/Prometheus) já é garantida pelo grafo de dependências do próprio
-Terraform - não precisa de um segundo `apply`.
+Terraform - não precisa de mais um `apply` além do `-target=module.eks`
+inicial. Em clusters já existentes (`module.eks` já no state), pule direto
+para `terraform plan`/`apply`.
 
 Ao final, aponte o `kubectl` local para o cluster criado:
 

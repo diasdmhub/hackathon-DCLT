@@ -180,7 +180,32 @@ distingue as duas causas.
 
 ## Uso
 
+Num backend/cluster totalmente novo (state vazio), o cluster EKS precisa
+existir *antes* dos providers `kubernetes`/`helm`/`kubectl` conseguirem se
+configurar - os 3 (`terraform.tf`) autenticam usando `module.eks.eks_cluster_endpoint`/
+`eks_cluster_ca`/`eks_cluster_name`, que ainda são valores desconhecidos
+("unknown") num `plan` contra um state vazio, já que o cluster ainda não
+existe para produzi-los. É a limitação clássica de Terraform+EKS (criar o
+cluster e já gerenciar recursos Kubernetes dentro dele no mesmo `apply`),
+não algo específico deste repositório. Os providers `kubernetes`/`helm`
+costumam tolerar isso (adiam a conexão real); o `kubectl` (`alekc/kubectl`,
+usado só para `TargetGroupBinding`) não - ele falha o `plan` inteiro com
+`Error: invalid provider configuration: invalid configuration: no
+configuration has been provided, try setting KUBERNETES_MASTER environment
+variable`, mesmo que nenhum recurso `kubectl_manifest` seja avaliado ainda.
+
+A solução é rodar o primeiro `apply` em duas etapas - só na primeira vez
+(depois que `module.eks` já estiver no state, `eks_cluster_endpoint`/etc.
+passam a ser valores concretos, e `terraform plan`/`apply` funcionam
+normalmente num único comando):
+
 ```bash
+# 1ª vez apenas: cria só o cluster (e o que ele depende: vpc), para os
+# outputs usados pelos providers kubernetes/helm/kubectl deixarem de ser
+# "unknown"
+terraform apply -target=module.eks
+
+# a partir daqui, uso normal
 terraform plan
 terraform apply
 
