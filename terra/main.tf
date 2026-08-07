@@ -163,6 +163,7 @@ module "zabbix" {
   name_prefix        = var.name_prefix
   zabbix_hostname    = var.zabbix_hostname
   zabbix_server_host = var.zabbix_server_host
+  zabbix_version     = var.zabbix_version
 
   depends_on = [module.eks]
 }

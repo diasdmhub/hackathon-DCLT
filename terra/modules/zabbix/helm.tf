@@ -20,6 +20,17 @@ resource "helm_release" "zabbix" {
 
   values = [
     yamlencode({
+      # O chart só traz por padrão a versão LTS (7.0) do Zabbix; para usar
+      # uma versão non-LTS (ex: 7.4) é preciso sobrescrever essa tag
+      # manualmente (ver comentário do values.yaml do chart). "ol-<versão>-
+      # latest" é a variante Oracle Linux com patch mais recente da minor
+      # (equivalente ao "ubuntu-<versão>-latest", trocado para bater com a
+      # distro deste ambiente). Atenção: o proxy precisa estar em versão
+      # igual ou compatível com o Zabbix server externo
+      # (var.zabbix_server_host) - confirme lá antes de aplicar, um proxy
+      # mais novo que o server não se conecta.
+      zabbixImageTag = "ol-${var.zabbix_version}-latest"
+
       zabbixServer     = { enabled = false }
       postgresql       = { enabled = false }
       zabbixWeb        = { enabled = false }
@@ -54,6 +65,38 @@ resource "helm_release" "zabbix" {
         # "address ... specified more than once" e o agent entra em
         # CrashLoopBackOff.
         ZBX_SERVER_HOST = "zabbix-zabbix-proxy"
+
+        # As probes padrão do chart fazem tcpSocket na porta "zabbix-agent"
+        # (10050, o listener passivo). Como ZBX_PASSIVE_ALLOW=false acima
+        # desliga esse listener, a porta nunca abre, a probe falha sempre e
+        # o kubelet mata o container em loop (CrashLoopBackOff) mesmo com o
+        # agent funcionando normalmente em modo active-only. Troca para uma
+        # exec probe que testa localmente, sem depender de porta de rede.
+        # tcpSocket = null é necessário porque o merge de values do Helm é
+        # por chave: sem isso, a chave "exec" só se soma à "tcpSocket" do
+        # default do chart em vez de substituí-la, e o Kubernetes rejeita o
+        # DaemonSet por ter mais de um handler type na mesma probe.
+        startupProbe = {
+          tcpSocket = null
+          exec = {
+            command = ["zabbix_agent2", "-t", "agent.ping"]
+          }
+          initialDelaySeconds = 15
+          periodSeconds       = 5
+          timeoutSeconds      = 3
+          failureThreshold    = 5
+          successThreshold    = 1
+        }
+        livenessProbe = {
+          tcpSocket = null
+          exec = {
+            command = ["zabbix_agent2", "-t", "agent.ping"]
+          }
+          timeoutSeconds   = 3
+          failureThreshold = 3
+          periodSeconds    = 10
+          successThreshold = 1
+        }
       }
     })
   ]
@@ -79,8 +122,19 @@ resource "helm_release" "zabbix" {
 # by HTTP" (ver README.md deste módulo). Valores padrão do chart bastam: só
 # precisamos do Service (porta 8080) acessível via proxy da API do
 # Kubernetes.
+#
+# name = "zabbix-kube-state-metrics" (não só "kube-state-metrics"): o script
+# de preprocessing da template oficial "Kubernetes cluster state by HTTP"
+# faz "GET api/v1/endpoints" (cluster-wide) e filtra pelo nome exato do
+# objeto Endpoints, contra a macro {$KUBE.STATE.ENDPOINT.NAME}, cujo default
+# na template é "zabbix-kube-state-metrics" - sem bater esse nome, a
+# descoberta falha com "Cannot get state metrics endpoints from Kubernetes
+# API". O helper "fullname" padrão do chart usa o nome do release como nome
+# do Service/Endpoints quando ele já contém "kube-state-metrics", então só
+# nomear o release assim já alinha com o default da template, sem precisar
+# editar a macro manualmente no Zabbix.
 resource "helm_release" "kube_state_metrics" {
-  name       = "kube-state-metrics"
+  name       = "zabbix-kube-state-metrics"
   namespace  = kubernetes_namespace_v1.zabbix.metadata[0].name
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-state-metrics"

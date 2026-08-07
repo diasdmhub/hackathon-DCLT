@@ -49,7 +49,7 @@ resource "kubernetes_cluster_role_v1" "zabbix_k8s_reader" {
 
   rule {
     api_groups = [""]
-    resources  = ["nodes", "pods", "namespaces", "events", "componentstatuses", "resourcequotas"]
+    resources  = ["nodes", "pods", "namespaces", "events", "endpoints", "componentstatuses", "resourcequotas"]
     verbs      = ["get", "list", "watch"]
   }
 

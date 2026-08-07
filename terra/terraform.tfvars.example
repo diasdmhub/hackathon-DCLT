@@ -53,3 +53,9 @@ observe_allowed_cidrs = ["CHANGE_ME"]
 # (porta 10051) - ver terra/modules/zabbix/README.md.
 zabbix_hostname    = "CHANGE_ME-solidarytech-eks-proxy"
 zabbix_server_host = "CHANGE_ME"
+
+# Versão major.minor das imagens Docker do Zabbix Proxy/Agent2 (monta a tag
+# "ol-<versão>-latest"). Tem default ("7.4") em variables.tf, só precisa
+# repetir aqui se quiser fixar outra versão - confira que bate com a versão
+# do seu Zabbix server externo.
+zabbix_version = "7.4"
