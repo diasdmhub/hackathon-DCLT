@@ -56,11 +56,25 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - '$[*].amount.sum()'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
           master_item:
             key: 'st.donation[list]'
           tags:
             - tag: Donation
               value: total
+          triggers:
+            - uuid: f8ec6e0052374088b60c3c53ac9ed92a
+              expression: 'changecount(/SolidaryTech by HTTP/st.donation[sum],{$ST.DONATION.PERIOD},"inc")=0'
+              name: 'SolidaryTech No Donations'
+              event_name: 'SolidaryTech No Donations for {$ST.DONATION.PERIOD}'
+              opdata: 'Donations so far: {ITEM.LASTVALUE}'
+              priority: WARNING
+              description: 'No donations were detected in the last defined period'
+              manual_close: 'YES'
+              tags:
+                - tag: Donation
+                  value: absent
         - uuid: 3d369ce4a6004a76ae9c139ddd869f30
           name: 'SolidaryTech Health Donation Service'
           type: HTTP_AGENT
@@ -71,20 +85,38 @@ zabbix_export:
           valuemap:
             name: 'Health Status'
           preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '0'
+                - 'Could not connect to server'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
             - type: JSONPATH
               parameters:
                 - $.status
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
             - type: STR_REPLACE
               parameters:
                 - ok
                 - '1'
-            - type: DISCARD_UNCHANGED_HEARTBEAT
-              parameters:
-                - 5m
           url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.DONATION}/health'
           tags:
             - tag: Service
               value: donation
+          triggers:
+            - uuid: 36f98a5d99944e2b8222f2df44594ec2
+              expression: 'max(/SolidaryTech by HTTP/st.health[donation],#2)=0'
+              name: 'SolidaryTech Health Service Unavailable Donation'
+              opdata: 'Service Status: {ITEM.LASTVALUE}'
+              priority: HIGH
+              description: 'Service health status is not available'
+              dependencies:
+                - name: 'SolidaryTech Health Services All Unavailable'
+                  expression: 'sum(last(/SolidaryTech by HTTP/st.health[donation],#1),last(/SolidaryTech by HTTP/st.health[ngo],#1),last(/SolidaryTech by HTTP/st.health[volunteer],#1))<1'
+              tags:
+                - tag: Donation
+                  value: unavailable
         - uuid: 6035b4f1a6f7454cabb792d1af55b636
           name: 'SolidaryTech Health NGO Service'
           type: HTTP_AGENT
@@ -95,20 +127,38 @@ zabbix_export:
           valuemap:
             name: 'Health Status'
           preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '0'
+                - 'Could not connect to server'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
             - type: JSONPATH
               parameters:
                 - $.status
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
             - type: STR_REPLACE
               parameters:
                 - ok
                 - '1'
-            - type: DISCARD_UNCHANGED_HEARTBEAT
-              parameters:
-                - 5m
           url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.NGO}/health'
           tags:
             - tag: Service
               value: ngo
+          triggers:
+            - uuid: bdb8d0d68efc4291bb45b71bf0db0c16
+              expression: 'max(/SolidaryTech by HTTP/st.health[ngo],#2)=0'
+              name: 'SolidaryTech Health Service Unavailable NGO'
+              opdata: 'Service Status: {ITEM.LASTVALUE}'
+              priority: HIGH
+              description: 'NGO Service health status is not available'
+              dependencies:
+                - name: 'SolidaryTech Health Services All Unavailable'
+                  expression: 'sum(last(/SolidaryTech by HTTP/st.health[donation],#1),last(/SolidaryTech by HTTP/st.health[ngo],#1),last(/SolidaryTech by HTTP/st.health[volunteer],#1))<1'
+              tags:
+                - tag: NGO
+                  value: unavailable
         - uuid: f462aeae03924616814ad09a6722aeaa
           name: 'SolidaryTech Health Volunteer Service'
           type: HTTP_AGENT
@@ -119,20 +169,38 @@ zabbix_export:
           valuemap:
             name: 'Health Status'
           preprocessing:
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '0'
+                - 'Could not connect to server'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
             - type: JSONPATH
               parameters:
                 - $.status
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
             - type: STR_REPLACE
               parameters:
                 - ok
                 - '1'
-            - type: DISCARD_UNCHANGED_HEARTBEAT
-              parameters:
-                - 5m
           url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.VOLUNTEER}/health'
           tags:
             - tag: Service
               value: volunteer
+          triggers:
+            - uuid: 6b0ad1b63bbe43799a28697aad97e982
+              expression: 'max(/SolidaryTech by HTTP/st.health[volunteer],#2)=0'
+              name: 'SolidaryTech Health Service Unavailable Volunteer'
+              opdata: 'Service Status: {ITEM.LASTVALUE}'
+              priority: HIGH
+              description: 'Volunteer Service health status is not available'
+              dependencies:
+                - name: 'SolidaryTech Health Services All Unavailable'
+                  expression: 'sum(last(/SolidaryTech by HTTP/st.health[donation],#1),last(/SolidaryTech by HTTP/st.health[ngo],#1),last(/SolidaryTech by HTTP/st.health[volunteer],#1))<1'
+              tags:
+                - tag: Volunteer
+                  value: unavailable
         - uuid: 8d181575dce64c468a2452d5abb79be3
           name: 'SolidaryTech NGO Count'
           type: DEPENDENT
@@ -197,7 +265,13 @@ zabbix_export:
               path: $.id
             - lld_macro: '{#ST.NGO.NAME}'
               path: $.name
+      tags:
+        - tag: SolidaryTech
+          value: health
       macros:
+        - macro: '{$ST.DONATION.PERIOD}'
+          value: 1d
+          description: 'Donation amount evaluation period'
         - macro: '{$ST.HTTP.SCHEMA}'
           value: http
           description: 'HTTP service schema (http or https)'
@@ -218,3 +292,13 @@ zabbix_export:
               newvalue: Ok
             - type: DEFAULT
               newvalue: Unavailable
+  triggers:
+    - uuid: 2d3fb0a0913f42aeb261b74d9f4a7b14
+      expression: 'sum(last(/SolidaryTech by HTTP/st.health[donation],#1),last(/SolidaryTech by HTTP/st.health[ngo],#1),last(/SolidaryTech by HTTP/st.health[volunteer],#1))<1'
+      name: 'SolidaryTech Health Services All Unavailable'
+      opdata: 'Service Status: {ITEM.LASTVALUE}'
+      priority: DISASTER
+      description: 'All services from SolidaryTech are not available'
+      tags:
+        - tag: Services
+          value: unavailable
