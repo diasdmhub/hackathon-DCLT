@@ -10,6 +10,21 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "~> 2.34"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.16"
+    }
+    # kubectl (não o provider "kubernetes") para os CRDs de terceiros
+    # (TargetGroupBinding, instalado pelo módulo lb): o provider
+    # "kubernetes" valida o schema do CRD contra o cluster já no
+    # `terraform plan`, o que quebraria numa primeira execução contra um
+    # cluster novo, antes de module.lb ter aplicado; kubectl_manifest
+    # aplica o YAML como está, sem essa validação prévia - ver
+    # terra/README.md.
+    kubectl = {
+      source  = "alekc/kubectl"
+      version = "~> 2.1"
+    }
     tls = {
       source  = "hashicorp/tls"
       version = "~> 4.3"
@@ -43,6 +58,33 @@ provider "dns" {}
 provider "kubernetes" {
   host                   = module.eks.eks_cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.eks_cluster_ca)
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.eks_cluster_name, "--region", var.aws_region]
+    command     = "aws"
+  }
+}
+
+# Mesma autenticação do provider "kubernetes" acima - usado pelos módulos
+# zabbix (chart zabbix-community/helm-zabbix + kube-state-metrics).
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.eks_cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.eks_cluster_ca)
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.eks_cluster_name, "--region", var.aws_region]
+      command     = "aws"
+    }
+  }
+}
+
+# Mesma autenticação do provider "kubernetes" acima - usado pelos módulos
+# loki/tempo/prometheus só para o TargetGroupBinding (CRD do módulo lb).
+provider "kubectl" {
+  host                   = module.eks.eks_cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.eks_cluster_ca)
+  load_config_file       = false
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     args        = ["eks", "get-token", "--cluster-name", module.eks.eks_cluster_name, "--region", var.aws_region]

@@ -14,6 +14,6 @@ output "target_group_arns" {
 }
 
 output "observe_target_group_arns" {
-  description = "ARN do target group de cada backend de observabilidade (loki/tempo/prometheus) - usar no targetGroupARN dos TargetGroupBinding em observe-aws/"
+  description = "ARN do target group de cada backend de observabilidade (loki/tempo/prometheus) - usar no target_group_arn dos módulos terra/modules/{loki,tempo,prometheus}"
   value       = { for k, tg in aws_lb_target_group.observe : k => tg.arn }
 }

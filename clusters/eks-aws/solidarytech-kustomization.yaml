@@ -7,8 +7,11 @@ spec:
   interval: 5m0s
   path: ./kube-aws
   prune: true
-  dependsOn:
-    - name: lb-controller
+  # Sem dependsOn: o AWS Load Balancer Controller (e o CRD TargetGroupBinding
+  # que os TargetGroupBinding de ./kube-aws precisam) agora é aplicado pelo
+  # Terraform (terra/modules/lb), não por uma Kustomization Flux - ele já
+  # existe antes do `flux bootstrap` rodar, contanto que `terraform apply`
+  # tenha sido executado primeiro (ver doc/roteiro-cluster-aws.md).
   sourceRef:
     kind: GitRepository
     name: flux-system

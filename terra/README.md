@@ -19,12 +19,25 @@ nenhum módulo de registry (ECR) foi criado aqui.
 | `sqs` | Fila standard de eventos de doação | Always-free até 1M requisições/mês, sem prazo |
 | `iam` | Roles IRSA (donation-service → SQS, volunteer-service → DynamoDB) | Sem custo |
 | `nlb` | Network Load Balancer única (3 listeners/target groups por serviço + 3 para observabilidade) | Sem free tier - cobra por hora + LCU |
-| `lb-controller` | Role IRSA do AWS Load Balancer Controller (kube-system) | Sem custo |
+| `lb-iam` | Role IRSA do AWS Load Balancer Controller (kube-system) | Sem custo |
+| `lb` | O AWS Load Balancer Controller em si (ServiceAccount + `helm_release`) | Sem custo AWS - só o compute já contado no node group |
 | `secrets` | Parâmetros SSM Parameter Store (`SecureString`/`String`) | Camada Standard é gratuita |
+| `zabbix` | Zabbix Proxy (modo ativo) + Agent2 (DaemonSet) + kube-state-metrics, via `helm_release` | Sem custo AWS - só o compute já contado no node group |
+| `loki` / `tempo` / `prometheus` | Deployment + PVC (`gp3`) + Service + `TargetGroupBinding` cada, via recursos `kubernetes_*`/`kubectl_manifest` | Sem custo AWS além do já contado (node group, NLB, EBS) |
+| `alloy` | DaemonSet (coleta de logs + roteamento OTLP) via recursos `kubernetes_*` | Sem custo AWS além do já contado (node group) |
+
+Os últimos 6 módulos não provisionam recursos AWS (`aws_*`) - aplicam
+Kubernetes/Helm diretamente contra o cluster que os módulos acima acabaram
+de criar, via os providers `kubernetes`/`helm`/`kubectl` (ver "Observabilidade
+via Terraform" abaixo). `lb-iam` é a exceção nesse grupo: continua
+puramente IAM (`aws_iam_role`/`aws_iam_role_policy`), como antes (só o nome
+mudou, de `lb-controller` para `lb-iam`, para não ser confundido com o
+módulo `lb`) - só o lado Kubernetes do AWS Load Balancer Controller (`lb`)
+é novo.
 
 ### Resolução de domínio em `observe_allowed_cidrs`
 
-A regra de Security Group que libera Loki/Tempo/Prometheus (`observe-aws/`)
+A regra de Security Group que libera Loki/Tempo/Prometheus (`terra/modules/{loki,tempo,prometheus}`)
 para o Grafana externo aceita, em `observe_allowed_cidrs`
 (`terra/terraform.tfvars`), um CIDR, um IP solto ou um nome de domínio -
 útil para quem consulta a partir de um IP dinâmico associado a um domínio
@@ -40,6 +53,98 @@ O EKS control plane, o NAT Gateway e a NLB (`nlb`) são cobrados desde o
 primeiro minuto, independentemente da idade da conta AWS - são os itens que
 mais pesam neste ambiente; destrua o cluster (`terraform destroy`) fora de
 uso para evitar cobrança contínua.
+
+## Observabilidade e monitoração de infraestrutura via Terraform
+
+Zabbix, Loki, Tempo, Alloy, Prometheus **e o AWS Load Balancer Controller**
+(módulos `zabbix`/`loki`/`tempo`/`alloy`/`prometheus`/`lb` acima) são
+aplicados diretamente por este `terraform apply`, não por uma
+`Kustomization` do FluxCD. Na prática, esses componentes se mostraram pouco
+confiáveis quando geridos pelo Flux neste ambiente - reconciliações que
+exigiam intervenção manual, e o próprio Flux se autodestruindo
+ocasionalmente, prejudicando a sincronização do cluster e gerando commits
+extras no repositório. Como esses serviços só existem no cluster EKS que o
+próprio Terraform já provisiona, e os providers `helm`/`kubernetes` já
+conseguem aplicá-los direto contra esse cluster, faz mais sentido tratá-los
+como parte do mesmo `apply` que cria o cluster. Só os microsserviços da
+SolidaryTech (`kube-aws/`) continuam sob Flux - ver `CLAUDE.md`.
+
+O AWS Load Balancer Controller entrou nessa migração por uma razão a mais,
+além da confiabilidade: mantê-lo no Flux teria criado uma dependência
+cruzada entre ferramentas (o Terraform aplicando `TargetGroupBinding` de um
+CRD que só o Flux instalaria) - ver o caveat abaixo sobre por que isso
+importa.
+
+### Providers extras e como se autenticam
+
+`terraform.tf` define, além do `kubernetes` já existente, dois providers
+novos, ambos reaproveitando a mesma autenticação (endpoint/CA do EKS +
+`aws eks get-token` via `exec`):
+
+- `helm` (`hashicorp/helm`): usado pelos módulos `zabbix` (charts
+  `zabbix-community/helm-zabbix` e `prometheus-community/kube-state-metrics`)
+  e `lb` (chart `aws-load-balancer-controller` do repositório `eks-charts`).
+- `kubectl` (`alekc/kubectl`): usado pelos módulos `loki`/`tempo`/`prometheus`
+  só para o recurso `TargetGroupBinding` (ver seção abaixo sobre por que não
+  `kubernetes_manifest`). Todo o resto
+  (Deployment, Service, PVC, ConfigMap, DaemonSet, RBAC, a ServiceAccount do
+  módulo `lb`) usa recursos `kubernetes_*` comuns do provider `kubernetes`
+  já existente.
+
+Nenhum CLI adicional (`helm`/`kubectl`/`flux`) é pré-requisito para rodar
+`terraform apply` em si - esses providers falam com a API do Kubernetes
+diretamente. `kubectl`/`helm` continuam úteis para inspecionar o cluster
+depois (ver `doc/roteiro-cluster-aws.md`).
+
+### Por que `TargetGroupBinding` usa `kubectl_manifest`, não `kubernetes_manifest`
+
+O CRD `TargetGroupBinding`, usado pelos módulos `loki`/`tempo`/`prometheus`
+(e por `kube-aws/`, ainda no Flux), é instalado pelo módulo `lb` acima -
+mas dentro do mesmo `terraform apply`, `module.lb` só termina de aplicar
+*durante* esse mesmo `apply`, não antes dele começar. O provider
+`kubernetes` e seu recurso `kubernetes_manifest` validam o schema do CRD
+contra o cluster já no `terraform plan` (antes de qualquer recurso ser
+criado), o que quebraria numa primeira execução contra um cluster novo,
+onde o CRD ainda não existe nesse momento. `kubectl_manifest` (provider
+`kubectl`) não tem essa validação prévia - só valida no `apply`, quando o
+grafo de dependências do Terraform (`depends_on = [..., module.lb]` nos 3
+módulos, em `main.tf`) já garante que `module.lb` foi aplicado primeiro e o
+CRD já existe. Um único `terraform apply` já é suficiente - não é mais
+necessário rodar o Flux bootstrap antes ou reaplicar depois, diferente de
+quando o AWS Load Balancer Controller ainda vivia no Flux.
+
+### `zabbix_hostname`/`zabbix_server_host`
+
+Identificam a infraestrutura pessoal do seu Zabbix server externo, por isso
+sem default (`terra/variables.tf`) - defina os valores reais em
+`terraform.tfvars`. O módulo `zabbix` os passa ao chart via `set` em
+`helm.tf`, no lugar do antigo Secret aplicado manualmente fora do Flux -
+`terraform.tfvars` já é a fonte de valores sensíveis deste ambiente (mesmo
+padrão de `db_password`).
+
+Passos manuais (uma vez, no seu Zabbix server - o Terraform não pode
+aplicá-los, essa configuração vive no banco de dados do Zabbix):
+
+1. **Criar o Proxy**: *Data collection → Proxies → Create proxy*. Nome igual
+   ao `zabbix_hostname` de `terraform.tfvars`. Modo: **Active**.
+2. Rodar `terraform apply` com `zabbix_hostname`/`zabbix_server_host` já
+   preenchidos - a stack sobe junto com o resto do cluster.
+3. **Pegar o token da ServiceAccount de leitura**:
+   ```bash
+   kubectl get secret zabbix-k8s-reader-token -n zabbix \
+     -o jsonpath='{.data.token}' | base64 -d
+   ```
+4. **Pegar a URL da API do EKS**: `terraform output -raw configure_kubectl`.
+5. **Importar as templates nativas do Zabbix** (Zabbix 6.4+, já inclusas):
+   *Data collection → Templates → Kubernetes* - confirme **"Kubernetes nodes
+   by HTTP"** e **"Kubernetes cluster state by HTTP"**.
+6. **Criar os hosts do cluster EKS** a partir dessas templates, vinculados ao
+   **Proxy** do passo 1 (não ao Zabbix server diretamente), preenchendo
+   `{$KUBE.API.SERVER.URL}` (passo 4), `{$KUBE.API.TOKEN}` (passo 3) e
+   `{$KUBE.NAMESPACE}` = `zabbix`.
+7. **Verificar**: `kubectl logs -n zabbix -l app.kubernetes.io/component=proxy`
+   deve mostrar a conexão ativa com o Zabbix server; no Zabbix, o Proxy deve
+   aparecer com "last seen" recente.
 
 ## Pré-requisitos
 
@@ -99,6 +204,15 @@ ENIs órfãs bloqueando a exclusão da VPC), a NLB aqui é o recurso `aws_lb` de
 `terra/modules/nlb`: está no state do Terraform, então `terraform destroy` já
 apaga NLB, listeners, target groups e a regra de Security Group na ordem
 certa, sem passo manual.
+
+O mesmo vale para os recursos `kubernetes_*`/`helm_release`/`kubectl_manifest`
+dos módulos `zabbix`/`loki`/`tempo`/`alloy`/`prometheus`: por estarem no
+state do Terraform, `terraform destroy` os remove (Deployments, PVCs,
+`TargetGroupBinding`, releases do Helm) sem passo manual - mas isso exige a
+API do EKS alcançável durante todo o destroy, já que esses providers
+conversam com o cluster para aplicar as remoções (diferente dos recursos
+`aws_*`, que a AWS processa independente do cluster estar de pé). Não
+destrua o node group/cluster antes desses recursos serem removidos do state.
 
 Ainda assim, use `terra/destroy.sh` em vez de `terraform destroy` direto -
 hoje é só um wrapper fino (`terraform destroy -auto-approve`), mantido como

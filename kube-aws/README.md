@@ -62,14 +62,18 @@ A NLB, os 3 listeners e os 3 target groups são provisionados pelo Terraform
 que referencia o target group pelo nome determinístico gerado pelo Terraform
 (`targetGroupName: solidarytech-<serviço>-tg`) e o `Service` correspondente;
 é o [AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/)
-(instalado via `lb-controller/`, fora deste diretório) quem reconcilia esse
+(instalado via `terra/modules/lb`, fora deste diretório) quem reconcilia esse
 CRD, registrando/removendo os IPs de pod no target group conforme os
 Deployments escalam.
 
-`clusters/eks-aws/solidarytech-kustomization.yaml` declara `dependsOn:
-lb-controller` para garantir que o controller (e o CRD `TargetGroupBinding`
-que o chart instala) já exista antes desses manifests serem aplicados - ver
-`lb-controller/README.md`.
+Diferente da IAM/IRSA (`terra/modules/lb-iam`), o controller
+em si (ServiceAccount + `helm_release`) é aplicado direto pelo Terraform, não
+pelo Flux - ver "Observabilidade e monitoração de infraestrutura via
+Terraform" em `terra/README.md`. `clusters/eks-aws/solidarytech-kustomization.yaml`
+não precisa de `dependsOn` por causa disso: contanto que `terraform apply`
+rode antes do `flux bootstrap` (ver `doc/roteiro-cluster-aws.md`), o
+controller e o CRD `TargetGroupBinding` já existem quando o Flux aplica
+estes manifests.
 
 ## IRSA
 

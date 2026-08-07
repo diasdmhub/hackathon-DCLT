@@ -50,7 +50,7 @@ O pipeline CI combinado ao FluxCD formam duas metades de um macro fluxo de GitOp
 São declarados 3 conciliações com manifestos do Kubernetes:
 
 1. [`kube/kube-aws`][kube] - Manifestos da SolidaryTech.
-2. [`observe/observe-aws`][observe] - Manifestos de serviços de monitoração e observabilidade.
+2. [`observe/`][observe] - Manifestos de serviços de monitoração e observabilidade (só no cluster local; no EKS, esses mesmos serviços são aplicados pelo Terraform - ver `terra/README.md`).
 3. [`image-automation/`][imageauto] - Manifestos para atualização de imagens dos serviços.
 
 <BR>
