@@ -1,211 +1,205 @@
 zabbix_export:
   version: '7.4'
   template_groups:
-    - uuid: 8cda9acfc1ff424e9b6c59309da60031
+    - uuid: 26b0b8ed7f8c4a0e9c7c2a0c9d6c5a11
       name: Templates/Applications
   templates:
     - uuid: d56256dd1df44d92867db50d2097213f
       template: 'SolidaryTech Load by HTTP'
       name: 'SolidaryTech Load by HTTP'
-      description: 'Generates constant synthetic traffic against the SolidaryTech services (NGO, donation and volunteer registrations) via Script items running on the Duktape engine.'
+      description: 'Generates constant synthetic traffic against the SolidaryTech services (NGO, donation and volunteer registrations) via JavaScript items running.'
       vendor:
         name: diasdm
         version: 7.4.12
       groups:
         - name: Templates/Applications
       items:
-        - uuid: 2b2d1722bc184aa8a6777000f1b55b02
-          name: 'SolidaryTech Load Create Random NGO'
-          type: SCRIPT
-          key: st.load.ngo.create
-          history: 3d
-          trends: '0'
-          value_type: TEXT
-          description: 'Registers one random NGO per day against the NGO service, to keep the platform populated with fresh data.'
-          params: |
-            try {
-                var params = JSON.parse(value);
-
-                var causes = ['Educação', 'Saúde', 'Meio Ambiente', 'Combate à Fome', 'Cultura', 'Proteção Animal'];
-                var cities = ['Vale do Ipê', 'Porto das Andorinhas', 'Santa Clara do Monte', 'Nova Aurora do Sul',
-                    'Ribeirão das Pedras', 'Alto da Boa Vista', 'Campos do Jequitibá', 'Serra dos Ventos',
-                    'Lagoa Dourada do Norte', 'São Bento das Flores', 'Recanto das Araras', 'Barra do Sossego',
-                    'Morro da Esperança', 'Vila dos Coqueiros', 'Fonte do Cerrado'];
-
-                function pick(arr) {
-                    return arr[Math.floor(Math.random() * arr.length)];
-                }
-
-                var cause = pick(causes);
-                var city = pick(cities);
-                var name = 'ONG ' + cause + ' ' + city;
-                var email = 'ngo-load-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '@example.com';
-
-                var url = params.schema + '://' + params.host + ':' + params.port + '/ngos';
-                var req = new HttpRequest();
-                req.addHeader('Content-Type: application/json');
-
-                var resp = req.post(url, JSON.stringify({name: name, email: email, cause: cause, city: city}));
-                var status = req.getStatus();
-
-                if (status != 200 && status != 201) {
-                    throw 'Unexpected status ' + status + ': ' + resp;
-                }
-
-                return JSON.stringify({ok: true, status: status, name: name, email: email});
-            }
-            catch (error) {
-                Zabbix.log(3, 'SolidaryTech Load NGO create failed: ' + error);
-                throw 'SolidaryTech Load NGO create failed: ' + error;
-            }
-          parameters:
-            - name: schema
-              value: '{$ST.HTTP.SCHEMA}'
-            - name: host
-              value: '{HOST.CONN}'
-            - name: port
-              value: '{$ST.PORT.NGO}'
-          timeout: 10s
-          delay: 1d
-          tags:
-            - tag: Load
-              value: ngo
-        - uuid: f93b71b58c404ffc8db57de1801700c8
-          name: 'SolidaryTech Load Create Random Volunteer'
-          type: SCRIPT
-          key: st.load.volunteer.create
-          history: 3d
-          trends: '0'
-          value_type: TEXT
-          description: 'Registers one volunteer twice a day for a randomly picked, already existing NGO.'
-          params: |
-            try {
-                var params = JSON.parse(value);
-
-                var firstNames = ['Ana', 'Bruno', 'Carla', 'Diego', 'Elisa', 'Fábio', 'Gabriela', 'Hugo', 'Íris', 'João',
-                    'Karina', 'Lucas', 'Marina', 'Nícolas', 'Olívia', 'Paulo', 'Quésia', 'Rafael', 'Sofia', 'Tiago',
-                    'Úrsula', 'Vinícius', 'Wagner', 'Ximena', 'Yasmin', 'Zeca', 'Beatriz', 'Caio', 'Denise', 'Eduardo'];
-                var lastNames = ['Silva', 'Souza', 'Oliveira', 'Pereira', 'Costa', 'Rodrigues', 'Almeida', 'Nascimento', 'Lima', 'Araújo',
-                    'Fernandes', 'Carvalho', 'Gomes', 'Martins', 'Rocha', 'Ribeiro', 'Barbosa', 'Cardoso', 'Teixeira', 'Correia',
-                    'Vieira', 'Monteiro', 'Moreira', 'Batista', 'Freitas', 'Pinto', 'Cavalcanti', 'Dias', 'Campos', 'Duarte'];
-
-                function pick(arr) {
-                    return arr[Math.floor(Math.random() * arr.length)];
-                }
-
-                var req = new HttpRequest();
-                var ngoUrl = params.schema + '://' + params.host + ':' + params.port_ngo + '/ngos';
-                var ngoResp = req.get(ngoUrl);
-                if (req.getStatus() != 200) {
-                    throw 'Failed to list NGOs, status ' + req.getStatus() + ': ' + ngoResp;
-                }
-
-                var ngos = JSON.parse(ngoResp);
-                if (!ngos.length) {
-                    return JSON.stringify({ok: false, skipped: 'no NGOs registered yet'});
-                }
-                var ngo = ngos[Math.floor(Math.random() * ngos.length)];
-
-                var name = pick(firstNames) + ' ' + pick(lastNames);
-                var email = 'vol-load-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '@example.com';
-
-                var volunteerUrl = params.schema + '://' + params.host + ':' + params.port_volunteer + '/volunteers';
-                req.addHeader('Content-Type: application/json');
-                var resp = req.post(volunteerUrl, JSON.stringify({name: name, email: email, ngo_id: ngo.id}));
-                var status = req.getStatus();
-
-                if (status != 200 && status != 201) {
-                    throw 'Unexpected status ' + status + ': ' + resp;
-                }
-
-                return JSON.stringify({ok: true, status: status, ngo_id: ngo.id, name: name, email: email});
-            }
-            catch (error) {
-                Zabbix.log(3, 'SolidaryTech Load volunteer create failed: ' + error);
-                throw 'SolidaryTech Load volunteer create failed: ' + error;
-            }
-          parameters:
-            - name: schema
-              value: '{$ST.HTTP.SCHEMA}'
-            - name: host
-              value: '{HOST.CONN}'
-            - name: port_ngo
-              value: '{$ST.PORT.NGO}'
-            - name: port_volunteer
-              value: '{$ST.PORT.VOLUNTEER}'
-          timeout: 10s
-          delay: 12h
-          tags:
-            - tag: Load
-              value: volunteer
         - uuid: 5f2cad5a98c747c682cd2d306e445cb9
           name: 'SolidaryTech Load Create Random Donation'
           type: SCRIPT
-          key: st.load.donation.create
+          key: st.load.donation
+          delay: 288m
           history: 3d
-          trends: '0'
           value_type: TEXT
-          description: 'Registers one donation five times a day for a randomly picked, already existing NGO.'
           params: |
             try {
                 var params = JSON.parse(value);
-
+            
                 var firstNames = ['Ana', 'Bruno', 'Carla', 'Diego', 'Elisa', 'Fábio', 'Gabriela', 'Hugo', 'Íris', 'João',
                     'Karina', 'Lucas', 'Marina', 'Nícolas', 'Olívia', 'Paulo', 'Quésia', 'Rafael', 'Sofia', 'Tiago',
                     'Úrsula', 'Vinícius', 'Wagner', 'Ximena', 'Yasmin', 'Zeca', 'Beatriz', 'Caio', 'Denise', 'Eduardo'];
                 var lastNames = ['Silva', 'Souza', 'Oliveira', 'Pereira', 'Costa', 'Rodrigues', 'Almeida', 'Nascimento', 'Lima', 'Araújo',
                     'Fernandes', 'Carvalho', 'Gomes', 'Martins', 'Rocha', 'Ribeiro', 'Barbosa', 'Cardoso', 'Teixeira', 'Correia',
                     'Vieira', 'Monteiro', 'Moreira', 'Batista', 'Freitas', 'Pinto', 'Cavalcanti', 'Dias', 'Campos', 'Duarte'];
-
+            
                 function pick(arr) {
                     return arr[Math.floor(Math.random() * arr.length)];
                 }
-
+            
                 var req = new HttpRequest();
                 var ngoUrl = params.schema + '://' + params.host + ':' + params.port_ngo + '/ngos';
                 var ngoResp = req.get(ngoUrl);
                 if (req.getStatus() != 200) {
                     throw 'Failed to list NGOs, status ' + req.getStatus() + ': ' + ngoResp;
                 }
-
+            
                 var ngos = JSON.parse(ngoResp);
                 if (!ngos.length) {
                     return JSON.stringify({ok: false, skipped: 'no NGOs registered yet'});
                 }
                 var ngo = ngos[Math.floor(Math.random() * ngos.length)];
-
+            
                 var amount = parseFloat((Math.random() * 490 + 10).toFixed(2));
                 var donor = pick(firstNames) + ' ' + pick(lastNames);
-
+            
                 var donationUrl = params.schema + '://' + params.host + ':' + params.port_donation + '/donations';
                 req.addHeader('Content-Type: application/json');
                 var resp = req.post(donationUrl, JSON.stringify({ngo_id: ngo.id, amount: amount, donor_name: donor}));
                 var status = req.getStatus();
-
+            
                 if (status != 200 && status != 201) {
                     throw 'Unexpected status ' + status + ': ' + resp;
                 }
-
+            
                 return JSON.stringify({ok: true, status: status, ngo_id: ngo.id, amount: amount, donor_name: donor});
             }
             catch (error) {
                 Zabbix.log(3, 'SolidaryTech Load donation create failed: ' + error);
                 throw 'SolidaryTech Load donation create failed: ' + error;
             }
+          description: 'Registers one donation five times a day for a randomly picked, already existing NGO.'
           parameters:
+            - name: host
+              value: '{HOST.CONN}'
+            - name: port_donation
+              value: '{$ST.PORT.DONATION}'
+            - name: port_ngo
+              value: '{$ST.PORT.NGO}'
             - name: schema
               value: '{$ST.HTTP.SCHEMA}'
+          tags:
+            - tag: Load
+              value: donation
+        - uuid: 2b2d1722bc184aa8a6777000f1b55b02
+          name: 'SolidaryTech Load Create Random NGO'
+          type: SCRIPT
+          key: st.load.ngo
+          delay: 1d
+          history: 3d
+          value_type: TEXT
+          params: |
+            try {
+                var params = JSON.parse(value);
+            
+                var causes = ['Educação', 'Saúde', 'Meio Ambiente', 'Combate à Fome', 'Cultura', 'Proteção Animal'];
+                var cities = ['Vale do Ipê', 'Porto das Andorinhas', 'Santa Clara do Monte', 'Nova Aurora do Sul',
+                    'Ribeirão das Pedras', 'Alto da Boa Vista', 'Campos do Jequitibá', 'Serra dos Ventos',
+                    'Lagoa Dourada do Norte', 'São Bento das Flores', 'Recanto das Araras', 'Barra do Sossego',
+                    'Morro da Esperança', 'Vila dos Coqueiros', 'Fonte do Cerrado'];
+            
+                function pick(arr) {
+                    return arr[Math.floor(Math.random() * arr.length)];
+                }
+            
+                var cause = pick(causes);
+                var city = pick(cities);
+                var name = 'ONG ' + cause + ' ' + city;
+                var email = 'ngo-load-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '@example.com';
+            
+                var url = params.schema + '://' + params.host + ':' + params.port + '/ngos';
+                var req = new HttpRequest();
+                req.addHeader('Content-Type: application/json');
+            
+                var resp = req.post(url, JSON.stringify({name: name, email: email, cause: cause, city: city}));
+                var status = req.getStatus();
+            
+                if (status != 200 && status != 201) {
+                    throw 'Unexpected status ' + status + ': ' + resp;
+                }
+            
+                return JSON.stringify({ok: true, status: status, name: name, email: email});
+            }
+            catch (error) {
+                Zabbix.log(3, 'SolidaryTech Load NGO create failed: ' + error);
+                throw 'SolidaryTech Load NGO create failed: ' + error;
+            }
+          description: 'Registers one random NGO per day against the NGO service, to keep the platform populated with fresh data.'
+          parameters:
+            - name: host
+              value: '{HOST.CONN}'
+            - name: port
+              value: '{$ST.PORT.NGO}'
+            - name: schema
+              value: '{$ST.HTTP.SCHEMA}'
+          tags:
+            - tag: Load
+              value: ngo
+        - uuid: f93b71b58c404ffc8db57de1801700c8
+          name: 'SolidaryTech Load Create Random Volunteer'
+          type: SCRIPT
+          key: st.load.volunteer
+          delay: 12h
+          history: 3d
+          value_type: TEXT
+          params: |
+            try {
+                var params = JSON.parse(value);
+            
+                var firstNames = ['Ana', 'Bruno', 'Carla', 'Diego', 'Elisa', 'Fábio', 'Gabriela', 'Hugo', 'Íris', 'João',
+                    'Karina', 'Lucas', 'Marina', 'Nícolas', 'Olívia', 'Paulo', 'Quésia', 'Rafael', 'Sofia', 'Tiago',
+                    'Úrsula', 'Vinícius', 'Wagner', 'Ximena', 'Yasmin', 'Zeca', 'Beatriz', 'Caio', 'Denise', 'Eduardo'];
+                var lastNames = ['Silva', 'Souza', 'Oliveira', 'Pereira', 'Costa', 'Rodrigues', 'Almeida', 'Nascimento', 'Lima', 'Araújo',
+                    'Fernandes', 'Carvalho', 'Gomes', 'Martins', 'Rocha', 'Ribeiro', 'Barbosa', 'Cardoso', 'Teixeira', 'Correia',
+                    'Vieira', 'Monteiro', 'Moreira', 'Batista', 'Freitas', 'Pinto', 'Cavalcanti', 'Dias', 'Campos', 'Duarte'];
+            
+                function pick(arr) {
+                    return arr[Math.floor(Math.random() * arr.length)];
+                }
+            
+                var req = new HttpRequest();
+                var ngoUrl = params.schema + '://' + params.host + ':' + params.port_ngo + '/ngos';
+                var ngoResp = req.get(ngoUrl);
+                if (req.getStatus() != 200) {
+                    throw 'Failed to list NGOs, status ' + req.getStatus() + ': ' + ngoResp;
+                }
+            
+                var ngos = JSON.parse(ngoResp);
+                if (!ngos.length) {
+                    return JSON.stringify({ok: false, skipped: 'no NGOs registered yet'});
+                }
+                var ngo = ngos[Math.floor(Math.random() * ngos.length)];
+            
+                var name = pick(firstNames) + ' ' + pick(lastNames);
+                var email = 'vol-load-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '@example.com';
+            
+                var volunteerUrl = params.schema + '://' + params.host + ':' + params.port_volunteer + '/volunteers';
+                req.addHeader('Content-Type: application/json');
+                var resp = req.post(volunteerUrl, JSON.stringify({name: name, email: email, ngo_id: ngo.id}));
+                var status = req.getStatus();
+            
+                if (status != 200 && status != 201) {
+                    throw 'Unexpected status ' + status + ': ' + resp;
+                }
+            
+                return JSON.stringify({ok: true, status: status, ngo_id: ngo.id, name: name, email: email});
+            }
+            catch (error) {
+                Zabbix.log(3, 'SolidaryTech Load volunteer create failed: ' + error);
+                throw 'SolidaryTech Load volunteer create failed: ' + error;
+            }
+          description: 'Registers one volunteer twice a day for a randomly picked, already existing NGO.'
+          parameters:
             - name: host
               value: '{HOST.CONN}'
             - name: port_ngo
               value: '{$ST.PORT.NGO}'
-            - name: port_donation
-              value: '{$ST.PORT.DONATION}'
-          timeout: 10s
-          delay: 288m
+            - name: port_volunteer
+              value: '{$ST.PORT.VOLUNTEER}'
+            - name: schema
+              value: '{$ST.HTTP.SCHEMA}'
           tags:
             - tag: Load
-              value: donation
+              value: volunteer
       tags:
         - tag: SolidaryTech
           value: load
