@@ -2,62 +2,74 @@
   "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
-    "name": "di82d9x",
-    "generation": 28,
-    "creationTimestamp": "2026-08-05T14:10:44Z",
-    "labels": {},
-    "annotations": {}
+    "name": "di82d9x"
   },
   "spec": {
-    "annotations": [],
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
     "cursorSync": "Off",
     "description": "Saúde e status geral da SolidaryTech sob a perspectiva externa",
-    "editable": false,
+    "editable": true,
     "elements": {
       "panel-10": {
         "kind": "Panel",
         "spec": {
-          "id": 10,
-          "title": "",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
               "queries": [],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 10,
+          "links": [],
+          "title": "",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "text",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "code": {
                   "language": "plaintext",
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "<center>\n<h1>Indicador de Saúde</h1>\n</center>",
+                "content": "\u003ccenter\u003e\n\u003ch1\u003eIndicador de Saúde\u003c/h1\u003e\n\u003c/center\u003e",
                 "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
+            },
+            "version": "13.1.1"
           }
         }
       },
       "panel-11": {
         "kind": "Panel",
         "spec": {
-          "id": 11,
-          "title": "NGO",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -65,10 +77,10 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
                       "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "application": {
                           "filter": ""
@@ -120,20 +132,20 @@
                           "filter": ""
                         }
                       },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Health_NGO",
-                    "hidden": false
+                    "refId": "AWS_SLI_Health_NGO"
                   }
                 }
               ],
+              "queryOptions": {
+                "hideTimeOverride": true,
+                "timeFrom": "5m"
+              },
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -142,18 +154,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "hideTimeOverride": true
-              }
+              ]
             }
           },
+          "description": "",
+          "id": 11,
+          "links": [],
+          "title": "NGO",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -170,49 +212,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-12": {
         "kind": "Panel",
         "spec": {
-          "id": 12,
-          "title": "Donation",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -220,26 +228,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 11
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Health_Donation",
-                    "hidden": false
+                    "refId": "AWS_SLI_Health_Donation"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -248,15 +257,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 12,
+          "links": [],
+          "title": "Donation",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -273,49 +315,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-13": {
         "kind": "Panel",
         "spec": {
-          "id": 13,
-          "title": "Volunteer",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -323,26 +331,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 11
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Health_Volunteer",
-                    "hidden": false
+                    "refId": "AWS_SLI_Health_Volunteer"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -351,15 +360,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 13,
+          "links": [],
+          "title": "Volunteer",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -376,49 +418,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-14": {
         "kind": "Panel",
         "spec": {
-          "id": 14,
-          "title": "Saúde dos Serviços",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -426,26 +434,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 15
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "Service_Health",
-                    "hidden": false
+                    "refId": "AWS_Service_Health"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -454,15 +463,67 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 14,
+          "links": [],
+          "title": "Saúde dos Serviços",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "0": {
+                          "color": "dark-red",
+                          "index": 2,
+                          "text": "Unavailable"
+                        },
+                        "1": {
+                          "color": "dark-green",
+                          "index": 0,
+                          "text": "UP"
+                        }
+                      },
+                      "type": "value"
+                    },
+                    {
+                      "options": {
+                        "match": "null+nan",
+                        "result": {
+                          "color": "dark-red",
+                          "index": 1,
+                          "text": "Unavailable"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 1
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -479,68 +540,15 @@
                 "showPercentChange": false,
                 "textMode": "value_and_name",
                 "wideLayout": false
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "mappings": [
-                    {
-                      "type": "value",
-                      "options": {
-                        "0": {
-                          "text": "Unavailable",
-                          "color": "dark-red",
-                          "index": 2
-                        },
-                        "1": {
-                          "text": "UP",
-                          "color": "dark-green",
-                          "index": 0
-                        }
-                      }
-                    },
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null+nan",
-                        "result": {
-                          "text": "Unavailable",
-                          "color": "dark-red",
-                          "index": 1
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 1,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-15": {
         "kind": "Panel",
         "spec": {
-          "id": 15,
-          "title": "Quantidade ONGs",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -548,10 +556,10 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
                       "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "application": {
                           "filter": ""
@@ -626,20 +634,20 @@
                           "filter": ""
                         }
                       },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "NGO_Count",
-                    "hidden": false
+                    "refId": "AWS_NGO_Count"
                   }
                 }
               ],
+              "queryOptions": {
+                "hideTimeOverride": true,
+                "timeFrom": "5m"
+              },
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -648,18 +656,36 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "hideTimeOverride": true
-              }
+              ]
             }
           },
+          "description": "",
+          "id": 15,
+          "links": [],
+          "title": "Quantidade ONGs",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-blue",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "sishort"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -676,37 +702,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "sishort",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-blue"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-16": {
         "kind": "Panel",
         "spec": {
-          "id": 16,
-          "title": "Quantidade Total de Doações",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -714,26 +718,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 15
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "Dontaion_Count",
-                    "hidden": false
+                    "refId": "AWS_Donation_Count"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -742,15 +747,36 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 16,
+          "links": [],
+          "title": "Quantidade Total de Doações",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-blue",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "sishort"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -767,37 +793,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "sishort",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-blue"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-17": {
         "kind": "Panel",
         "spec": {
-          "id": 17,
-          "title": "Valor Total de Doações",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -805,26 +809,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 15
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "Dontaion_Amount",
-                    "hidden": false
+                    "refId": "AWS_Donation_Amount"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -833,15 +838,36 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 17,
+          "links": [],
+          "title": "Valor Total de Doações",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-blue",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "currencyBRL"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -858,37 +884,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "currencyBRL",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-blue"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-18": {
         "kind": "Panel",
         "spec": {
-          "id": 18,
-          "title": "Saúde dos Serviços",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -896,26 +900,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 19
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "Service_Health",
-                    "hidden": false
+                    "refId": "Local_Service_Health"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -924,15 +929,67 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 18,
+          "links": [],
+          "title": "Saúde dos Serviços",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "0": {
+                          "color": "dark-red",
+                          "index": 2,
+                          "text": "Unavailable"
+                        },
+                        "1": {
+                          "color": "dark-green",
+                          "index": 0,
+                          "text": "UP"
+                        }
+                      },
+                      "type": "value"
+                    },
+                    {
+                      "options": {
+                        "match": "null+nan",
+                        "result": {
+                          "color": "dark-red",
+                          "index": 1,
+                          "text": "Unavailable"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 1
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -949,68 +1006,15 @@
                 "showPercentChange": false,
                 "textMode": "value_and_name",
                 "wideLayout": false
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "mappings": [
-                    {
-                      "type": "value",
-                      "options": {
-                        "0": {
-                          "text": "Unavailable",
-                          "color": "dark-red",
-                          "index": 2
-                        },
-                        "1": {
-                          "text": "UP",
-                          "color": "dark-green",
-                          "index": 0
-                        }
-                      }
-                    },
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null+nan",
-                        "result": {
-                          "text": "Unavailable",
-                          "color": "dark-red",
-                          "index": 1
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 1,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-19": {
         "kind": "Panel",
         "spec": {
-          "id": 19,
-          "title": "Quantidade ONGs",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1018,10 +1022,10 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
                       "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "application": {
                           "filter": ""
@@ -1096,20 +1100,20 @@
                           "filter": ""
                         }
                       },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "NGO_Count",
-                    "hidden": false
+                    "refId": "Local_NGO_Count"
                   }
                 }
               ],
+              "queryOptions": {
+                "hideTimeOverride": true,
+                "timeFrom": "5m"
+              },
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -1118,18 +1122,36 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "hideTimeOverride": true
-              }
+              ]
             }
           },
+          "description": "",
+          "id": 19,
+          "links": [],
+          "title": "Quantidade ONGs",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-blue",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "sishort"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1146,37 +1168,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "sishort",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-blue"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-20": {
         "kind": "Panel",
         "spec": {
-          "id": 20,
-          "title": "Quantidade Total de Doações",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1184,26 +1184,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 19
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "Dontaion_Count",
-                    "hidden": false
+                    "refId": "Local_Donation_Count"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -1212,15 +1213,36 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 20,
+          "links": [],
+          "title": "Quantidade Total de Doações",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-blue",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "sishort"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1237,37 +1259,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "sishort",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-blue"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-21": {
         "kind": "Panel",
         "spec": {
-          "id": 21,
-          "title": "Valor Total de Doações",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1275,26 +1275,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 19
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "Dontaion_Amount",
-                    "hidden": false
+                    "refId": "Local_Donation_Amount"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -1303,15 +1304,36 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 21,
+          "links": [],
+          "title": "Valor Total de Doações",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-blue",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "currencyBRL"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1328,111 +1350,89 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "currencyBRL",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-blue"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-22": {
         "kind": "Panel",
         "spec": {
-          "id": 22,
-          "title": "",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
               "queries": [],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 22,
+          "links": [],
+          "title": "",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "text",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "code": {
                   "language": "plaintext",
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "<center>\n<h1>Indicador de Saúde</h1>\n</center>",
+                "content": "\u003ccenter\u003e\n\u003ch1\u003eIndicador de Saúde\u003c/h1\u003e\n\u003c/center\u003e",
                 "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
+            },
+            "version": "13.1.1"
           }
         }
       },
       "panel-23": {
         "kind": "Panel",
         "spec": {
-          "id": 23,
-          "title": "",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
               "queries": [],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 23,
+          "links": [],
+          "title": "",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "text",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "code": {
                   "language": "plaintext",
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "<center>\n<h1>Indicador de Doações</h1>\n</center>",
+                "content": "\u003ccenter\u003e\n\u003ch1\u003eIndicador de Doações\u003c/h1\u003e\n\u003c/center\u003e",
                 "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
+            },
+            "version": "13.1.1"
           }
         }
       },
       "panel-24": {
         "kind": "Panel",
         "spec": {
-          "id": 24,
-          "title": "Donation",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1440,27 +1440,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
-                        "adHocFiltersEnabled": false,
                         "panelId": 25
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Health_Donation",
-                    "hidden": false
+                    "refId": "Local_SLI_Health_Donation"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -1469,15 +1469,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 24,
+          "links": [],
+          "title": "Donation",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1494,49 +1527,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-25": {
         "kind": "Panel",
         "spec": {
-          "id": 25,
-          "title": "NGO",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1544,10 +1543,10 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
                       "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "application": {
                           "filter": ""
@@ -1599,20 +1598,20 @@
                           "filter": ""
                         }
                       },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Health_NGO",
-                    "hidden": false
+                    "refId": "Local_SLI_Health_NGO"
                   }
                 }
               ],
+              "queryOptions": {
+                "hideTimeOverride": true,
+                "timeFrom": "5m"
+              },
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -1621,18 +1620,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "hideTimeOverride": true
-              }
+              ]
             }
           },
+          "description": "",
+          "id": 25,
+          "links": [],
+          "title": "NGO",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1649,49 +1678,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-26": {
         "kind": "Panel",
         "spec": {
-          "id": 26,
-          "title": "Volunteer",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1699,26 +1694,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 25
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Health_Volunteer",
-                    "hidden": false
+                    "refId": "Local_SLI_Health_Volunteer"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -1730,15 +1726,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 26,
+          "links": [],
+          "title": "Volunteer",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1755,49 +1784,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-27": {
         "kind": "Panel",
         "spec": {
-          "id": 27,
-          "title": "SLI Diário",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1805,10 +1800,10 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
                       "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "application": {
                           "filter": ""
@@ -1860,20 +1855,20 @@
                           "filter": ""
                         }
                       },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Daily",
-                    "hidden": false
+                    "refId": "Local_SLI_Daily"
                   }
                 }
               ],
+              "queryOptions": {
+                "hideTimeOverride": true,
+                "timeFrom": "5m"
+              },
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -1882,18 +1877,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "hideTimeOverride": true
-              }
+              ]
             }
           },
+          "description": "",
+          "id": 27,
+          "links": [],
+          "title": "SLI Diário",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1910,49 +1935,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-28": {
         "kind": "Panel",
         "spec": {
-          "id": 28,
-          "title": "SLI Semanal",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1960,26 +1951,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 27
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Weekly",
-                    "hidden": false
+                    "refId": "Local_SLI_Semanal"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -1988,15 +1980,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 28,
+          "links": [],
+          "title": "SLI Semanal",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -2013,49 +2038,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-29": {
         "kind": "Panel",
         "spec": {
-          "id": 29,
-          "title": "SLI Mensal",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2063,26 +2054,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 27
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Monthly",
-                    "hidden": false
+                    "refId": "Local_SLI_Mensal"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -2091,15 +2083,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 29,
+          "links": [],
+          "title": "SLI Mensal",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -2116,49 +2141,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-30": {
         "kind": "Panel",
         "spec": {
-          "id": 30,
-          "title": "SolidaryTech Events",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2166,10 +2157,10 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
                       "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "application": {
                           "filter": ""
@@ -2225,25 +2216,29 @@
                           "filter": ""
                         }
                       },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "Sol_Events",
-                    "hidden": false
+                    "refId": "Sol_Events"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 30,
+          "links": [],
+          "title": "SolidaryTech Events",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "alexanderzobnin-zabbix-triggers-panel",
-            "version": "6.5.0",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "ackEventColor": "rgb(56, 219, 156)",
                 "ackField": true,
@@ -2312,23 +2307,15 @@
                     "show": true
                   }
                 ]
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "6.5.0"
+          }
         }
       },
       "panel-5": {
         "kind": "Panel",
         "spec": {
-          "id": 5,
-          "title": "SolidaryTech Events",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2336,10 +2323,10 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
                       "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "application": {
                           "filter": ""
@@ -2395,25 +2382,29 @@
                           "filter": ""
                         }
                       },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "Sol_Events",
-                    "hidden": false
+                    "refId": "Sol_Events"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "SolidaryTech Events",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "alexanderzobnin-zabbix-triggers-panel",
-            "version": "6.5.0",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "ackEventColor": "rgb(56, 219, 156)",
                 "ackField": true,
@@ -2482,23 +2473,15 @@
                     "show": true
                   }
                 ]
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "6.5.0"
+          }
         }
       },
       "panel-6": {
         "kind": "Panel",
         "spec": {
-          "id": 6,
-          "title": "SLI Diário",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2506,10 +2489,10 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
                       "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "application": {
                           "filter": ""
@@ -2561,20 +2544,20 @@
                           "filter": ""
                         }
                       },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Daily",
-                    "hidden": false
+                    "refId": "AWS_SLI_Daily"
                   }
                 }
               ],
+              "queryOptions": {
+                "hideTimeOverride": true,
+                "timeFrom": "5m"
+              },
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -2583,18 +2566,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "hideTimeOverride": true
-              }
+              ]
             }
           },
+          "description": "",
+          "id": 6,
+          "links": [],
+          "title": "SLI Diário",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -2611,49 +2624,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-7": {
         "kind": "Panel",
         "spec": {
-          "id": 7,
-          "title": "SLI Semanal",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2661,26 +2640,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 6
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Weekly",
-                    "hidden": false
+                    "refId": "AWS_SLI_Semanal"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -2689,15 +2669,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "SLI Semanal",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -2714,49 +2727,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-8": {
         "kind": "Panel",
         "spec": {
-          "id": 8,
-          "title": "SLI Mensal",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2764,26 +2743,27 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
                       "group": "datasource",
-                      "version": "v0",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 6
                       },
-                      "labels": {
-                        "grafana.app/export-label": "datasource-1"
-                      }
+                      "version": "v0"
                     },
-                    "refId": "SLI_Monthly",
-                    "hidden": false
+                    "refId": "AWS_SLI_Mensal"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "Transformation",
                   "group": "filterFieldsByName",
+                  "kind": "Transformation",
                   "spec": {
                     "options": {
                       "include": {
@@ -2792,15 +2772,48 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "",
+          "id": 8,
+          "links": [],
+          "title": "SLI Mensal",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-orange",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 91
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 92
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -2817,76 +2830,46 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-orange"
-                      },
-                      {
-                        "value": 91,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 92,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-9": {
         "kind": "Panel",
         "spec": {
-          "id": 9,
-          "title": "",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
               "queries": [],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "text",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "code": {
                   "language": "plaintext",
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "<center>\n<h1>Indicador de Doações</h1>\n</center>",
+                "content": "\u003ccenter\u003e\n\u003ch1\u003eIndicador de Doações\u003c/h1\u003e\n\u003c/center\u003e",
                 "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
+            },
+            "version": "13.1.1"
           }
         }
       }
@@ -2898,7 +2881,6 @@
           {
             "kind": "TabsLayoutTab",
             "spec": {
-              "title": "AWS",
               "layout": {
                 "kind": "RowsLayout",
                 "spec": {
@@ -2906,10 +2888,9 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Saúde Geral",
                         "collapse": false,
-                        "hideHeader": false,
                         "fillScreen": false,
+                        "hideHeader": false,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -2917,64 +2898,64 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-14"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 12,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-15"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 12,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 16,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-16"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 16,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 20,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-17"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 20,
+                                  "y": 0
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "Saúde Geral"
                       }
                     },
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Indicadores da SolidaryTech",
                         "collapse": false,
                         "layout": {
                           "kind": "GridLayout",
@@ -2983,116 +2964,116 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 2,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-10"
-                                  }
+                                  },
+                                  "height": 2,
+                                  "width": 12,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 2,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-9"
-                                  }
+                                  },
+                                  "height": 2,
+                                  "width": 12,
+                                  "x": 12,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-12"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-11"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 4,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-13"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 8,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-6"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 12,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 16,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-7"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 16,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 20,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-8"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 20,
+                                  "y": 2
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "Indicadores da SolidaryTech"
                       }
                     },
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Eventos da SolidaryTech",
                         "collapse": false,
                         "layout": {
                           "kind": "GridLayout",
@@ -3101,58 +3082,60 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 24,
-                                  "height": 8,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-5"
-                                  }
+                                  },
+                                  "height": 8,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "Eventos da SolidaryTech"
                       }
                     }
                   ]
                 }
               },
+              "title": "AWS",
               "variables": [
                 {
                   "kind": "CustomVariable",
                   "spec": {
-                    "name": "HostSolidaryTechCluster",
-                    "query": "SolidaryTech AWS",
+                    "allowCustomValue": false,
                     "current": {
                       "text": "SolidaryTech AWS",
                       "value": "SolidaryTech AWS"
                     },
-                    "options": [],
-                    "multi": false,
-                    "includeAll": false,
                     "hide": "hideVariable",
+                    "includeAll": false,
+                    "multi": false,
+                    "name": "HostSolidaryTechCluster",
+                    "options": [],
+                    "query": "SolidaryTech AWS",
                     "skipUrlSync": false,
-                    "allowCustomValue": false,
                     "valuesFormat": "csv"
                   }
                 },
                 {
                   "kind": "CustomVariable",
                   "spec": {
-                    "name": "cluster",
-                    "query": "AWS",
+                    "allowCustomValue": false,
                     "current": {
                       "text": "AWS",
                       "value": "AWS"
                     },
-                    "options": [],
-                    "multi": false,
-                    "includeAll": false,
                     "hide": "hideVariable",
+                    "includeAll": false,
+                    "multi": false,
+                    "name": "cluster",
+                    "options": [],
+                    "query": "AWS",
                     "skipUrlSync": false,
-                    "allowCustomValue": false,
                     "valuesFormat": "csv"
                   }
                 }
@@ -3162,7 +3145,6 @@
           {
             "kind": "TabsLayoutTab",
             "spec": {
-              "title": "Local",
               "layout": {
                 "kind": "RowsLayout",
                 "spec": {
@@ -3170,10 +3152,9 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Saúde Geral",
                         "collapse": false,
-                        "hideHeader": false,
                         "fillScreen": false,
+                        "hideHeader": false,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -3181,64 +3162,64 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-18"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 12,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-19"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 12,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 16,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-20"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 16,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 20,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-21"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 20,
+                                  "y": 0
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "Saúde Geral"
                       }
                     },
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Indicadores da SolidaryTech",
                         "collapse": false,
                         "layout": {
                           "kind": "GridLayout",
@@ -3247,116 +3228,116 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 2,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-22"
-                                  }
+                                  },
+                                  "height": 2,
+                                  "width": 12,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 2,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-23"
-                                  }
+                                  },
+                                  "height": 2,
+                                  "width": 12,
+                                  "x": 12,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-24"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-25"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 4,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-26"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 8,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-27"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 12,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 16,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-28"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 16,
+                                  "y": 2
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 20,
-                                  "y": 2,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-29"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 20,
+                                  "y": 2
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "Indicadores da SolidaryTech"
                       }
                     },
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Eventos da SolidaryTech",
                         "collapse": false,
                         "layout": {
                           "kind": "GridLayout",
@@ -3365,58 +3346,60 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 24,
-                                  "height": 8,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-30"
-                                  }
+                                  },
+                                  "height": 8,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "Eventos da SolidaryTech"
                       }
                     }
                   ]
                 }
               },
+              "title": "Local",
               "variables": [
                 {
                   "kind": "CustomVariable",
                   "spec": {
-                    "name": "HostSolidaryTechCluster",
-                    "query": "SolidaryTech Local",
+                    "allowCustomValue": false,
                     "current": {
                       "text": "SolidaryTech Local",
                       "value": "SolidaryTech Local"
                     },
-                    "options": [],
-                    "multi": false,
-                    "includeAll": false,
                     "hide": "hideVariable",
+                    "includeAll": false,
+                    "multi": false,
+                    "name": "HostSolidaryTechCluster",
+                    "options": [],
+                    "query": "SolidaryTech Local",
                     "skipUrlSync": false,
-                    "allowCustomValue": false,
                     "valuesFormat": "csv"
                   }
                 },
                 {
                   "kind": "CustomVariable",
                   "spec": {
-                    "name": "cluster",
-                    "query": "Local",
+                    "allowCustomValue": false,
                     "current": {
                       "text": "Local",
                       "value": "Local"
                     },
-                    "options": [],
-                    "multi": false,
-                    "includeAll": false,
                     "hide": "hideVariable",
+                    "includeAll": false,
+                    "multi": false,
+                    "name": "cluster",
+                    "options": [],
+                    "query": "Local",
                     "skipUrlSync": false,
-                    "allowCustomValue": false,
                     "valuesFormat": "csv"
                   }
                 }
@@ -3426,17 +3409,35 @@
         ]
       }
     },
-    "links": [],
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "external link",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": true,
+        "title": "Source (GitHub)",
+        "tooltip": "View source file in repository",
+        "type": "link",
+        "url": "https://github.com/diasdmhub/hackathon-DCLT/blob/main/doc/grafana/dashboard-solidarytech-externo.json"
+      }
+    ],
     "liveNow": false,
+    "preferences": {
+      "layout": {
+        "kind": "GridLayout",
+        "spec": {
+          "items": []
+        }
+      }
+    },
     "preload": false,
     "tags": [
       "solidarytech",
       "sre"
     ],
     "timeSettings": {
-      "timezone": "America/Sao_Paulo",
-      "from": "now-24h",
-      "to": "now",
       "autoRefresh": "30s",
       "autoRefreshIntervals": [
         "30s",
@@ -3448,18 +3449,13 @@
         "2h",
         "1d"
       ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
       "hideTimepicker": true,
-      "fiscalYearStartMonth": 0
+      "timezone": "America/Sao_Paulo",
+      "to": "now"
     },
     "title": "SolidaryTech - Visão Externa",
-    "variables": [],
-    "preferences": {
-      "layout": {
-        "kind": "GridLayout",
-        "spec": {
-          "items": []
-        }
-      }
-    }
+    "variables": []
   }
 }
