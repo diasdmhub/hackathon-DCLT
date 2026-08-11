@@ -80,6 +80,7 @@ resource "kubernetes_daemon_set_v1" "alloy" {
             "run",
             "--server.http.listen-addr=0.0.0.0:12345",
             "--storage.path=/var/lib/alloy/data",
+            "--disable-reporting",
             "/etc/alloy/config.alloy",
           ]
           port {
