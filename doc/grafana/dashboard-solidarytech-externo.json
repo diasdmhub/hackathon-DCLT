@@ -458,7 +458,7 @@
                   "spec": {
                     "options": {
                       "include": {
-                        "pattern": "/Health .* Service/"
+                        "pattern": "/Health Service .*/"
                       }
                     }
                   }
@@ -924,7 +924,7 @@
                   "spec": {
                     "options": {
                       "include": {
-                        "pattern": "/Health .* Service/"
+                        "pattern": "/Health Service .*/"
                       }
                     }
                   }

@@ -14,42 +14,6 @@ zabbix_export:
       groups:
         - name: Templates/Applications
       items:
-        - uuid: 2fa9780d00364623aa6571d1bb29439b
-          name: 'SolidaryTech Latency Donation Service'
-          type: SIMPLE
-          key: 'net.tcp.service.perf[tcp,,{$ST.PORT.DONATION}]'
-          history: 7d
-          value_type: FLOAT
-          trends: 90d
-          units: s
-          description: 'Latency check for the Donation service'
-          tags:
-            - tag: Latency
-              value: donation
-        - uuid: 802bff0add7f4a8283147cb5e44a7201
-          name: 'SolidaryTech Latency NGO Service'
-          type: SIMPLE
-          key: 'net.tcp.service.perf[tcp,,{$ST.PORT.NGO}]'
-          history: 7d
-          value_type: FLOAT
-          trends: 90d
-          units: s
-          description: 'Latency check for the NGO service'
-          tags:
-            - tag: Latency
-              value: NGO
-        - uuid: f1730f4481924c7f8c4b50f7434e86fe
-          name: 'SolidaryTech Latency Volunteer Service'
-          type: SIMPLE
-          key: 'net.tcp.service.perf[tcp,,{$ST.PORT.VOLUNTEER}]'
-          history: 7d
-          value_type: FLOAT
-          trends: 90d
-          units: s
-          description: 'Latency check for the Volunteer service'
-          tags:
-            - tag: Latency
-              value: Volunteer
         - uuid: 1398d861196a4bbe934204cb8f302493
           name: 'SolidaryTech Donation Count'
           type: DEPENDENT
@@ -111,132 +75,6 @@ zabbix_export:
               tags:
                 - tag: Donation
                   value: absent
-        - uuid: 3d369ce4a6004a76ae9c139ddd869f30
-          name: 'SolidaryTech Health Donation Service'
-          type: HTTP_AGENT
-          key: 'st.health[donation]'
-          history: 7d
-          trends: 90d
-          description: 'Health check for the Donation service'
-          valuemap:
-            name: 'Health Status'
-          preprocessing:
-            - type: CHECK_NOT_SUPPORTED
-              parameters:
-                - '0'
-                - 'Could not connect to server'
-              error_handler: CUSTOM_VALUE
-              error_handler_params: '0'
-            - type: JSONPATH
-              parameters:
-                - $.status
-              error_handler: CUSTOM_VALUE
-              error_handler_params: '0'
-            - type: STR_REPLACE
-              parameters:
-                - ok
-                - '1'
-          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.DONATION}/health'
-          tags:
-            - tag: Health
-              value: donation
-          triggers:
-            - uuid: 36f98a5d99944e2b8222f2df44594ec2
-              expression: 'max(/SolidaryTech Health by HTTP/st.health[donation],#2)=0'
-              name: 'SolidaryTech Health Service Unavailable Donation'
-              opdata: 'Service Status: {ITEM.LASTVALUE}'
-              priority: HIGH
-              description: 'Service health status is not available'
-              dependencies:
-                - name: 'SolidaryTech Health Services All Unavailable'
-                  expression: 'sum(last(/SolidaryTech Health by HTTP/st.health[donation],#1),last(/SolidaryTech Health by HTTP/st.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.health[volunteer],#1))<1'
-              tags:
-                - tag: Donation
-                  value: unavailable
-        - uuid: 6035b4f1a6f7454cabb792d1af55b636
-          name: 'SolidaryTech Health NGO Service'
-          type: HTTP_AGENT
-          key: 'st.health[ngo]'
-          history: 7d
-          trends: 90d
-          description: 'Health check for the NGO service'
-          valuemap:
-            name: 'Health Status'
-          preprocessing:
-            - type: CHECK_NOT_SUPPORTED
-              parameters:
-                - '0'
-                - 'Could not connect to server'
-              error_handler: CUSTOM_VALUE
-              error_handler_params: '0'
-            - type: JSONPATH
-              parameters:
-                - $.status
-              error_handler: CUSTOM_VALUE
-              error_handler_params: '0'
-            - type: STR_REPLACE
-              parameters:
-                - ok
-                - '1'
-          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.NGO}/health'
-          tags:
-            - tag: Health
-              value: ngo
-          triggers:
-            - uuid: bdb8d0d68efc4291bb45b71bf0db0c16
-              expression: 'max(/SolidaryTech Health by HTTP/st.health[ngo],#2)=0'
-              name: 'SolidaryTech Health Service Unavailable NGO'
-              opdata: 'Service Status: {ITEM.LASTVALUE}'
-              priority: HIGH
-              description: 'NGO Service health status is not available'
-              dependencies:
-                - name: 'SolidaryTech Health Services All Unavailable'
-                  expression: 'sum(last(/SolidaryTech Health by HTTP/st.health[donation],#1),last(/SolidaryTech Health by HTTP/st.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.health[volunteer],#1))<1'
-              tags:
-                - tag: NGO
-                  value: unavailable
-        - uuid: f462aeae03924616814ad09a6722aeaa
-          name: 'SolidaryTech Health Volunteer Service'
-          type: HTTP_AGENT
-          key: 'st.health[volunteer]'
-          history: 7d
-          trends: 90d
-          description: 'Health check for the Volunteer service'
-          valuemap:
-            name: 'Health Status'
-          preprocessing:
-            - type: CHECK_NOT_SUPPORTED
-              parameters:
-                - '0'
-                - 'Could not connect to server'
-              error_handler: CUSTOM_VALUE
-              error_handler_params: '0'
-            - type: JSONPATH
-              parameters:
-                - $.status
-              error_handler: CUSTOM_VALUE
-              error_handler_params: '0'
-            - type: STR_REPLACE
-              parameters:
-                - ok
-                - '1'
-          url: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.VOLUNTEER}/health'
-          tags:
-            - tag: Health
-              value: volunteer
-          triggers:
-            - uuid: 6b0ad1b63bbe43799a28697aad97e982
-              expression: 'max(/SolidaryTech Health by HTTP/st.health[volunteer],#2)=0'
-              name: 'SolidaryTech Health Service Unavailable Volunteer'
-              opdata: 'Service Status: {ITEM.LASTVALUE}'
-              priority: HIGH
-              description: 'Volunteer Service health status is not available'
-              dependencies:
-                - name: 'SolidaryTech Health Services All Unavailable'
-                  expression: 'sum(last(/SolidaryTech Health by HTTP/st.health[donation],#1),last(/SolidaryTech Health by HTTP/st.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.health[volunteer],#1))<1'
-              tags:
-                - tag: Volunteer
-                  value: unavailable
         - uuid: 8d181575dce64c468a2452d5abb79be3
           name: 'SolidaryTech NGO Count'
           type: DEPENDENT
@@ -265,6 +103,297 @@ zabbix_export:
           tags:
             - tag: NGO
               value: list
+        - uuid: 3d369ce4a6004a76ae9c139ddd869f30
+          name: 'SolidaryTech Health Service Donation'
+          type: DEPENDENT
+          key: 'st.status.health[donation]'
+          history: 7d
+          trends: 90d
+          description: 'Health check for the Donation service'
+          valuemap:
+            name: 'Health Status'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+            - type: STR_REPLACE
+              parameters:
+                - ok
+                - '1'
+          master_item:
+            key: 'st.status[donation]'
+          tags:
+            - tag: Donation
+              value: health
+          triggers:
+            - uuid: 36f98a5d99944e2b8222f2df44594ec2
+              expression: 'max(/SolidaryTech Health by HTTP/st.status.health[donation],#2)=0'
+              name: 'SolidaryTech Health Service Unavailable Donation'
+              opdata: 'Service Status: {ITEM.LASTVALUE}'
+              priority: HIGH
+              description: 'Service health status is not available'
+              dependencies:
+                - name: 'SolidaryTech Health Services All Unavailable'
+                  expression: 'sum(last(/SolidaryTech Health by HTTP/st.status.health[donation],#1),last(/SolidaryTech Health by HTTP/st.status.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.status.health[volunteer],#1))<1'
+              tags:
+                - tag: Donation
+                  value: unavailable
+        - uuid: 6035b4f1a6f7454cabb792d1af55b636
+          name: 'SolidaryTech Health Service NGO'
+          type: DEPENDENT
+          key: 'st.status.health[ngo]'
+          history: 7d
+          trends: 90d
+          description: 'Health check for the NGO service'
+          valuemap:
+            name: 'Health Status'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+            - type: STR_REPLACE
+              parameters:
+                - ok
+                - '1'
+          master_item:
+            key: 'st.status[ngo]'
+          tags:
+            - tag: NGO
+              value: health
+          triggers:
+            - uuid: bdb8d0d68efc4291bb45b71bf0db0c16
+              expression: 'max(/SolidaryTech Health by HTTP/st.status.health[ngo],#2)=0'
+              name: 'SolidaryTech Health Service Unavailable NGO'
+              opdata: 'Service Status: {ITEM.LASTVALUE}'
+              priority: HIGH
+              description: 'NGO Service health status is not available'
+              dependencies:
+                - name: 'SolidaryTech Health Services All Unavailable'
+                  expression: 'sum(last(/SolidaryTech Health by HTTP/st.status.health[donation],#1),last(/SolidaryTech Health by HTTP/st.status.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.status.health[volunteer],#1))<1'
+              tags:
+                - tag: NGO
+                  value: unavailable
+        - uuid: f462aeae03924616814ad09a6722aeaa
+          name: 'SolidaryTech Health Service Volunteer'
+          type: DEPENDENT
+          key: 'st.status.health[volunteer]'
+          history: 7d
+          trends: 90d
+          description: 'Health check for the Volunteer service'
+          valuemap:
+            name: 'Health Status'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+            - type: STR_REPLACE
+              parameters:
+                - ok
+                - '1'
+          master_item:
+            key: 'st.status[volunteer]'
+          tags:
+            - tag: Volunteer
+              value: health
+          triggers:
+            - uuid: 6b0ad1b63bbe43799a28697aad97e982
+              expression: 'max(/SolidaryTech Health by HTTP/st.status.health[volunteer],#2)=0'
+              name: 'SolidaryTech Health Service Unavailable Volunteer'
+              opdata: 'Service Status: {ITEM.LASTVALUE}'
+              priority: HIGH
+              description: 'Volunteer Service health status is not available'
+              dependencies:
+                - name: 'SolidaryTech Health Services All Unavailable'
+                  expression: 'sum(last(/SolidaryTech Health by HTTP/st.status.health[donation],#1),last(/SolidaryTech Health by HTTP/st.status.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.status.health[volunteer],#1))<1'
+              tags:
+                - tag: Volunteer
+                  value: unavailable
+        - uuid: 566066b7253e4e09af99be2d78dd4863
+          name: 'SolidaryTech Latency Service Donation'
+          type: DEPENDENT
+          key: 'st.status.latency[donation]'
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: s
+          description: 'Round-trip latency of the HTTP call to the Donation service health endpoint'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.latency
+          master_item:
+            key: 'st.status[donation]'
+          tags:
+            - tag: Donation
+              value: latency
+        - uuid: 316905cf55434c4590391b78722550b0
+          name: 'SolidaryTech Latency Service NGO'
+          type: DEPENDENT
+          key: 'st.status.latency[ngo]'
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: s
+          description: 'Round-trip latency of the HTTP call to the NGO service health endpoint'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.latency
+          master_item:
+            key: 'st.status[ngo]'
+          tags:
+            - tag: NGO
+              value: latency
+        - uuid: e0ec54e372254cf1bbd78079be129a8b
+          name: 'SolidaryTech Latency Service Volunteer'
+          type: DEPENDENT
+          key: 'st.status.latency[volunteer]'
+          history: 7d
+          value_type: FLOAT
+          trends: 90d
+          units: s
+          description: 'Round-trip latency of the HTTP call to the Volunteer service health endpoint'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.latency
+          master_item:
+            key: 'st.status[volunteer]'
+          tags:
+            - tag: Volunteer
+              value: latency
+        - uuid: 2713ea34bac649f0a110dea2e0088795
+          name: 'SolidaryTech Status Service Donation'
+          type: SCRIPT
+          key: 'st.status[donation]'
+          history: '0'
+          value_type: TEXT
+          params: |
+            try {
+                var params = JSON.parse(value);
+                var req = new HttpRequest();
+                var start = Date.now();
+                var body;
+                var result = {status: 0};
+            
+                try {
+                    body = req.get(params.url);
+                    result.latency = ( Date.now() - start ) / 1000;
+                }
+                catch (err) {
+                    return JSON.stringify(result);
+                }
+            
+                try {
+                    result.status = JSON.parse(body).status;
+                }
+                catch (err) {
+                    result.status = 0;
+                }
+            
+                return JSON.stringify(result);
+            }
+            catch (error) {
+                Zabbix.log(3, 'SolidaryTech Health check failed: ' + error);
+                throw 'SolidaryTech Health check failed: ' + error;
+            }
+          description: 'Raw health check payload for the Donation service'
+          parameters:
+            - name: url
+              value: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.DONATION}/health'
+          tags:
+            - tag: Health
+              value: donation
+        - uuid: a11d4d65c94144f5b9a42b1893faa4ce
+          name: 'SolidaryTech Status Service NGO'
+          type: SCRIPT
+          key: 'st.status[ngo]'
+          history: '0'
+          value_type: TEXT
+          params: |
+            try {
+                var params = JSON.parse(value);
+                var req = new HttpRequest();
+                var start = Date.now();
+                var body;
+                var result = {status: 0};
+            
+                try {
+                    body = req.get(params.url);
+                    result.latency = ( Date.now() - start ) / 1000;
+                }
+                catch (err) {
+                    return JSON.stringify(result);
+                }
+            
+                try {
+                    result.status = JSON.parse(body).status;
+                }
+                catch (err) {
+                    result.status = 0;
+                }
+            
+                return JSON.stringify(result);
+            }
+            catch (error) {
+                Zabbix.log(3, 'SolidaryTech Health check failed: ' + error);
+                throw 'SolidaryTech Health check failed: ' + error;
+            }
+          description: 'Raw health check payload for the NGO service'
+          parameters:
+            - name: url
+              value: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.NGO}/health'
+          tags:
+            - tag: Health
+              value: ngo
+        - uuid: ef9c4ac69ef9438ab89a337f679ba617
+          name: 'SolidaryTech Status Service Volunteer'
+          type: SCRIPT
+          key: 'st.status[volunteer]'
+          history: '0'
+          value_type: TEXT
+          params: |
+            try {
+                var params = JSON.parse(value);
+                var req = new HttpRequest();
+                var start = Date.now();
+                var body;
+                var result = {status: 0};
+            
+                try {
+                    body = req.get(params.url);
+                    result.latency = ( Date.now() - start ) / 1000;
+                }
+                catch (err) {
+                    return JSON.stringify(result);
+                }
+            
+                try {
+                    result.status = JSON.parse(body).status;
+                }
+                catch (err) {
+                    result.status = 0;
+                }
+            
+                return JSON.stringify(result);
+            }
+            catch (error) {
+                Zabbix.log(3, 'SolidaryTech Health check failed: ' + error);
+                throw 'SolidaryTech Health check failed: ' + error;
+            }
+          description: 'Raw health check payload for the Volunteer service'
+          parameters:
+            - name: url
+              value: '{$ST.HTTP.SCHEMA}://{HOST.CONN}:{$ST.PORT.VOLUNTEER}/health'
+          tags:
+            - tag: Health
+              value: volunteer
       discovery_rules:
         - uuid: 3cffea3fc5094d69ae38021eca4bd773
           name: 'SolidaryTech NGO Discovery'
@@ -330,7 +459,7 @@ zabbix_export:
               newvalue: Unavailable
   triggers:
     - uuid: 2d3fb0a0913f42aeb261b74d9f4a7b14
-      expression: 'sum(last(/SolidaryTech Health by HTTP/st.health[donation],#1),last(/SolidaryTech Health by HTTP/st.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.health[volunteer],#1))<1'
+      expression: 'sum(last(/SolidaryTech Health by HTTP/st.status.health[donation],#1),last(/SolidaryTech Health by HTTP/st.status.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.status.health[volunteer],#1))<1'
       name: 'SolidaryTech Health Services All Unavailable'
       opdata: 'Service Status: {ITEM.LASTVALUE}'
       priority: DISASTER
