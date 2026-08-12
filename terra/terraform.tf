@@ -4,15 +4,15 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.54"
+      version = "~> 6.59"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.34"
+      version = "~> 3.2"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 2.16"
+      version = "~> 3.2"
     }
     # kubectl (não o provider "kubernetes") para os CRDs de terceiros
     # (TargetGroupBinding, instalado pelo módulo lb): o provider
@@ -23,7 +23,7 @@ terraform {
     # terra/README.md.
     kubectl = {
       source  = "alekc/kubectl"
-      version = "~> 2.1"
+      version = "~> 2.4"
     }
     tls = {
       source  = "hashicorp/tls"
@@ -31,7 +31,7 @@ terraform {
     }
     dns = {
       source  = "hashicorp/dns"
-      version = "~> 3.4"
+      version = "~> 3.6"
     }
   }
 

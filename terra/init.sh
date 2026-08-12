@@ -54,7 +54,7 @@ aws dynamodb create-table \
 
 
 # 4 Inicialização do Terraform
-terraform init -reconfigure
+terraform init -reconfigure -upgrade
 
 # 5 Plan do Terraform
 #terraform plan
