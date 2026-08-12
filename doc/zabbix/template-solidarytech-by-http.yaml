@@ -232,6 +232,21 @@ zabbix_export:
           tags:
             - tag: Donation
               value: latency
+          triggers:
+            - uuid: 7e16b33de41f491b97431d0eb745dc65
+              expression: 'avg(/SolidaryTech Health by HTTP/st.status.latency[donation],#2)>={$ST.HIGH.LATENCY}'
+              name: 'SolidaryTech High Latency for Service Donation'
+              opdata: 'Service Latency: {ITEM.LASTVALUE}'
+              priority: AVERAGE
+              description: 'Service latency is too high'
+              dependencies:
+                - name: 'SolidaryTech Health Services All Unavailable'
+                  expression: 'sum(last(/SolidaryTech Health by HTTP/st.status.health[donation],#1),last(/SolidaryTech Health by HTTP/st.status.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.status.health[volunteer],#1))<1'
+                - name: 'SolidaryTech Health Service Unavailable Donation'
+                  expression: 'max(/SolidaryTech Health by HTTP/st.status.health[donation],#2)=0'
+              tags:
+                - tag: Latency
+                  value: high
         - uuid: 316905cf55434c4590391b78722550b0
           name: 'SolidaryTech Latency Service NGO'
           type: DEPENDENT
@@ -250,6 +265,21 @@ zabbix_export:
           tags:
             - tag: NGO
               value: latency
+          triggers:
+            - uuid: bbb2a206a3a443d3806d71ce743030df
+              expression: 'avg(/SolidaryTech Health by HTTP/st.status.latency[ngo],#2)>={$ST.HIGH.LATENCY}'
+              name: 'SolidaryTech High Latency for Service NGO'
+              opdata: 'Service Latency: {ITEM.LASTVALUE}'
+              priority: AVERAGE
+              description: 'Service latency is too high'
+              dependencies:
+                - name: 'SolidaryTech Health Services All Unavailable'
+                  expression: 'sum(last(/SolidaryTech Health by HTTP/st.status.health[donation],#1),last(/SolidaryTech Health by HTTP/st.status.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.status.health[volunteer],#1))<1'
+                - name: 'SolidaryTech Health Service Unavailable NGO'
+                  expression: 'max(/SolidaryTech Health by HTTP/st.status.health[ngo],#2)=0'
+              tags:
+                - tag: Latency
+                  value: high
         - uuid: e0ec54e372254cf1bbd78079be129a8b
           name: 'SolidaryTech Latency Service Volunteer'
           type: DEPENDENT
@@ -268,6 +298,21 @@ zabbix_export:
           tags:
             - tag: Volunteer
               value: latency
+          triggers:
+            - uuid: 5a2daa1d702c4f3bbc80ea3e2bb82510
+              expression: 'avg(/SolidaryTech Health by HTTP/st.status.latency[volunteer],#2)>={$ST.HIGH.LATENCY}'
+              name: 'SolidaryTech High Latency for Service Volunteer'
+              opdata: 'Service Latency: {ITEM.LASTVALUE}'
+              priority: AVERAGE
+              description: 'Service latency is too high'
+              dependencies:
+                - name: 'SolidaryTech Health Services All Unavailable'
+                  expression: 'sum(last(/SolidaryTech Health by HTTP/st.status.health[donation],#1),last(/SolidaryTech Health by HTTP/st.status.health[ngo],#1),last(/SolidaryTech Health by HTTP/st.status.health[volunteer],#1))<1'
+                - name: 'SolidaryTech Health Service Unavailable Volunteer'
+                  expression: 'max(/SolidaryTech Health by HTTP/st.status.health[volunteer],#2)=0'
+              tags:
+                - tag: Latency
+                  value: high
         - uuid: 2713ea34bac649f0a110dea2e0088795
           name: 'SolidaryTech Status Service Donation'
           type: SCRIPT
@@ -437,6 +482,9 @@ zabbix_export:
         - macro: '{$ST.DONATION.PERIOD}'
           value: 1d
           description: 'Donation amount evaluation period'
+        - macro: '{$ST.HIGH.LATENCY}'
+          value: 1s
+          description: 'High latency threshold'
         - macro: '{$ST.HTTP.SCHEMA}'
           value: http
           description: 'HTTP service schema (http or https)'
