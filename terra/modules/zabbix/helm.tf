@@ -105,15 +105,16 @@ resource "helm_release" "zabbix" {
   # var.zabbix_hostname/var.zabbix_server_host (terraform.tfvars, não
   # versionado) via "set" em vez do bloco values acima, no lugar do antigo
   # Secret zabbix-proxy-env aplicado manualmente fora do Flux.
-  set {
-    name  = "zabbixProxy.ZBX_HOSTNAME"
-    value = var.zabbix_hostname
-  }
-
-  set {
-    name  = "zabbixProxy.ZBX_SERVER_HOST"
-    value = var.zabbix_server_host
-  }
+  set = [
+    {
+      name  = "zabbixProxy.ZBX_HOSTNAME"
+      value = var.zabbix_hostname
+    },
+    {
+      name  = "zabbixProxy.ZBX_SERVER_HOST"
+      value = var.zabbix_server_host
+    },
+  ]
 }
 
 # kube-state-metrics: expõe /metrics com o estado dos objetos do Kubernetes
