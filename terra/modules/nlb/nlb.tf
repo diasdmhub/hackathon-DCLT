@@ -32,6 +32,16 @@ resource "aws_lb" "solidarytech" {
   load_balancer_type = "network"
   subnets            = var.public_subnet_ids
 
+  # Necessário porque cada microsserviço roda com replicas=1 (ver
+  # kube-aws/*/*.yaml): o pod existe em uma única AZ, então o target group
+  # correspondente fica sem targets saudáveis na(s) outra(s) AZ(s). Sem
+  # cross-zone habilitado (desabilitado por padrão em NLB), conexões que
+  # chegam a um nó da NLB na AZ sem target saudável não são encaminhadas,
+  # causando latência de ~2s (retransmissão TCP) ou timeout total,
+  # dependendo do caminho de rede do cliente - ver diagnóstico do
+  # comportamento de latência oscilante do Zabbix.
+  enable_cross_zone_load_balancing = true
+
   tags = { Name = "${var.name_prefix}-nlb" }
 }
 
