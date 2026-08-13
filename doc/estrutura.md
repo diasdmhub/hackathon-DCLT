@@ -13,8 +13,6 @@ Abaixo são descritas algumas das disciplinas utilizadas neste projeto.
 
 O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a seguir.
 
-- **Infraestrutura como Código (IaC)** - Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) via Terraform.
-
 <BR>
 
 ### **Container**
@@ -55,7 +53,16 @@ São declarados 3 conciliações com manifestos do Kubernetes:
 
 <BR>
 
-### 3. Kubernetes
+### 3. Infraestrutura como Código (IaC)
+
+Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) via Terraform.
+
+- Os recursos da AWS foram implementados como módulos do Terraform de modo a facilitar o gerenciamento e possíveis manutenções.
+- Consistência de tags em todos os recursos AWS e Kubernetes, tanto para o ambiente local como para o ambiente _cloud_.
+
+<BR>
+
+### 4. Kubernetes
 
 > **O projeto foi estruturado em plataformas de desenvolvimento e produção.**
 
@@ -65,7 +72,7 @@ Deploy testado ponta a ponta no cluster real. Os serviços da SolidaryTech compa
 
 <BR>
 
-### 4. Observabilidade e APM
+### 5. Observabilidade e APM
 
 Stack completa rodando (Prometheus, Grafana, Loki e/ou Alloy) e instrumentação dos códigos no APM (Tempo) com Distributed Tracing.
 
