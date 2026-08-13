@@ -51,6 +51,17 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+
+  # Aplicada automaticamente a todo recurso AWS criado por este state, para
+  # manter a mesma política de tags usada nos labels dos recursos Kubernetes
+  # (Project/Environment/ManagedBy) sem precisar repetir isso em cada módulo.
+  default_tags {
+    tags = {
+      Project     = "SolidaryTech"
+      Environment = "primary"
+      ManagedBy   = "Terraform"
+    }
+  }
 }
 
 provider "dns" {}

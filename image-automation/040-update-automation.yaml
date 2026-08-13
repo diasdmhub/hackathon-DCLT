@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
 spec:
   interval: 10m0s
   sourceRef:

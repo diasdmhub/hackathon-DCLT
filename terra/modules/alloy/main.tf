@@ -2,7 +2,7 @@ locals {
   labels = {
     "app.kubernetes.io/part-of" = "solidarytech"
     "Project"                   = "SolidaryTech"
-    "Environment"               = "dev"
+    "Environment"               = "primary"
   }
 }
 

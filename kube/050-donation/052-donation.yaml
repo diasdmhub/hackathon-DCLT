@@ -7,7 +7,7 @@ metadata:
     app: donation
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
 spec:
   replicas: 1
   selector:
@@ -19,7 +19,7 @@ spec:
         app: donation
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: dev
+        Environment: secondary
     spec:
       initContainers:
         - name: wait-for-psql
@@ -90,7 +90,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
   annotations:
     metallb.universe.tf/allow-shared-ip: solidarytech-external
 spec:

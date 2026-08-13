@@ -15,7 +15,7 @@ resource "kubernetes_service_account_v1" "aws_load_balancer_controller" {
     labels = {
       "app.kubernetes.io/part-of" = "solidarytech"
       "Project"                   = "SolidaryTech"
-      "Environment"               = "dev"
+      "Environment"               = "primary"
     }
     annotations = {
       "eks.amazonaws.com/role-arn" = var.role_arn

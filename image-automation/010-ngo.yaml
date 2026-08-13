@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
 spec:
   image: docker.io/diasdmhub/ngo
   interval: 10m0s
@@ -19,7 +19,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
 spec:
   imageRepositoryRef:
     name: ngo

@@ -7,7 +7,7 @@ metadata:
     app: dynamodb
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
 spec:
   replicas: 1
   selector:
@@ -19,7 +19,7 @@ spec:
         app: dynamodb
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: dev
+        Environment: secondary
     spec:
       containers:
         - name: dynamodb
@@ -60,7 +60,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
 spec:
   selector:
     app: dynamodb

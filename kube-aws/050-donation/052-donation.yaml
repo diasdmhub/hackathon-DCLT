@@ -7,7 +7,7 @@ metadata:
     app: donation
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: primary
 spec:
   replicas: 1
   selector:
@@ -19,7 +19,7 @@ spec:
         app: donation
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: dev
+        Environment: primary
     spec:
       serviceAccountName: donation-service
       containers:
@@ -73,7 +73,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: primary
 spec:
   # ClusterIP, não LoadBalancer: a exposição externa é a NLB única
   # provisionada por terra/modules/nlb, via TargetGroupBinding abaixo - ver
@@ -93,7 +93,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: primary
 spec:
   serviceRef:
     name: donation

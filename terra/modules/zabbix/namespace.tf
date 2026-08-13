@@ -4,7 +4,7 @@ resource "kubernetes_namespace_v1" "zabbix" {
     labels = {
       "app.kubernetes.io/part-of" = "solidarytech"
       "Project"                   = "SolidaryTech"
-      "Environment"               = "dev"
+      "Environment"               = "primary"
     }
   }
 }

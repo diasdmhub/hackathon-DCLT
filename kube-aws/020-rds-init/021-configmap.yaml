@@ -13,7 +13,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: primary
 data:
   ngo-init.sql: |
     CREATE TABLE IF NOT EXISTS ngos (

@@ -150,7 +150,7 @@ resource "kubernetes_namespace_v1" "observe" {
     labels = {
       "app.kubernetes.io/part-of" = "solidarytech"
       "Project"                   = "SolidaryTech"
-      "Environment"               = "dev"
+      "Environment"               = "primary"
     }
   }
 

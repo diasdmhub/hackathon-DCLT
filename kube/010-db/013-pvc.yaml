@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
   annotations:
     kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
 spec:

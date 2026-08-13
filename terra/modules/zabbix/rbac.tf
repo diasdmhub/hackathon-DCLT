@@ -16,7 +16,7 @@ resource "kubernetes_service_account_v1" "zabbix_k8s_reader" {
     labels = {
       "app.kubernetes.io/part-of" = "solidarytech"
       "Project"                   = "SolidaryTech"
-      "Environment"               = "dev"
+      "Environment"               = "primary"
     }
   }
 }
@@ -28,7 +28,7 @@ resource "kubernetes_secret_v1" "zabbix_k8s_reader_token" {
     labels = {
       "app.kubernetes.io/part-of" = "solidarytech"
       "Project"                   = "SolidaryTech"
-      "Environment"               = "dev"
+      "Environment"               = "primary"
     }
     annotations = {
       "kubernetes.io/service-account.name" = kubernetes_service_account_v1.zabbix_k8s_reader.metadata[0].name
@@ -43,7 +43,7 @@ resource "kubernetes_cluster_role_v1" "zabbix_k8s_reader" {
     labels = {
       "app.kubernetes.io/part-of" = "solidarytech"
       "Project"                   = "SolidaryTech"
-      "Environment"               = "dev"
+      "Environment"               = "primary"
     }
   }
 
@@ -93,7 +93,7 @@ resource "kubernetes_cluster_role_binding_v1" "zabbix_k8s_reader" {
     labels = {
       "app.kubernetes.io/part-of" = "solidarytech"
       "Project"                   = "SolidaryTech"
-      "Environment"               = "dev"
+      "Environment"               = "primary"
     }
   }
 

@@ -29,7 +29,7 @@ configMapGenerator:
       labels:
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: dev
+        Environment: secondary
 
   - name: alloy-config
     namespace: observe
@@ -39,7 +39,7 @@ configMapGenerator:
       labels:
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: dev
+        Environment: secondary
 
   - name: tempo-config
     namespace: observe
@@ -49,7 +49,7 @@ configMapGenerator:
       labels:
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: dev
+        Environment: secondary
 
   - name: prometheus-config
     namespace: observe
@@ -59,4 +59,4 @@ configMapGenerator:
       labels:
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: dev
+        Environment: secondary

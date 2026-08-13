@@ -7,7 +7,7 @@ metadata:
     app: tempo
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
 spec:
   replicas: 1
   strategy:
@@ -21,7 +21,7 @@ spec:
         app: tempo
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: dev
+        Environment: secondary
     spec:
       securityContext:
         fsGroup: 10001
@@ -76,7 +76,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: dev
+    Environment: secondary
   annotations:
     metallb.universe.tf/allow-shared-ip: solidarytech-external
 spec:

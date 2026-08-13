@@ -2,7 +2,7 @@ locals {
   labels = {
     "app.kubernetes.io/part-of" = "solidarytech"
     "Project"                   = "SolidaryTech"
-    "Environment"               = "dev"
+    "Environment"               = "primary"
   }
 }
 
@@ -165,7 +165,7 @@ resource "kubectl_manifest" "tempo_target_group_binding" {
       labels:
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: dev
+        Environment: primary
     spec:
       serviceRef:
         name: tempo
