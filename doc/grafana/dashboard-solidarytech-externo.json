@@ -2222,9 +2222,7 @@
                   }
                 }
               ],
-              "queryOptions": {
-                "timeFrom": "1d"
-              },
+              "queryOptions": {},
               "transformations": []
             }
           },
