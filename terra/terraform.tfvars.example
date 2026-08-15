@@ -14,7 +14,7 @@ eks_node_instance_types     = ["m7i-flex.large"]
 eks_node_desired_size       = 2
 eks_node_min_size           = 1
 eks_node_max_size           = 4
-eks_enable_prefix_delegation = true
+enable_prefix_delegation    = true
 
 # RDS - CREDENCIAL SENSÍVEL, defina um valor real aqui
 db_name     = "sol_db"

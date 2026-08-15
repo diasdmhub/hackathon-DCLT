@@ -38,7 +38,7 @@ variable "eks_node_instance_types" {
   default     = ["m7i-flex.large"]
 }
 
-variable "eks_enable_prefix_delegation" {
+variable "enable_prefix_delegation" {
   description = "Habilita IPv4 Prefix Delegation no vpc-cni (mais IPs/pods por node, sem custo adicional)"
   type        = bool
   default     = true

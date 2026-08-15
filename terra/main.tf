@@ -18,7 +18,7 @@ module "eks" {
   node_desired_size        = var.eks_node_desired_size
   node_min_size            = var.eks_node_min_size
   node_max_size            = var.eks_node_max_size
-  enable_prefix_delegation = var.eks_enable_prefix_delegation
+  enable_prefix_delegation = var.enable_prefix_delegation
 
   depends_on = [module.vpc]
 }
