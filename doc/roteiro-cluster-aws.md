@@ -5,16 +5,61 @@
 
 > ⚠️ **_Em construção_**
 
-Sequência mínima para implementar o ambiente EKS do zero: infraestrutura AWS, o AWS Load Balancer Controller, observabilidade (Loki/Tempo/Alloy/Prometheus self-hosted) e monitoração de infraestrutura (Zabbix), tudo via Terraform - só os microsserviços da SolidaryTech ficam sob gestão do FluxCD. Detalhes e justificativas de cada etapa estão em `terra/README.md` e `kube-aws/README.md`; este roteiro só reúne os comandos na ordem correta.
+Esta é uma sequência de passos para a implementação do ambiente EKS, incluindo os recursos de infraestrutura AWS, o AWS Load Balancer Controller, recursos de observabilidade (Loki/Tempo/Alloy/Prometheus self-hosted) e monitoração de do ambiente (Zabbix), tudo via Terraform. Os microsserviços da SolidaryTech ficam sob gestão do FluxCD. Detalhes e justificativas de cada etapa estão em `terra/README.md` e `kube-aws/README.md`; este roteiro só reúne os comandos na ordem correta.
 
 <BR>
 
-## Pré-requisitos
+## 🔑 Pré-requisitos
 
-- `terraform` >= 1.6, `aws` CLI v2 configurado (permissão para criar VPC, EKS, RDS, DynamoDB, SQS, IAM e SSM). É só o que o passo 1 exige - os providers `helm`/`kubernetes`/`kubectl` do Terraform conversam direto com a API do EKS, sem precisar dos CLIs `helm`/`kubectl` instalados.
-- [`flux` CLI][fluxcli] instalado (usado no passo 2, para o bootstrap dos microsserviços e para validar a instalação).
-- `kubectl` (para inspecionar o cluster e para os passos manuais do Zabbix).
-- Um **Personal Access Token do GitHub** com escopo `repo` (e `admin:public_key`/`admin:org` se o repositório for de uma organização), exportado como `GITHUB_TOKEN` — é com ele que o `flux bootstrap github` autentica e faz commit das definições em `clusters/eks-aws/flux-system/`.
+**1.** De preferência, faça um **"_fork_" deste repositório** para possibilitar a execução do CI workflow. Ele é utilizado para testar e, principalmente, para enviar as imagens dos microserviços ao Docker Hub.
+
+> **É necessário habilitar o serviço de `Actions` no repositório.**
+
+**2.** Copie todo o código-fonte do repositório para um ambiente de execução/desenvolvimento local. Recomenda-se **clonar o repositório com o Git**:
+
+> **`git clone https://github.com/SUA_CONTA/FORK_DO_REPO.git && cd FORK_DO_REPO`**
+
+**3.** O ambiente de execução/desenvolvimento local deve estar **autenticado na AWS** com o [**AWS CLI**][awscli], pois ele será utilizado em algumas configurações mais adiante.
+
+**4.** É necessário [**instalar o Terraform**][terraform] no ambiente de execução/desenvolvimento local para implementar os serviços da AWS que serão utilizados pela SolidaryTech;
+
+**5.** Um **Personal Access Token do GitHub** com escopo `repo` (_e `admin:public_key`/`admin:org` se o repositório for de uma organização_). Ele é utilizado para autenticação e commits do FluxCD e deve ser definido como uma variável de ambiente `GITHUB_TOKEN`.
+
+**6.** O [FluxCD CLI][fluxcli] é utilizado para a inicialização dos microsserviços e para validar a instalação, caso necessário.
+
+**7.** (_Opcional_) Apesar de não ser necessário, o **`kubectl`** ainda é muito eficiente para gerenciar o cluster Kubernetes e seus recursos. Caso necessário, recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
+
+<BR>
+
+## 1. Variáveis Terraform
+
+Para a implementação inicial, é necessário configurar alguns dados para permitir que o ambiente seja criado de forma consistente.
+
+O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser definido com as principais variáveis do ambiente, incluindo a senhas. Embora seja disponibilizado um arquivo de exemplo (`terraform.tfvars.example`) com alguns valores pré-definidos, é **altamente recomendado que as variáveis a seguir sejam definidas de acordo com o ambiente final**.
+
+> ⚠️ **Note que este arquivo contém dados sensíveis e deve ter seu acesso restrito. Ele é ignorado pelo Git.**
+
+
+| Variável | Descrição | Default |
+| :---: | :--- | :--- |
+| `name_prefix` | Prefixo geral do nome dos recursos AWS | _`solidarytech`_ |
+| `aws_region` | Regiao principal da AWS | _`us-east-1`_ |
+| `subnet_prefix` | Os 2 primeiros octetos do CIDR da VPC | _`10.80`_ |
+| `az_count` | Quantidade de AZs da AWS | _`2`_ |
+| `eks_node_instance_types` | Tipo de instância EC2 para o cluster K8s (_free tier_) | _`m7i-flex.large`_ |
+| `eks_node_desired_size` | Quantidade de instâncias ativas EC2 para o cluster K8s | _`2`_ |
+| `eks_node_min_size` | Quantidade mínima de instâncias EC2 para o cluster K8s | _`1`_ |
+| `eks_node_max_size` | Quantidade máxima de instâncias EC2 para o cluster K8s | _`4`_ |
+| `eks_enable_prefix_delegation` | Habilita o uso de prefixos de IP disponíveis para os nodes | _`true`_ |
+| `db_name` | Nome do banco de dados inicial no RDS | _vazio_ |
+| `db_username` | Usuário master do PostgreSQL | _vazio_ |
+| `db_password` | Senha do usuário master | _vazio_ |
+| `git_org` | Domínio provedor Git | _vazio_ |
+| `git_repo` | Nome do repositório do provedor Git | _fiap-toggle-master-stack_ |
+| `service_type` | Tipo de serviço para o ArgoCD | _ClusterIP_ |
+| `grafana_pass` | Senha do usuário admin do Grafana | _vazio_ |
+| `grafana_service_type` | Tipo de serviço do Grafana | _ClusterIP_ |
+
 - O CIDR, IP ou domínio público de onde o seu Grafana externo vai consultar Loki/Tempo/Prometheus (para `observe_allowed_cidrs` em `terra/terraform.tfvars` - ver passo 1; um domínio, ex. de um DDNS para IP dinâmico, é resolvido via DNS a cada `terraform apply`).
 - Um Zabbix server já em operação, acessível pela internet na porta 10051 (para `zabbix_server_host`/`zabbix_hostname` em `terra/terraform.tfvars` - ver passo 1 e passo 4).
 
@@ -158,4 +203,8 @@ cd terra
 | [⬆️ Top](#roteiro-de-implementação-inicial-do-cluster-k8s-na-aws) |
 | --- |
 
+[awscli]: https://aws.amazon.com/cli
+[terraform]: https://developer.hashicorp.com/terraform/install
 [fluxcli]: https://fluxcd.io/flux/installation/#install-the-flux-cli
+[kuberepo]: https://kubernetes.io/docs/tasks/tools
+[tfvars]: /terra/terraform.tfvars.example

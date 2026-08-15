@@ -1,8 +1,7 @@
-# Copie este arquivo para terraform.tfvars (não versionado, ver .gitignore
-# na raiz do repositório) e ajuste os valores abaixo.
+# Copie este arquivo para "terraform.tfvars" e ajuste os valores abaixo.
 
-name_prefix = "solidarytech"
-aws_region  = "us-east-1"
+name_prefix = "solidarytech"  # Prefixo geral para os recursos da SolidaryTech
+aws_region  = "us-east-1"     # Região principal da AWS
 
 # CIDR da VPC (2 primeiros octetos)
 subnet_prefix = "10.80"
@@ -14,7 +13,7 @@ az_count      = 2
 eks_node_instance_types     = ["m7i-flex.large"]
 eks_node_desired_size       = 2
 eks_node_min_size           = 1
-eks_node_max_size           = 2
+eks_node_max_size           = 4
 eks_enable_prefix_delegation = true
 
 # RDS - CREDENCIAL SENSÍVEL, defina um valor real aqui
