@@ -60,10 +60,10 @@ spec:
               value: http/protobuf
           resources:
             requests:
-              cpu: 50m
+              cpu: 40m
               memory: 64Mi
             limits:
-              cpu: 250m
+              cpu: 200m
               memory: 256Mi
           readinessProbe:
             httpGet:

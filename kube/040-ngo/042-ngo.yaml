@@ -59,10 +59,10 @@ spec:
               value: /health
           resources:
             requests:
-              cpu: 50m
-              memory: 64Mi
+              cpu: 25m
+              memory: 96Mi
             limits:
-              cpu: 250m
+              cpu: 150m
               memory: 256Mi
           readinessProbe:
             httpGet:
