@@ -46,7 +46,7 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 #### Lista de variáveis:
 
 | Variável | Descrição | Default |
-| :---: | :--- | :--- |
+| :---: | :--- | :---: |
 | `name_prefix` | Prefixo geral do nome dos recursos AWS | _`solidarytech`_ |
 | `aws_region` | Regiao principal da AWS | _`us-east-1`_ |
 | `subnet_prefix` | Os 2 primeiros octetos do CIDR da VPC | _`10.80`_ |
@@ -76,30 +76,30 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 
 ## 2. Provisionamento de infraestrutura
 
-Neste passo serão provisionados a infraestrutura AWS, Load Balancer Controller, serviços de observabilidade e monitoramento com o Terraform. Os passos abaixo devem ser executados a partir de um host de controle da infraestrutura.
+Neste passo serão provisionados a infraestrutura AWS, Load Balancer Controller, serviços de observabilidade e monitoramento com o Terraform. Os comandos abaixo devem ser executados a partir de um host de controle da infraestrutura.
 
 ```bash
 cd terra
 cp terraform.tfvars.example terraform.tfvars
-# edite terraform.tfvars: no mínimo db_password, observe_allowed_cidrs
-# e zabbix_hostname/zabbix_server_host; não use os valores de exemplo.
+# edite terraform.tfvars: no mínimo `db_password`, `observe_allowed_cidrs`
+# e `zabbix_hostname`/`zabbix_server_host`; não use os valores de exemplo.
 
 ./init.sh   # cria bucket S3 + tabela DynamoDB + inicializa Terraform (idempotente)
 
 # Na primeira inicialização, com um cluster totalmente novo, os providers
-# kubernetes/helm/kubectl autenticam com outputs do cluster EKS, que não
-# existem num state vazio. Crie o cluster primeiro.
-# Ver "Uso" em terra/README.md para o porquê (limitação de Terraform+EKS).
+# kubernetes/helm/kubectl tentam usar outputs do cluster EKS, que não
+# existem num state vazio. Portantanto, o cluster deve ser criado primeiro.
+# Vide "Uso" em terra/README.md (limitação de Terraform+EKS).
 terraform plan -target=module.eks
 terraform apply -target=module.eks
 
-# Um segundo `apply` (já num state com o cluster criado) cria os demais recursos
+# Um segundo `apply` (já num state com o cluster criado) cria os demais recursos 
 # AWS, instala o Load Balancer Controller, e aplica o Loki/Tempo/Alloy/Prometheus
 # e o Zabbix Proxy/Agent2/kube-state-metrics direto no cluster, através dos providers
 # `helm`/`kubernetes`/`kubectl`. Nenhum desses passa pelo FluxCD, (`terra/README.md`).
-# A ordem entre eles pelas de dependências do Terraform. Não precisa de mais um
+# A ordem entre eles passa por dependências do Terraform. Não precisa de mais um
 # `apply` além do `-target=module.eks` inicial. Em clusters já existentes
-# (`module.eks` criado), vá direto para o `terraform plan`/`apply`.
+# (`module.eks` criado), siga direto para o `terraform plan`/`apply`.
 terraform plan
 terraform apply
 ```
@@ -131,9 +131,9 @@ flux bootstrap github \
     --token-auth
 ```
 
-Isso instala os controladores (_`clusters/eks-aws/flux-system/`_) do FluxCD, cria o `GitRepository` apontando para o repositório determinado e o `Kustomization` raiz. Ele faz _commit_ e _push_ direto na branch `main` do repositório. A partir daí, a `Kustomization` já declarada em `clusters/eks-aws/` passa a se reconciliar com o cluster, criando os serviços da SolidaryTech.
+Isso instala os controladores (_`clusters/eks-aws/flux-system/`_) do FluxCD, cria o `GitRepository` apontando para o repositório determinado e o `Kustomization` raiz. Ele faz _commit_ e _push_ direto na branch `main` do repositório. A partir daí, o `Kustomization` já declarado em `clusters/eks-aws/` passa a se reconciliar com o cluster, criando os serviços da SolidaryTech.
 
-O Namespace `solidarytech` e os Secrets `ngo-env`, `donation-env` e `volunteer-env` (string de conexão real do RDS) já existem nesse ponto - foram criados pelo `terraform apply` do passo 2 (`kubernetes_namespace_v1.solidarytech` e `module.secrets`), não pelo Flux. Nenhum passo manual de Secret é necessário; ver `kube-aws/README.md`, seção "Secrets".
+O Namespace `solidarytech` e os Secrets `ngo-env`, `donation-env` e `volunteer-env` (string de conexão real do RDS) já existem nesse ponto, pois foram criados pelo `terraform apply` do passo 2 (`kubernetes_namespace_v1.solidarytech` e `module.secrets`), não pelo Flux (vide `kube-aws/README.md`, seção "Secrets").
 
 ```bash
 flux get kustomizations  # Consulta
@@ -143,24 +143,23 @@ flux get kustomizations  # Consulta
 
 ## 4. Configurar o Grafana externo
 
-Loki, Tempo e Prometheus são implementados com o `terraform apply` do passo 2. Falta cadastrar os 3 datasources no Grafana externo, apontando para o DNS name da NLB:
+Loki, Tempo e Prometheus são implementados com o `terraform apply` do passo 2. Após isso, é necessário cadastrar os 3 datasources no Grafana externo, apontando para o DNS name do NLB.
 
 ```bash
-terraform output -raw nlb_dns_name   # em terra/
+terraform output -raw nlb_dns_name   # no diretório `terra/`
 ```
 
 - Loki: `http://<nlb_dns_name>:3100`
 - Tempo: `http://<nlb_dns_name>:3200`
 - Prometheus: `http://<nlb_dns_name>:9090`
 
-Ver `doc/observabilidade.md` para o restante da configuração (Service Graph, derived field de `trace_id`, dashboard modelo).
+> **Ver `doc/observabilidade.md` para o restante da configuração para mais informação.**
 
 <BR>
 
 ## 5. Conectar o cluster ao seu Zabbix
 
-O Zabbix Proxy, Agent2, kube-state-metrics são implementados com o `terraform apply` do passo 2. É necessário configurar o **lado do seu Zabbix Server**. Veja a seção "Observabilidade e monitoração de infraestrutura via Terraform" em `terra/README.md` para o passo-a-passo completo: criar o Proxy, pegar o token da ServiceAccount
-`zabbix-k8s-reader`, e importar/vincular as templates do Kubernetes.
+Também é necessário configurar o **lado do seu Zabbix Server**. Veja a seção "Observabilidade e monitoração de infraestrutura via Terraform" em `terra/README.md` para mais informações: criar o Proxy, obter o token da ServiceAccount `zabbix-k8s-reader` e importar/vincular as templates do Kubernetes.
 
 <BR>
 
