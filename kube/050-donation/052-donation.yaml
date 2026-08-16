@@ -9,7 +9,7 @@ metadata:
     Project: SolidaryTech
     Environment: secondary
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: donation
@@ -21,6 +21,17 @@ spec:
         Project: SolidaryTech
         Environment: secondary
     spec:
+      # Preferencial (não hard) para não travar o rollout com só 2 nodes: um
+      # required exigiria um 3º node livre durante o maxSurge do deploy.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: donation
+                topologyKey: kubernetes.io/hostname
       initContainers:
         - name: wait-for-psql
           image: docker.io/library/busybox:1.36
