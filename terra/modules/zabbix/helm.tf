@@ -42,6 +42,46 @@ resource "helm_release" "zabbix" {
         # dentro (porta 10051), sem exigir nenhuma regra de ingress no EKS.
         ZBX_PROXYMODE   = 0
         ZBX_SERVER_PORT = 10051
+
+        # PSK na conexão de saída (proxy -> Zabbix server externo, a única
+        # que atravessa a borda do cluster). O chart não tem campos
+        # dedicados para nenhuma dessas 3 variáveis (só ZBX_PROXYMODE/
+        # ZBX_HOSTNAME/ZBX_SERVER_HOST/ZBX_SERVER_PORT/... são lidas
+        # diretamente do template - ver comentário do "set" mais abaixo),
+        # então todas entram via extraEnv. O valor da PSK em si NUNCA vai
+        # como env var (ficaria visível em "kubectl describe pod") - vem de
+        # um arquivo montado a partir do Secret
+        # kubernetes_secret_v1.zabbix_proxy_psk (ver extraVolumes abaixo e
+        # psk.tf).
+        extraEnv = [
+          {
+            name  = "ZBX_TLSCONNECT"
+            value = "psk"
+          },
+          {
+            name  = "ZBX_TLSPSKIDENTITY"
+            value = var.zabbix_proxy_tls_psk_identity
+          },
+          {
+            name  = "ZBX_TLSPSKFILE"
+            value = "/run/secrets/zabbix-proxy-psk/tls_psk_file"
+          },
+        ]
+        extraVolumeMounts = [
+          {
+            name      = "tls-psk"
+            mountPath = "/run/secrets/zabbix-proxy-psk"
+            readOnly  = true
+          },
+        ]
+        extraVolumes = [
+          {
+            name = "tls-psk"
+            secret = {
+              secretName = kubernetes_secret_v1.zabbix_proxy_psk.metadata[0].name
+            }
+          },
+        ]
       }
 
       zabbixAgent = {

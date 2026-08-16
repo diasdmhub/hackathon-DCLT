@@ -166,3 +166,14 @@ variable "zabbix_version" {
   type        = string
   default     = "7.4"
 }
+
+variable "zabbix_proxy_tls_psk_identity" {
+  description = "Identidade da PSK (Pre-Shared Key) usada na conexão TLS do Zabbix Proxy com o Zabbix server externo - precisa ser igual à identidade configurada na aba Encryption do objeto Proxy no Zabbix server"
+  type        = string
+}
+
+variable "zabbix_proxy_tls_psk" {
+  description = "Valor da PSK em hexadecimal (64 a 128 caracteres, ou seja 256 a 512 bits) - ex: gerado com \"openssl rand -hex 32\". Precisa ser igual ao valor configurado na aba Encryption do objeto Proxy no Zabbix server. DEFINA O VALOR REAL NO terraform.tfvars (não versionado)"
+  type        = string
+  sensitive   = true
+}

@@ -184,10 +184,12 @@ resource "kubernetes_namespace_v1" "observe" {
 module "zabbix" {
   source = "./modules/zabbix"
 
-  name_prefix        = var.name_prefix
-  zabbix_hostname    = var.zabbix_hostname
-  zabbix_server_host = var.zabbix_server_host
-  zabbix_version     = var.zabbix_version
+  name_prefix                   = var.name_prefix
+  zabbix_hostname               = var.zabbix_hostname
+  zabbix_server_host            = var.zabbix_server_host
+  zabbix_version                = var.zabbix_version
+  zabbix_proxy_tls_psk_identity = var.zabbix_proxy_tls_psk_identity
+  zabbix_proxy_tls_psk          = var.zabbix_proxy_tls_psk
 
   depends_on = [module.eks]
 }

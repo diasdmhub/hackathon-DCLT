@@ -139,27 +139,48 @@ sem default (`terra/variables.tf`) - defina os valores reais em
 `terraform.tfvars` já é a fonte de valores sensíveis deste ambiente (mesmo
 padrão de `db_password`).
 
+### `zabbix_proxy_tls_psk_identity`/`zabbix_proxy_tls_psk`
+
+Criptografam com PSK (Pre-Shared Key) a única conexão do Zabbix Proxy que
+atravessa a borda do cluster (saída para o Zabbix server externo, porta
+10051 via NAT Gateway) - sem isso, esse tráfego vai em texto plano. Também
+sem default, também em `terraform.tfvars`. Diferente de
+`zabbix_hostname`/`zabbix_server_host`, o chart `zabbix-community/helm-zabbix`
+não tem um campo dedicado para nenhuma das 3 variáveis de TLS
+(`ZBX_TLSCONNECT`/`ZBX_TLSPSKIDENTITY`/`ZBX_TLSPSKFILE`), então
+`terra/modules/zabbix/helm.tf` as injeta via `zabbixProxy.extraEnv`. O valor
+da PSK em si (`zabbix_proxy_tls_psk`) nunca vira variável de ambiente
+diretamente - ficaria visível em `kubectl describe pod` - em vez disso
+`terra/modules/zabbix/psk.tf` cria um Secret Kubernetes com o valor, montado
+como arquivo (`ZBX_TLSPSKFILE`) via `extraVolumes`/`extraVolumeMounts`.
+
 Passos manuais (uma vez, no seu Zabbix server - o Terraform não pode
 aplicá-los, essa configuração vive no banco de dados do Zabbix):
 
 1. **Criar o Proxy**: *Data collection → Proxies → Create proxy*. Nome igual
    ao `zabbix_hostname` de `terraform.tfvars`. Modo: **Active**.
-2. Rodar `terraform apply` com `zabbix_hostname`/`zabbix_server_host` já
-   preenchidos - a stack sobe junto com o resto do cluster.
-3. **Pegar o token da ServiceAccount de leitura**:
+2. **Configurar a PSK no mesmo Proxy**: aba *Encryption* → marque
+   *Connections from proxy* como **PSK** → preencha *PSK identity* com o
+   valor de `zabbix_proxy_tls_psk_identity` e *PSK* com o valor hexadecimal
+   de `zabbix_proxy_tls_psk` (mesmo par usado em `terraform.tfvars`; gere um
+   novo valor com `openssl rand -hex 32` se ainda não tiver um).
+3. Rodar `terraform apply` com `zabbix_hostname`/`zabbix_server_host`/
+   `zabbix_proxy_tls_psk_identity`/`zabbix_proxy_tls_psk` já preenchidos - a
+   stack sobe junto com o resto do cluster.
+4. **Pegar o token da ServiceAccount de leitura**:
    ```bash
    kubectl get secret zabbix-k8s-reader-token -n zabbix \
      -o jsonpath='{.data.token}' | base64 -d
    ```
-4. **Pegar a URL da API do EKS**: `terraform output -raw configure_kubectl`.
-5. **Importar as templates nativas do Zabbix** (Zabbix 6.4+, já inclusas):
+5. **Pegar a URL da API do EKS**: `terraform output -raw configure_kubectl`.
+6. **Importar as templates nativas do Zabbix** (Zabbix 6.4+, já inclusas):
    *Data collection → Templates → Kubernetes* - confirme **"Kubernetes nodes
    by HTTP"** e **"Kubernetes cluster state by HTTP"**.
-6. **Criar os hosts do cluster EKS** a partir dessas templates, vinculados ao
+7. **Criar os hosts do cluster EKS** a partir dessas templates, vinculados ao
    **Proxy** do passo 1 (não ao Zabbix server diretamente), preenchendo
-   `{$KUBE.API.SERVER.URL}` (passo 4), `{$KUBE.API.TOKEN}` (passo 3) e
+   `{$KUBE.API.SERVER.URL}` (passo 5), `{$KUBE.API.TOKEN}` (passo 4) e
    `{$KUBE.NAMESPACE}` = `zabbix`.
-7. **Verificar**: `kubectl logs -n zabbix -l app.kubernetes.io/component=proxy`
+8. **Verificar**: `kubectl logs -n zabbix -l app.kubernetes.io/component=proxy`
    deve mostrar a conexão ativa com o Zabbix server; no Zabbix, o Proxy deve
    aparecer com "last seen" recente.
 
