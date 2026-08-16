@@ -1,0 +1,26 @@
+# Diferente de clusters/kubeadm-local/flux-system/gotk-sync.yaml, este
+# GitRepository não é gerenciado por uma Kustomization "flux-system"
+# autogerenciada (o que `flux bootstrap` cria por padrão) - é aplicado uma
+# única vez, manualmente (`kubectl apply -f`), depois de `flux install`.
+#
+# Motivo: o Gitea (autoritativo, é nele que os commits são feitos) tem um
+# push mirror unidirecional para este repositório no GitHub, que força a
+# branch main do GitHub a ficar idêntica à do Gitea a cada push - inclusive
+# apagando commits que existam só no GitHub. O EKS não alcança o Gitea pela
+# rede, então este GitRepository aponta para o GitHub (onde o cluster
+# consegue ler), mas nunca deve escrever nele: se o Flux aqui se
+# autogerenciasse via `flux bootstrap` (como o cluster local faz contra o
+# Gitea), o commit de bootstrap ficaria só no GitHub e seria apagado no
+# próximo push feito no Gitea - foi exatamente o que causou a
+# autodestruição do Flux neste cluster (ver doc/roteiro-cluster-aws.md).
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: main
+  # Repositório público: leitura via HTTPS anônimo, sem secretRef de token.
+  url: https://github.com/diasdmhub/hackathon-DCLT.git

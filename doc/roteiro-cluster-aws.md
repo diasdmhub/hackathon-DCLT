@@ -115,23 +115,23 @@ $(terraform output -raw configure_kubectl 2>/dev/null) || \
 
 ## 3. Inicializar o FluxCD no cluster (microsserviços)
 
-Com o `flux` CLI instalado e o `kubectl` já apontando para o cluster criado no passo anterior, valide os pré-requisitos e rode o _bootstrap_ contra o GitHub.
+Com o `flux` CLI instalado e o `kubectl` já apontando para o cluster criado no passo anterior, valide os pré-requisitos e instale os controladores do FluxCD.
+
+**Importante**: ao contrário do cluster local (`clusters/kubeadm-local/`), aqui **não** se usa `flux bootstrap` (que faz o Flux se autogerenciar, commitando seus próprios manifests de volta no repositório). O repositório canônico deste projeto é o Gitea (`gitea.diasdm.com.br`), que mantém um *push mirror* unidirecional para o GitHub — a cada push no Gitea, a branch `main` do GitHub é forçada a ficar idêntica à do Gitea, apagando qualquer commit que exista só no lado do GitHub. Como o EKS não alcança o Gitea pela rede (só o GitHub), qualquer commit que o Flux fizesse aqui ficaria só no GitHub e seria apagado no próximo push feito no Gitea — foi exatamente isso que causou uma autodestruição do Flux neste cluster (o `kustomize-controller`, ao reconciliar contra o caminho que tinha acabado de ser esvaziado pelo mirror, tentou podar os próprios recursos que instalou, incluindo a si mesmo). Por isso, aqui o Flux só lê do GitHub, nunca escreve nele.
 
 ```bash
 flux check --pre
 
-export GITHUB_TOKEN=<personal-access-token>
-
-flux bootstrap github \
-    --owner=[CONTA DO GITHUB] \
-    --repository=hackathon-DCLT \
-    --branch=main \
-    --path=./clusters/eks-aws \
-    --personal \
-    --token-auth
+flux install
 ```
 
-Isso instala os controladores (_`clusters/eks-aws/flux-system/`_) do FluxCD, cria o `GitRepository` apontando para o repositório determinado e o `Kustomization` raiz. Ele faz _commit_ e _push_ direto na branch `main` do repositório. A partir daí, o `Kustomization` já declarado em `clusters/eks-aws/` passa a se reconciliar com o cluster, criando os serviços da SolidaryTech.
+Em seguida, aplique manualmente o `GitRepository` já versionado em `clusters/eks-aws/flux-system/gotk-sync.yaml` (aponta para `https://github.com/diasdmhub/hackathon-DCLT.git`, leitura anônima já que o repositório é público):
+
+```bash
+kubectl apply -f clusters/eks-aws/flux-system/gotk-sync.yaml
+```
+
+Diferente do cluster local, esse `GitRepository` não é reconciliado por uma `Kustomization` autogerenciada — é aplicado uma única vez, à mão, e só muda se o `url`/`branch` mudar no futuro. A partir daí, o `Kustomization` `solidarytech` já declarado em `clusters/eks-aws/solidarytech-kustomization.yaml` referencia esse `GitRepository` e passa a se reconciliar sozinho, criando os serviços da SolidaryTech (`./kube-aws`).
 
 O Namespace `solidarytech` e os Secrets `ngo-env`, `donation-env` e `volunteer-env` (string de conexão real do RDS) já existem nesse ponto, pois foram criados pelo `terraform apply` do passo 2 (`kubernetes_namespace_v1.solidarytech` e `module.secrets`), não pelo Flux (vide `kube-aws/README.md`, seção "Secrets").
 
