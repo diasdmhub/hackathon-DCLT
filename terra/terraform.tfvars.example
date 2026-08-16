@@ -49,7 +49,7 @@ observe_allowed_cidrs = ["CHANGE_ME"]
 
 # - zabbix_hostname precisa ser o nome do Proxy" criado no Zabbix server
 # (Adminstration -> Proxies, modo Active);
-# - zabbix_server_host é o hostname/IP desse servidor (porta 10051)
+# - zabbix_server_host é o hostname/IP do Zabbix Server (porta 10051)
 # (ver terra/modules/zabbix/README.md)
 zabbix_hostname    = "CHANGE_ME-proxy-eks-solidarytech"
 zabbix_server_host = "CHANGE_ME"
