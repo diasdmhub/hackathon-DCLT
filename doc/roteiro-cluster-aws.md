@@ -56,21 +56,21 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `eks_node_min_size` | Quantidade mínima de instâncias EC2 para o cluster K8s | _`1`_ |
 | `eks_node_max_size` | Quantidade máxima de instâncias EC2 para o cluster K8s | _`4`_ |
 | `enable_prefix_delegation` | Habilita o uso de prefixos de IP disponíveis para os nodes | _`true`_ |
-| `db_name` | Nome do banco de dados inicial no RDS - PostgreSQL | _sol_db_ |
-| `db_username` | Usuário master do PostgreSQL | _sol_ |
-| `db_password` | Senha do usuário master do PostgreSQL | _CHANGE_ME_ |
-| `rds_instance_class` | Tipo de instância RDS para o DB | _db.t3.micro_ |
-| `dynamodb_table_name` | Nome da tabela da SolidaryTech no DynamoDB | _SolidaryTechVolunteers_ |
-| `sqs_queue_name` | Nome da fila do Donation Service no SQS | _donation-events_ |
-| `k8s_namespace` | Nome do namespace da SolidaryTech no K8s | _solidarytech_ |
-| `donation_service_account` | Nome da service account do Donation Service | _donation-service_ |
-| `volunteer_service_account` | Nome da service account do Volunteer Service | _volunteer-service_ |
-| `lb_controller_namespace` | Namespace para o Load Balancer Controller | _kube-system_ |
-| `lb_controller_service_account` | ServiceAccount do Load Balancer Controller | _aws-load-balancer-controller_ |
-| `observe_allowed_cidrs` | CIDR, IP ou domínio autorizados a alcançar o cluster | _CHANGE_ME_ |
-| `zabbix_hostname` | Nome do Proxy criado no Zabbix server | _CHANGE_ME-proxy-eks-solidarytech_ |
-| `zabbix_server_host` | Hostname/IP desse do Zabbix Server | _CHANGE_ME_ |
-| `zabbix_version` | Versão major do Zabbix Proxy/Agent2 | _7.4_ |
+| `db_name` | Nome do banco de dados inicial no RDS - PostgreSQL | _`sol_db`_ |
+| `db_username` | Usuário master do PostgreSQL | _`sol`_ |
+| `db_password` | Senha do usuário master do PostgreSQL | _`CHANGE_ME`_ |
+| `rds_instance_class` | Tipo de instância RDS para o DB | _`db.t3.micro`_ |
+| `dynamodb_table_name` | Nome da tabela da SolidaryTech no DynamoDB | _`SolidaryTechVolunteers`_ |
+| `sqs_queue_name` | Nome da fila do Donation Service no SQS | _`donation-events`_ |
+| `k8s_namespace` | Nome do namespace da SolidaryTech no K8s | _`solidarytech`_ |
+| `donation_service_account` | Nome da service account do Donation Service | _`donation-service`_ |
+| `volunteer_service_account` | Nome da service account do Volunteer Service | _`volunteer-service`_ |
+| `lb_controller_namespace` | Namespace para o Load Balancer Controller | _`kube-system`_ |
+| `lb_controller_service_account` | ServiceAccount do Load Balancer Controller | _`aws-load-balancer-controller`_ |
+| `observe_allowed_cidrs` | CIDR, IP ou domínio autorizados a alcançar o cluster | _`CHANGE_ME`_ |
+| `zabbix_hostname` | Nome do Proxy criado no Zabbix server | _`CHANGE_ME-proxy-eks-solidarytech`_ |
+| `zabbix_server_host` | Hostname/IP desse do Zabbix Server | _`CHANGE_ME`_ |
+| `zabbix_version` | Versão major do Zabbix Proxy/Agent2 | _`7.4`_ |
 
 <BR>
 
