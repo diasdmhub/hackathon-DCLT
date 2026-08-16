@@ -132,7 +132,21 @@ kubectl apply -f clusters/eks-aws/flux-system/gotk-sync.yaml
 kubectl apply -f clusters/eks-aws/solidarytech-kustomization.yaml
 ```
 
-Diferente do cluster local, nenhum desses dois objetos é reconciliado por uma `Kustomization` raiz autogerenciada — não existe mais, aqui, um `Kustomization` que fique observando `./clusters/eks-aws` e aplicando sozinho qualquer YAML novo naquela pasta. Os dois são aplicados uma única vez, à mão; a partir daí, é o `Kustomization` `solidarytech` (já aplicado) que passa a reconciliar sozinho, criando os serviços da SolidaryTech (`./kube-aws`). Se um dos dois arquivos mudar no futuro (novo `url`/`branch` no `GitRepository`, ou ajuste no `path`/`interval` do `Kustomization`), é preciso reaplicar manualmente de novo — não há reconciliação automática desse nível.
+Aplique também, do mesmo jeito e uma única vez, o Secret `irsa-role-arns`
+com os ARNs reais das roles IRSA (contêm o account ID da AWS, por isso não
+ficam versionados em `kube-aws/`, que é público - ver `kube-aws/README.md`,
+seção "IRSA"):
+
+```bash
+cp clusters/eks-aws/flux-system/irsa-role-arns-secret.example.yaml \
+   clusters/eks-aws/flux-system/irsa-role-arns-secret.yaml
+# edite irsa-role-arns-secret.yaml com os ARNs reais:
+terraform -chdir=terra output -json iam_outputs
+
+kubectl apply -f clusters/eks-aws/flux-system/irsa-role-arns-secret.yaml
+```
+
+Diferente do cluster local, nenhum desses dois objetos é reconciliado por uma `Kustomization` raiz autogerenciada — não existe mais, aqui, um `Kustomization` que fique observando `./clusters/eks-aws` e aplicando sozinho qualquer YAML novo naquela pasta. Os dois são aplicados uma única vez, à mão; a partir daí, é o `Kustomization` `solidarytech` (já aplicado) que passa a reconciliar sozinho, criando os serviços da SolidaryTech (`./kube-aws`). Se um dos dois arquivos mudar no futuro (novo `url`/`branch` no `GitRepository`, ou ajuste no `path`/`interval` do `Kustomization`), é preciso reaplicar manualmente de novo — não há reconciliação automática desse nível. O Secret `irsa-role-arns` é outro caso: não é reconciliado por nenhuma `Kustomization` (não está versionado, só consumido via `postBuild.substituteFrom`), então só precisa ser reaplicado se os ARNs mudarem (ex.: `terraform destroy`/`apply` recriando as roles IRSA).
 
 O Namespace `solidarytech` e os Secrets `ngo-env`, `donation-env` e `volunteer-env` (string de conexão real do RDS) já existem nesse ponto, pois foram criados pelo `terraform apply` do passo 2 (`kubernetes_namespace_v1.solidarytech` e `module.secrets`), não pelo Flux (vide `kube-aws/README.md`, seção "Secrets").
 

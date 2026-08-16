@@ -86,6 +86,18 @@ estes manifests.
 
 `005-serviceaccounts.yaml` cria as ServiceAccounts `donation-service` e `volunteer-service`, anotadas com os ARNs das roles IRSA que `terra/modules/iam` provisiona (escopo mínimo: `sqs:SendMessage`/`GetQueueAttributes` para a primeira, `dynamodb:PutItem`/`GetItem`/`Scan`/`Query` para a segunda). O nome do namespace e das ServiceAccounts aqui precisa continuar batendo com `k8s_namespace`/`donation_service_account`/`volunteer_service_account` em `terra/terraform.tfvars` - a trust policy de cada role é restrita a essa combinação exata via OIDC.
 
+O ARN de cada role não fica hardcoded em `005-serviceaccounts.yaml` - o
+account ID da AWS não deve ficar versionado num repositório público que
+pode ser copiado por terceiros. O arquivo usa `${DONATION_SERVICE_ROLE_ARN}`/
+`${VOLUNTEER_SERVICE_ROLE_ARN}`, substituídas em tempo de reconciliação pelo
+`postBuild.substituteFrom` da Kustomization `solidarytech`
+(`clusters/eks-aws/solidarytech-kustomization.yaml`), que lê o Secret
+`irsa-role-arns` no namespace `flux-system` - aplicado manualmente uma única
+vez, com os ARNs reais (`terraform output -json iam_outputs`), o mesmo
+padrão já usado para `gotk-sync.yaml`/`solidarytech-kustomization.yaml`
+neste cluster. Ver `clusters/eks-aws/flux-system/irsa-role-arns-secret.example.yaml`
+e `doc/roteiro-cluster-aws.md`.
+
 ## Flux
 
 `clusters/eks-aws/solidarytech-kustomization.yaml` já aponta para `./kube-aws`. Falta rodar o bootstrap do Flux nesse cluster (`flux bootstrap ...` com `--path=./clusters/eks-aws`) para que `flux-system/` seja gerado e essa Kustomization passe a ser reconciliada de fato - ver `clusters/eks-aws/`.

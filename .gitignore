@@ -52,6 +52,11 @@ docker-compose.override.yml
 # templates are versioned; see kube-aws/README.md
 kube-aws/**/*-secret.yaml
 
+# Real IRSA role ARNs (contains the AWS account ID) - only
+# irsa-role-arns-secret.example.yaml is versioned; see
+# doc/roteiro-cluster-aws.md and clusters/eks-aws/solidarytech-kustomization.yaml
+clusters/eks-aws/flux-system/irsa-role-arns-secret.yaml
+
 # General ignores
 .git
 dist
