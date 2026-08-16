@@ -19,7 +19,7 @@ Esta é uma sequência de passos para a implementação do ambiente EKS, incluin
 
 > **`git clone https://github.com/SUA_CONTA/FORK_DO_REPO.git && cd FORK_DO_REPO`**
 
-**3.** O ambiente de execução/desenvolvimento local deve estar **autenticado na AWS** com o [**AWS CLI**][awscli], pois ele será utilizado em algumas configurações mais adiante.
+**3.** O ambiente de execução/desenvolvimento local deve estar **autenticado na AWS** com o [**AWS CLI**][awscli], pois ele é utilizado em configurações do Terraform.
 
 **4.** É necessário [**instalar o Terraform**][terraform] no ambiente de execução/desenvolvimento local para implementar os serviços da AWS que serão utilizados pela SolidaryTech;
 
@@ -27,7 +27,11 @@ Esta é uma sequência de passos para a implementação do ambiente EKS, incluin
 
 **6.** O [FluxCD CLI][fluxcli] é utilizado para a inicialização dos microsserviços e para validar a instalação, caso necessário.
 
-**7.** (_Opcional_) Apesar de não ser necessário, o **`kubectl`** ainda é muito eficiente para gerenciar o cluster Kubernetes e seus recursos. Caso necessário, recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
+**7.** Apesar de não ser necessário posteriormente, o **`kubectl`** é necessário para a implementação inicial de forma automatizada, e ainda é muito eficiente para gerenciar o cluster Kubernetes e seus recursos, caso necessário. Recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
+
+**8.** Um [Zabbix Server][zabbixdoc] já em operação, acessível pela cluster K8s na porta 10051.
+
+**9.** Um [Grafana][grafanacloud] já em operação.
 
 <BR>
 
@@ -39,6 +43,7 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 
 > ⚠️ **Note que este arquivo contém dados sensíveis e deve ter seu acesso restrito. Ele é ignorado pelo Git.**
 
+#### Lista de variáveis:
 
 | Variável | Descrição | Default |
 | :---: | :--- | :--- |
@@ -51,55 +56,53 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `eks_node_min_size` | Quantidade mínima de instâncias EC2 para o cluster K8s | _`1`_ |
 | `eks_node_max_size` | Quantidade máxima de instâncias EC2 para o cluster K8s | _`4`_ |
 | `enable_prefix_delegation` | Habilita o uso de prefixos de IP disponíveis para os nodes | _`true`_ |
-| `db_name` | Nome do banco de dados inicial no RDS | _vazio_ |
-| `db_username` | Usuário master do PostgreSQL | _vazio_ |
-| `db_password` | Senha do usuário master | _vazio_ |
-| `git_org` | Domínio provedor Git | _vazio_ |
-| `git_repo` | Nome do repositório do provedor Git | _fiap-toggle-master-stack_ |
-| `service_type` | Tipo de serviço para o ArgoCD | _ClusterIP_ |
-| `grafana_pass` | Senha do usuário admin do Grafana | _vazio_ |
-| `grafana_service_type` | Tipo de serviço do Grafana | _ClusterIP_ |
-
-- O CIDR, IP ou domínio público de onde o seu Grafana externo vai consultar Loki/Tempo/Prometheus (para `observe_allowed_cidrs` em `terra/terraform.tfvars` - ver passo 1; um domínio, ex. de um DDNS para IP dinâmico, é resolvido via DNS a cada `terraform apply`).
-- Um Zabbix server já em operação, acessível pela internet na porta 10051 (para `zabbix_server_host`/`zabbix_hostname` em `terra/terraform.tfvars` - ver passo 1 e passo 4).
+| `db_name` | Nome do banco de dados inicial no RDS - PostgreSQL | _sol_db_ |
+| `db_username` | Usuário master do PostgreSQL | _sol_ |
+| `db_password` | Senha do usuário master do PostgreSQL | _CHANGE_ME_ |
+| `rds_instance_class` | Tipo de instância RDS para o DB | _db.t3.micro_ |
+| `dynamodb_table_name` | Nome da tabela da SolidaryTech no DynamoDB | _SolidaryTechVolunteers_ |
+| `sqs_queue_name` | Nome da fila do Donation Service no SQS | _donation-events_ |
+| `k8s_namespace` | Nome do namespace da SolidaryTech no K8s | _solidarytech_ |
+| `donation_service_account` | Nome da service account do Donation Service | _donation-service_ |
+| `volunteer_service_account` | Nome da service account do Volunteer Service | _volunteer-service_ |
+| `lb_controller_namespace` | Namespace para o Load Balancer Controller | _kube-system_ |
+| `lb_controller_service_account` | ServiceAccount do Load Balancer Controller | _aws-load-balancer-controller_ |
+| `observe_allowed_cidrs` | CIDR, IP ou domínio autorizados a alcançar o cluster | _CHANGE_ME_ |
+| `zabbix_hostname` | Nome do Proxy criado no Zabbix server | _CHANGE_ME-proxy-eks-solidarytech_ |
+| `zabbix_server_host` | Hostname/IP desse do Zabbix Server | _CHANGE_ME_ |
+| `zabbix_version` | Versão major do Zabbix Proxy/Agent2 | _7.4_ |
 
 <BR>
 
-## 1. Provisionar a infraestrutura AWS, o AWS Load Balancer Controller, observabilidade e Zabbix com Terraform
+## 2. Provisionamento de infraestrutura
+
+Neste passo serão provisionados a infraestrutura AWS, Load Balancer Controller, serviços de observabilidade e monitoramento com o Terraform. Os passos abaixo devem ser executados a partir de um host de controle da infraestrutura.
 
 ```bash
 cd terra
 cp terraform.tfvars.example terraform.tfvars
 # edite terraform.tfvars: no mínimo db_password, observe_allowed_cidrs
-# (CIDR, IP ou domínio de onde o Grafana externo vai consultar
-# Loki/Tempo/Prometheus) e zabbix_hostname/zabbix_server_host (identificam
-# o Proxy e o servidor do seu Zabbix externo - ver terra/README.md);
-# não deixe os valores de exemplo.
+# e zabbix_hostname/zabbix_server_host; não use os valores de exemplo.
 
-./init.sh   # cria bucket S3 + tabela DynamoDB do backend remoto (idempotente)
+./init.sh   # cria bucket S3 + tabela DynamoDB + inicializa Terraform (idempotente)
 
-# Só na primeira vez, contra um backend/cluster totalmente novo: os
-# providers kubernetes/helm/kubectl (usados abaixo) autenticam com outputs
-# do cluster EKS, que ainda não existem num state vazio - crie só o cluster
-# primeiro. Ver "Uso" em terra/README.md para o porquê (limitação clássica
-# de Terraform+EKS, não algo específico deste repositório).
+# Na primeira inicialização, com um cluster totalmente novo, os providers
+# kubernetes/helm/kubectl autenticam com outputs do cluster EKS, que não
+# existem num state vazio. Crie o cluster primeiro.
+# Ver "Uso" em terra/README.md para o porquê (limitação de Terraform+EKS).
+terraform plan -target=module.eks
 terraform apply -target=module.eks
 
+# Um segundo `apply` (já num state com o cluster criado) cria os demais recursos
+# AWS, instala o Load Balancer Controller, e aplica o Loki/Tempo/Alloy/Prometheus
+# e o Zabbix Proxy/Agent2/kube-state-metrics direto no cluster, através dos providers
+# `helm`/`kubernetes`/`kubectl`. Nenhum desses passa pelo FluxCD, (`terra/README.md`).
+# A ordem entre eles pelas de dependências do Terraform. Não precisa de mais um
+# `apply` além do `-target=module.eks` inicial. Em clusters já existentes
+# (`module.eks` criado), vá direto para o `terraform plan`/`apply`.
 terraform plan
 terraform apply
 ```
-
-Esse segundo `apply` (já num state com o cluster criado) cria o resto -
-RDS/DynamoDB/SQS/IAM/NLB/etc., instala o AWS Load Balancer Controller
-(`terra/modules/lb`), e já aplica Loki/Tempo/Alloy/Prometheus
-(`terra/modules/{loki,tempo,alloy,prometheus}`) e o Zabbix Proxy/Agent2/kube-state-metrics
-(`terra/modules/zabbix`) direto no cluster, via os providers `helm`/`kubernetes`/`kubectl`
-— nenhum desses passa pelo Flux, ver `terra/README.md` para o porquê. A
-ordem entre eles (controller antes dos `TargetGroupBinding` de
-Loki/Tempo/Prometheus) já é garantida pelo grafo de dependências do próprio
-Terraform - não precisa de mais um `apply` além do `-target=module.eks`
-inicial. Em clusters já existentes (`module.eks` já no state), pule direto
-para `terraform plan`/`apply`.
 
 Ao final, aponte o `kubectl` local para o cluster criado:
 
@@ -112,15 +115,15 @@ $(terraform output -raw configure_kubectl 2>/dev/null) || \
 
 ## 2. Inicializar o FluxCD no cluster (microsserviços)
 
-Com o `flux` CLI instalado e o `kubectl` já apontando para o cluster criado no passo anterior, valide os pré-requisitos e rode o bootstrap contra o GitHub:
+Com o `flux` CLI instalado e o `kubectl` já apontando para o cluster criado no passo anterior, valide os pré-requisitos e rode o _bootstrap_ contra o GitHub.
 
 ```bash
 flux check --pre
 
-export GITHUB_TOKEN=<seu-personal-access-token>
+export GITHUB_TOKEN=<personal-access-token>
 
 flux bootstrap github \
-    --owner=diasdmhub \
+    --owner=[CONTA DO GITHUB] \
     --repository=hackathon-DCLT \
     --branch=main \
     --path=./clusters/eks-aws \
@@ -128,15 +131,11 @@ flux bootstrap github \
     --token-auth
 ```
 
-Isso gera `clusters/eks-aws/flux-system/` (instala os controllers, cria o `GitRepository` apontando para este repositório e o `Kustomization` raiz) e faz commit + push direto na branch `main`. A partir daí, a `Kustomization` já declarada em `clusters/eks-aws/` passa a reconciliar de fato:
-
-- `solidarytech` → `./kube-aws`
+Isso instala os controladores (_`clusters/eks-aws/flux-system/`_) do FluxCD, cria o `GitRepository` apontando para o repositório determinado e o `Kustomization` raiz. Ele faz _commit_ e _push_ direto na branch `main` do repositório. A partir daí, a `Kustomization` já declarada em `clusters/eks-aws/` passa a se reconciliar com o cluster, criando os serviços da SolidaryTech.
 
 ```bash
-flux get kustomizations
+flux get kustomizations  # Consulta
 ```
-
-> **Este cluster não roda a `Kustomization` `image-automation`**: ela já reconcilia `./kube` a partir do `kubeadm-local` e faz commit+push direto em `main`; rodá-la também aqui faria dois Flux checarem o Docker Hub e tentarem commitar a mesma atualização de tag em paralelo. **Também não há `Kustomization` `lb-controller`/`observe`/`zabbix`** aqui: esses componentes já foram aplicados pelo Terraform no passo 1, não pelo Flux — ver `CLAUDE.md`. `solidarytech` não declara `dependsOn` por causa disso: o AWS Load Balancer Controller (e o CRD `TargetGroupBinding` que `kube-aws/` usa) já existe desde o passo 1, contanto que ele tenha rodado antes deste passo.
 
 <BR>
 
@@ -160,9 +159,7 @@ kubectl apply -f kube-aws/060-volunteer/061-secret.yaml
 
 ## 4. Configurar o Grafana externo
 
-Loki, Tempo e Prometheus já sobem sozinhos com o `terraform apply` do passo 1
-- nenhum passo manual de instalação aqui. Falta só cadastrar os 3
-datasources no seu Grafana externo, apontando para o DNS name da NLB:
+Loki, Tempo e Prometheus são implementados com o `terraform apply` do passo 1. Falta cadastrar os 3 datasources no Grafana externo, apontando para o DNS name da NLB:
 
 ```bash
 terraform output -raw nlb_dns_name   # em terra/
@@ -172,32 +169,24 @@ terraform output -raw nlb_dns_name   # em terra/
 - Tempo: `http://<nlb_dns_name>:3200`
 - Prometheus: `http://<nlb_dns_name>:9090`
 
-Ver `doc/observabilidade.md` para o restante da configuração (Service Graph,
-derived field de `trace_id`, dashboard modelo).
+Ver `doc/observabilidade.md` para o restante da configuração (Service Graph, derived field de `trace_id`, dashboard modelo).
 
 <BR>
 
 ## 5. Conectar o cluster ao seu Zabbix
 
-O Zabbix Proxy + Agent2 + kube-state-metrics já sobem sozinhos com o
-`terraform apply` do passo 1 (`zabbix_hostname`/`zabbix_server_host` de
-`terraform.tfvars`) - falta só a configuração do **lado do seu Zabbix
-server**, que nenhuma ferramenta deste repositório consegue aplicar (vive no
-banco de dados do próprio Zabbix). Ver a seção "Observabilidade e
-monitoração de infraestrutura via Terraform" em `terra/README.md` para o
-passo a passo completo: criar o Proxy, pegar o token da ServiceAccount
-`zabbix-k8s-reader`, e importar/vincular as templates nativas "Kubernetes
-nodes by HTTP"/"Kubernetes cluster state by HTTP".
+O Zabbix Proxy, Agent2, kube-state-metrics são implementados com o `terraform apply` do passo 1. É necessário configurar o **lado do seu Zabbix Server**. Veja a seção "Observabilidade e monitoração de infraestrutura via Terraform" em `terra/README.md` para o passo-a-passo completo: criar o Proxy, pegar o token da ServiceAccount
+`zabbix-k8s-reader`, e importar/vincular as templates do Kubernetes.
 
 <BR>
 
-## Referência: destruição do ambiente
+## Destruição do ambiente
 
-Use `terra/destroy.sh` em vez de `terraform destroy` direto - hoje é um wrapper fino sobre o destroy (a NLB única de `terra/modules/nlb` está no state do Terraform, sem risco de ENI órfã como um `Service` `LoadBalancer` teria). Ver `terra/README.md` para o detalhamento, incluindo o cuidado com os recursos `kubernetes_*`/`helm_release` de observabilidade/Zabbix (também no state, mas exigem a API do EKS alcançável durante o destroy).
+> **É necessário estar conectado ao cluster AWS.**
 
 ```bash
 cd terra
-./destroy.sh
+terraform destroy
 ```
 
 | [⬆️ Top](#roteiro-de-implementação-inicial-do-cluster-k8s-na-aws) |
@@ -208,3 +197,5 @@ cd terra
 [fluxcli]: https://fluxcd.io/flux/installation/#install-the-flux-cli
 [kuberepo]: https://kubernetes.io/docs/tasks/tools
 [tfvars]: /terra/terraform.tfvars.example
+[zabbixdoc]: https://www.zabbix.com/documentation/current/en
+[grafanacloud]: https://grafana.com/products/cloud/

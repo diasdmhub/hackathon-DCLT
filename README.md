@@ -22,6 +22,7 @@ Este é o ecossistema de microsserviços da SolidaryTech que simulam um ambiente
 - Devido às limitações do ambiente de laboratório da AWS, principalmente quanto aos acessos, não foi possivel implementar toda a infraestrutura do projeto adequadamente.
 Foi utilizado um conta privada da AWS para este projeto, no entanto, a infraestrutura do projeto só é mantida em produção pelo período de demonstração e testes para evitar custos elevados.
 - Para desenvolvimento, testes ou uso limitado, foi implementado um ambiente local de emulação AWS utilizando o Docker Compose ([`docker-compose.yaml`][dockercompose]) a fim de evitar o uso do ambiente real da AWS e seus custos agregados. Foi incluído o ElasticMQ para emular o SQS, e o DynamoDB Local para a tabela do DynamoDB do _volunteer-service_.
+- O Zabbix é utilizado como ferramenta central de eventos devido sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é _open-source_. Integrado a ele, estão recursos de tratamento e automatção de eventos.
 
 <BR>
 

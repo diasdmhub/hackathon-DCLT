@@ -16,45 +16,44 @@ eks_node_min_size           = 1
 eks_node_max_size           = 4
 enable_prefix_delegation    = true
 
-# RDS - CREDENCIAL SENSÍVEL, defina um valor real aqui
+# RDS - Credenciais do DB
 db_name     = "sol_db"
 db_username = "sol"
 db_password = "CHANGE_ME"
 
 rds_instance_class = "db.t3.micro"
 
-# DynamoDB / SQS - mantidos com os nomes já usados hoje pelos serviços
+# DynamoDB / SQS
 dynamodb_table_name = "SolidaryTechVolunteers"
-sqs_queue_name       = "donation-events"
+sqs_queue_name      = "donation-events"
 
-# IAM/IRSA - namespace e ServiceAccounts que os pods deverão usar em kube/
+# IAM/IRSA - namespace e ServiceAccounts que os pods deverão usar
 k8s_namespace              = "solidarytech"
 donation_service_account   = "donation-service"
 volunteer_service_account  = "volunteer-service"
 
-# IAM/IRSA - ServiceAccount do AWS Load Balancer Controller (lb-controller/)
+# IAM/IRSA - ServiceAccount do AWS Load Balancer Controller
 lb_controller_namespace       = "kube-system"
 lb_controller_service_account = "aws-load-balancer-controller"
 
 # NLB - CIDR(s), IP(s) ou domínio(s) autorizados a alcançar
 # Loki/Tempo/Prometheus (observe-aws/). Esses backends não têm autenticação
-# própria, então NÃO use 0.0.0.0/0 aqui: restrinja ao IP público de onde o
-# seu Grafana externo consulta. Aceita um CIDR ("203.0.113.10/32"), um IP
-# solto ("203.0.113.10", vira /32) ou um domínio ("meudominio.com.br", ex.:
-# um DDNS que aponta para seu IP dinâmico - resolvido via DNS a cada
-# terraform apply, ver terra/dns.tf).
+# própria, então NÃO use 0.0.0.0/0. Restrinja ao IP público de onde o
+# Grafana externo consulta.
+# Exemplos:
+#    CIDR "203.0.113.10/32"
+#    IP "203.0.113.10" (vira /32)
+#    Nome de domínio "meudominio.com.br" (resolvido via DNS a cada
+#                                        terraform apply, ver terra/dns.tf)
 observe_allowed_cidrs = ["CHANGE_ME"]
 
-# Zabbix (terra/modules/zabbix) - identificam sua infraestrutura pessoal,
-# por isso sem default. zabbix_hostname precisa bater com o nome do objeto
-# "Proxy" criado manualmente no seu Zabbix server (Data collection ->
-# Proxies, modo Active); zabbix_server_host é o hostname/IP desse servidor
-# (porta 10051) - ver terra/modules/zabbix/README.md.
-zabbix_hostname    = "CHANGE_ME-solidarytech-eks-proxy"
+# - zabbix_hostname precisa ser o nome do Proxy" criado no Zabbix server
+# (Adminstration -> Proxies, modo Active);
+# - zabbix_server_host é o hostname/IP desse servidor (porta 10051)
+# (ver terra/modules/zabbix/README.md)
+zabbix_hostname    = "CHANGE_ME-proxy-eks-solidarytech"
 zabbix_server_host = "CHANGE_ME"
 
-# Versão major.minor das imagens Docker do Zabbix Proxy/Agent2 (monta a tag
-# "ol-<versão>-latest"). Tem default ("7.4") em variables.tf, só precisa
-# repetir aqui se quiser fixar outra versão - confira que bate com a versão
-# do seu Zabbix server externo.
+# Versão major das imagens Docker do Zabbix Proxy/Agent2.
+# Deve ser igual à versão do Zabbix Server externo.
 zabbix_version = "7.4"
