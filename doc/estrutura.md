@@ -18,7 +18,7 @@ O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a 
 ### 1.1 **Container**
 
 - Dockerfiles otimizados para o _build_ dos 3 microserviços e implantação no Kubernetes.
-    - Os microserviços e acessórios utilizam imagens reduzidas, como `alpine`.
+    - Os microserviços utilizam imagens reduzidas, como `alpine`.
     - Possuem _stage build_ otimizado para redução de artefatos quando necessário (_donation-service_).
 - Três microserviços independentes (`ngo-service`, `donation-service` e `volunteer-service`), cada um com seu próprio banco/storage (Postgres, Postgres+SQS e DynamoDB, respectivamente).
 - Stack completa em `build/docker-compose.yaml`, incluindo emuladores locais de nuvem: ElasticMQ (SQS) e DynamoDB Local, para não depender de conta AWS real durante desenvolvimento e testes.
@@ -27,7 +27,7 @@ O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a 
 
 ### 1.2 CI e DevSecOps
 
-Trata-se de um modelo onde o Git é a fonte de verdade e o próprio cluster K8s puxa as mudanças. Esse formato mantém o ambiente em um estado desejado de forma declarativa trazendo mais flexibilidade e portabilidade.
+Trata-se de um modelo onde o Git é a fonte de verdade e o próprio cluster K8s sincroniza as mudanças. Esse formato mantém o ambiente em um estado desejado de forma declarativa trazendo mais flexibilidade e portabilidade.
 
 🔶 **Gitea e GitHub com pipeline de CI** - Pipeline de CI para os 3 microsserviços do SolidaryTech, cobrindo aspectos de qualidade e segurança de código, teste de integração de ponta a ponta contra a stack real, seguidos de build, scan e publicação de [imagens no Docker Hub][dockerhub].
 
