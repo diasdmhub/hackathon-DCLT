@@ -9,13 +9,13 @@ Abaixo são descritas algumas das disciplinas utilizadas neste projeto.
 
 <BR>
 
-## Fundamentos DevOps
+## 1. Fundamentos DevOps
 
 O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a seguir.
 
 <BR>
 
-### **Container**
+### 1.1 **Container**
 
 - Dockerfiles otimizados para o _build_ dos 3 microserviços e implantação no Kubernetes.
     - Os microserviços e acessórios utilizam imagens reduzidas, como `alpine`.
@@ -25,7 +25,7 @@ O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a 
 
 <BR>
 
-### 2. CI e DevSecOps
+### 1.2 CI e DevSecOps
 
 Trata-se de um modelo onde o Git é a fonte de verdade e o próprio cluster K8s puxa as mudanças. Esse formato mantém o ambiente em um estado desejado de forma declarativa trazendo mais flexibilidade e portabilidade.
 
@@ -39,7 +39,7 @@ Os dois workflows equivalentes ([`.gitea/workflows/ci-cd.yaml`][cigitea] e [`.gi
 
 <BR>
 
-### 3. Gitops (CD)
+### 1.3 Gitops (CD)
 
 O pipeline CI combinado ao FluxCD formam duas metades de um macro fluxo de GitOps.
 
@@ -53,7 +53,7 @@ São declarados 3 conciliações com manifestos do Kubernetes:
 
 <BR>
 
-### 3. Infraestrutura como Código (IaC)
+### 1.4 Infraestrutura como Código (IaC)
 
 Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) via Terraform.
 
@@ -62,7 +62,7 @@ Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) 
 
 <BR>
 
-### 4. Kubernetes
+### 1.5 Kubernetes
 
 > **O projeto foi estruturado em plataformas de desenvolvimento e produção.**
 
@@ -72,7 +72,7 @@ Deploy testado ponta a ponta no cluster real. Os serviços da SolidaryTech compa
 
 <BR>
 
-### 5. Observabilidade e APM
+### 1.6 Observabilidade e APM
 
 Stack completa rodando (Prometheus, Grafana, Loki e/ou Alloy) e instrumentação dos códigos no APM (Tempo) com Distributed Tracing.
 
