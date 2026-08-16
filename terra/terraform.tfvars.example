@@ -61,7 +61,7 @@ zabbix_version = "7.4"
 # PSK (Pre-Shared Key) da conexão TLS entre o Zabbix Proxy e o Zabbix Server
 # externo (porta 10051) - a única que atravessa a borda do cluster. Os dois
 # valores abaixo precisam ser cadastrados também na aba "Encryption" do
-# objeto Proxy no Zabbix Server (Data collection -> Proxies).
+# objeto Proxy no Zabbix Server (Administration -> Proxies).
 # zabbix_proxy_tls_psk: hexadecimal de 64 a 128 caracteres (256 a 512 bits),
 # gerado por exemplo com "openssl rand -hex 32".
 zabbix_proxy_tls_psk_identity = "CHANGE_ME-psk"
