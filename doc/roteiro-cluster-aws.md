@@ -125,13 +125,14 @@ flux check --pre
 flux install
 ```
 
-Em seguida, aplique manualmente o `GitRepository` já versionado em `clusters/eks-aws/flux-system/gotk-sync.yaml` (aponta para `https://github.com/diasdmhub/hackathon-DCLT.git`, leitura anônima já que o repositório é público):
+Em seguida, aplique manualmente o `GitRepository` já versionado em `clusters/eks-aws/flux-system/gotk-sync.yaml` (aponta para `https://github.com/diasdmhub/hackathon-DCLT.git`, leitura anônima já que o repositório é público) e o `Kustomization` `solidarytech` (`clusters/eks-aws/solidarytech-kustomization.yaml`):
 
 ```bash
 kubectl apply -f clusters/eks-aws/flux-system/gotk-sync.yaml
+kubectl apply -f clusters/eks-aws/solidarytech-kustomization.yaml
 ```
 
-Diferente do cluster local, esse `GitRepository` não é reconciliado por uma `Kustomization` autogerenciada — é aplicado uma única vez, à mão, e só muda se o `url`/`branch` mudar no futuro. A partir daí, o `Kustomization` `solidarytech` já declarado em `clusters/eks-aws/solidarytech-kustomization.yaml` referencia esse `GitRepository` e passa a se reconciliar sozinho, criando os serviços da SolidaryTech (`./kube-aws`).
+Diferente do cluster local, nenhum desses dois objetos é reconciliado por uma `Kustomization` raiz autogerenciada — não existe mais, aqui, um `Kustomization` que fique observando `./clusters/eks-aws` e aplicando sozinho qualquer YAML novo naquela pasta. Os dois são aplicados uma única vez, à mão; a partir daí, é o `Kustomization` `solidarytech` (já aplicado) que passa a reconciliar sozinho, criando os serviços da SolidaryTech (`./kube-aws`). Se um dos dois arquivos mudar no futuro (novo `url`/`branch` no `GitRepository`, ou ajuste no `path`/`interval` do `Kustomization`), é preciso reaplicar manualmente de novo — não há reconciliação automática desse nível.
 
 O Namespace `solidarytech` e os Secrets `ngo-env`, `donation-env` e `volunteer-env` (string de conexão real do RDS) já existem nesse ponto, pois foram criados pelo `terraform apply` do passo 2 (`kubernetes_namespace_v1.solidarytech` e `module.secrets`), não pelo Flux (vide `kube-aws/README.md`, seção "Secrets").
 
