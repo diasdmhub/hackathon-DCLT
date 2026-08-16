@@ -31,3 +31,14 @@ variable "dynamodb_table_name" {
   description = "Nome da tabela DynamoDB (output do módulo dynamo)"
   type        = string
 }
+
+# Namespace/região usados pelos Secrets Kubernetes ngo-env/donation-env/volunteer-env
+variable "k8s_namespace" {
+  description = "Namespace Kubernetes onde os Secrets ngo-env/donation-env/volunteer-env são criados (já deve existir - ver kubernetes_namespace_v1.solidarytech em terra/main.tf)"
+  type        = string
+}
+
+variable "aws_region" {
+  description = "Região da AWS, usada em AWS_REGION nos Secrets donation-env/volunteer-env"
+  type        = string
+}

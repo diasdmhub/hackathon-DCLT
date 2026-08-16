@@ -42,3 +42,63 @@ resource "aws_ssm_parameter" "dynamodb_table_name" {
 
   tags = { Name = "${var.name_prefix}-ssm-dynamodb-table-name" }
 }
+
+# Secrets ngo-env/donation-env/volunteer-env que kube-aws/ espera via
+# envFrom (042-ngo.yaml, 052-donation.yaml, 062-volunteer.yaml). Criados
+# aqui, direto pelo provider kubernetes, em vez de aplicados manualmente
+# fora do Flux: mesmo raciocínio de terra/modules/{zabbix,loki,tempo,alloy,
+# prometheus} (ver "Observabilidade via Terraform" em terra/README.md) -
+# evita um passo manual sem tirar o dado sensível (senha do RDS) do Flux/git.
+resource "kubernetes_secret_v1" "ngo_env" {
+  metadata {
+    name      = "ngo-env"
+    namespace = var.k8s_namespace
+    labels = {
+      "app.kubernetes.io/part-of" = "solidarytech"
+      "Project"                   = "SolidaryTech"
+      "Environment"               = "primary"
+    }
+  }
+
+  data = {
+    PORT         = "8081"
+    DATABASE_URL = var.rds_connection_url
+  }
+}
+
+resource "kubernetes_secret_v1" "donation_env" {
+  metadata {
+    name      = "donation-env"
+    namespace = var.k8s_namespace
+    labels = {
+      "app.kubernetes.io/part-of" = "solidarytech"
+      "Project"                   = "SolidaryTech"
+      "Environment"               = "primary"
+    }
+  }
+
+  data = {
+    PORT         = "8082"
+    DATABASE_URL = var.rds_connection_url
+    AWS_REGION   = var.aws_region
+    AWS_SQS_URL  = var.sqs_queue_url
+  }
+}
+
+resource "kubernetes_secret_v1" "volunteer_env" {
+  metadata {
+    name      = "volunteer-env"
+    namespace = var.k8s_namespace
+    labels = {
+      "app.kubernetes.io/part-of" = "solidarytech"
+      "Project"                   = "SolidaryTech"
+      "Environment"               = "primary"
+    }
+  }
+
+  data = {
+    PORT               = "8083"
+    AWS_REGION         = var.aws_region
+    AWS_DYNAMODB_TABLE = var.dynamodb_table_name
+  }
+}

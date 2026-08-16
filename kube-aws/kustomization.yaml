@@ -7,13 +7,13 @@ kind: Kustomization
 # credenciais AWS falsas usadas para os emuladores locais. Ver
 # kube-aws/README.md.
 #
-# Os Secrets *-env (ngo-env, donation-env, volunteer-env) não entram aqui de
-# propósito: contêm a string de conexão real do RDS e são aplicados
-# manualmente, fora do Flux, a partir dos *-secret.example.yaml deste
-# diretório.
+# O Namespace solidarytech e os Secrets *-env (ngo-env, donation-env,
+# volunteer-env) não entram aqui de propósito: contêm a string de conexão
+# real do RDS e são criados direto pelo Terraform (module "secrets" em
+# terra/main.tf), não pelo Flux - evita ter os dois gerenciando o mesmo
+# Namespace e mantém o dado sensível fora do git.
 
 resources:
-  - 000-namespace.yaml
   - 005-serviceaccounts.yaml
   - 020-rds-init/021-configmap.yaml
   - 020-rds-init/022-rds-init.yaml

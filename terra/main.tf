@@ -126,7 +126,29 @@ moved {
   to   = module.lb_iam
 }
 
-# Secrets (SSM Parameter Store) - depende dos valores gerados por rds/sqs/dynamo
+# Namespace solidarytech - criado aqui (não pelo Flux) para que os Secrets
+# ngo-env/donation-env/volunteer-env (module.secrets abaixo) possam ser
+# aplicados no mesmo `terraform apply` que provisiona RDS/SQS/DynamoDB, sem
+# depender do `flux bootstrap` já ter rodado. kube-aws/ não declara mais
+# esse Namespace (removido de kube-aws/kustomization.yaml) para evitar dois
+# donos do mesmo objeto - mesmo raciocínio de kubernetes_namespace_v1.observe
+# abaixo.
+resource "kubernetes_namespace_v1" "solidarytech" {
+  metadata {
+    name = var.k8s_namespace
+    labels = {
+      "app.kubernetes.io/part-of" = "solidarytech"
+      "Project"                   = "SolidaryTech"
+      "Environment"               = "primary"
+    }
+  }
+
+  depends_on = [module.eks]
+}
+
+# Secrets (SSM Parameter Store + Secrets Kubernetes ngo-env/donation-env/
+# volunteer-env) - depende dos valores gerados por rds/sqs/dynamo e do
+# namespace solidarytech já existir.
 module "secrets" {
   source = "./modules/secrets"
 
@@ -135,8 +157,10 @@ module "secrets" {
   rds_password        = var.db_password
   sqs_queue_url       = module.sqs.sqs_queue_url
   dynamodb_table_name = module.dynamo.dynamodb_table_name
+  k8s_namespace       = kubernetes_namespace_v1.solidarytech.metadata[0].name
+  aws_region          = var.aws_region
 
-  depends_on = [module.rds, module.sqs, module.dynamo]
+  depends_on = [module.rds, module.sqs, module.dynamo, kubernetes_namespace_v1.solidarytech]
 }
 
 # Observabilidade e métricas de infraestrutura, aplicadas direto pelo

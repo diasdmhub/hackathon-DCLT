@@ -113,7 +113,7 @@ $(terraform output -raw configure_kubectl 2>/dev/null) || \
 
 <BR>
 
-## 2. Inicializar o FluxCD no cluster (microsserviços)
+## 3. Inicializar o FluxCD no cluster (microsserviços)
 
 Com o `flux` CLI instalado e o `kubectl` já apontando para o cluster criado no passo anterior, valide os pré-requisitos e rode o _bootstrap_ contra o GitHub.
 
@@ -133,33 +133,17 @@ flux bootstrap github \
 
 Isso instala os controladores (_`clusters/eks-aws/flux-system/`_) do FluxCD, cria o `GitRepository` apontando para o repositório determinado e o `Kustomization` raiz. Ele faz _commit_ e _push_ direto na branch `main` do repositório. A partir daí, a `Kustomization` já declarada em `clusters/eks-aws/` passa a se reconciliar com o cluster, criando os serviços da SolidaryTech.
 
+O Namespace `solidarytech` e os Secrets `ngo-env`, `donation-env` e `volunteer-env` (string de conexão real do RDS) já existem nesse ponto - foram criados pelo `terraform apply` do passo 2 (`kubernetes_namespace_v1.solidarytech` e `module.secrets`), não pelo Flux. Nenhum passo manual de Secret é necessário; ver `kube-aws/README.md`, seção "Secrets".
+
 ```bash
 flux get kustomizations  # Consulta
 ```
 
 <BR>
 
-## 3. Aplicar os Secrets que o Flux não gerencia
-
-Os Secrets `ngo-env`, `donation-env` e `volunteer-env` ficam de fora do Flux de propósito, pois contêm a string de conexão real do RDS. Depois que o namespace `solidarytech` existir (criado pela `Kustomization` `solidarytech` no passo anterior):
-
-```bash
-cp kube-aws/040-ngo/041-secret.example.yaml kube-aws/040-ngo/041-secret.yaml
-cp kube-aws/050-donation/051-secret.example.yaml kube-aws/050-donation/051-secret.yaml
-cp kube-aws/060-volunteer/061-secret.example.yaml kube-aws/060-volunteer/061-secret.yaml
-# preencha DATABASE_URL em cada arquivo (terraform output rds_outputs, ou
-# aws ssm get-parameter no parâmetro já populado por terra/modules/secrets)
-
-kubectl apply -f kube-aws/040-ngo/041-secret.yaml
-kubectl apply -f kube-aws/050-donation/051-secret.yaml
-kubectl apply -f kube-aws/060-volunteer/061-secret.yaml
-```
-
-<BR>
-
 ## 4. Configurar o Grafana externo
 
-Loki, Tempo e Prometheus são implementados com o `terraform apply` do passo 1. Falta cadastrar os 3 datasources no Grafana externo, apontando para o DNS name da NLB:
+Loki, Tempo e Prometheus são implementados com o `terraform apply` do passo 2. Falta cadastrar os 3 datasources no Grafana externo, apontando para o DNS name da NLB:
 
 ```bash
 terraform output -raw nlb_dns_name   # em terra/
@@ -175,7 +159,7 @@ Ver `doc/observabilidade.md` para o restante da configuração (Service Graph, d
 
 ## 5. Conectar o cluster ao seu Zabbix
 
-O Zabbix Proxy, Agent2, kube-state-metrics são implementados com o `terraform apply` do passo 1. É necessário configurar o **lado do seu Zabbix Server**. Veja a seção "Observabilidade e monitoração de infraestrutura via Terraform" em `terra/README.md` para o passo-a-passo completo: criar o Proxy, pegar o token da ServiceAccount
+O Zabbix Proxy, Agent2, kube-state-metrics são implementados com o `terraform apply` do passo 2. É necessário configurar o **lado do seu Zabbix Server**. Veja a seção "Observabilidade e monitoração de infraestrutura via Terraform" em `terra/README.md` para o passo-a-passo completo: criar o Proxy, pegar o token da ServiceAccount
 `zabbix-k8s-reader`, e importar/vincular as templates do Kubernetes.
 
 <BR>

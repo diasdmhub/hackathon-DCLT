@@ -21,7 +21,7 @@ nenhum módulo de registry (ECR) foi criado aqui.
 | `nlb` | Network Load Balancer única (3 listeners/target groups por serviço + 3 para observabilidade) | Sem free tier - cobra por hora + LCU |
 | `lb-iam` | Role IRSA do AWS Load Balancer Controller (kube-system) | Sem custo |
 | `lb` | O AWS Load Balancer Controller em si (ServiceAccount + `helm_release`) | Sem custo AWS - só o compute já contado no node group |
-| `secrets` | Parâmetros SSM Parameter Store (`SecureString`/`String`) | Camada Standard é gratuita |
+| `secrets` | Parâmetros SSM Parameter Store (`SecureString`/`String`) + Secrets Kubernetes `ngo-env`/`donation-env`/`volunteer-env` | Camada Standard do SSM é gratuita; Secrets Kubernetes sem custo |
 | `zabbix` | Zabbix Proxy (modo ativo) + Agent2 (DaemonSet) + kube-state-metrics, via `helm_release` | Sem custo AWS - só o compute já contado no node group |
 | `loki` / `tempo` / `prometheus` | Deployment + PVC (`gp3`) + Service + `TargetGroupBinding` cada, via recursos `kubernetes_*`/`kubectl_manifest` | Sem custo AWS além do já contado (node group, NLB, EBS) |
 | `alloy` | DaemonSet (coleta de logs + roteamento OTLP) via recursos `kubernetes_*` | Sem custo AWS além do já contado (node group) |

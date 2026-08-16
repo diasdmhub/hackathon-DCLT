@@ -27,25 +27,32 @@ O RDS provisionado por `terra/modules/rds` sobe como uma instância Postgres em 
 
 Pontos de atenção:
 - O ConfigMap é uma **cópia** de `build/ngo-service/db/init.sql` e `build/donation-service/db/init.sql`, não gerada a partir deles (o kustomize recusa arquivos fora da raiz do kustomization, mesmo dentro do mesmo repo). Se esses arquivos mudarem, atualize `021-configmap.yaml` junto.
-- Como o Job depende do Secret `ngo-env` (aplicado manualmente, fora do Flux - ver "Secrets" acima), ele só terá sucesso depois desse passo manual. Se o Job esgotar o `backoffLimit` (6 tentativas) antes disso, rode `kubectl delete job rds-init -n solidarytech` e force a reconciliação (`flux reconcile kustomization solidarytech`) depois de aplicar o Secret.
+- Como o Job depende do Secret `ngo-env` (criado pelo Terraform - ver "Secrets" abaixo), e o `terraform apply` sempre roda antes do `flux bootstrap` (ver `doc/roteiro-cluster-aws.md`), o Secret já existe quando a Kustomization `solidarytech` cria o Job pela primeira vez - sem passo manual nem corrida entre os dois. Se o Job ainda assim esgotar o `backoffLimit` (6 tentativas, por exemplo após um `terraform destroy`/`apply` que recriou o RDS com outro endpoint), rode `kubectl delete job rds-init -n solidarytech` e force a reconciliação (`flux reconcile kustomization solidarytech`).
 - `kustomize.toolkit.fluxcd.io/ssa: IfNotPresent` faz o Flux não tentar recriar o Job já concluído a cada reconciliação (Jobs são imutáveis).
 
 Os `initContainers` `wait-for-psql`/`wait-for-elasticmq`/`wait-for-dynamodb` de `kube/` também não existem aqui: não há um Service local para esperar, e o RDS/SQS/DynamoDB já estão no ar antes do deploy (provisionados pelo Terraform).
 
 ## Secrets
 
-Os Secrets `ngo-env`, `donation-env` e `volunteer-env` **não são aplicados pelo Flux** (não estão listados em `kustomization.yaml`, de propósito): `ngo-env` e `donation-env` contêm a string de conexão real do RDS (com senha), diferente do `AWS_ACCESS_KEY_ID=test` fake versionado em `kube/`.
+O Namespace `solidarytech` e os Secrets `ngo-env`, `donation-env` e
+`volunteer-env` **não são aplicados pelo Flux** (não estão listados em
+`kustomization.yaml`, de propósito): `ngo-env` e `donation-env` contêm a
+string de conexão real do RDS (com senha), diferente do
+`AWS_ACCESS_KEY_ID=test` fake versionado em `kube/`.
 
-1. Copie o `*-secret.example.yaml` de cada serviço (`040-ngo/`, `050-donation/`, `060-volunteer/`) para `*-secret.yaml` (já coberto pelo `.gitignore` da raiz do repositório).
-2. Preencha `DATABASE_URL` com a URL de conexão real do RDS - instruções de onde encontrar o valor estão nos comentários do próprio arquivo (`terraform output rds_outputs` em `terra/`, ou `aws ssm get-parameter` no parâmetro que `terra/modules/secrets` já populou).
-3. Aplique manualmente, uma vez, depois que o namespace `solidarytech` existir:
-   ```bash
-   kubectl apply -f kube-aws/040-ngo/041-secret.yaml
-   kubectl apply -f kube-aws/050-donation/051-secret.yaml
-   kubectl apply -f kube-aws/060-volunteer/061-secret.yaml
-   ```
+Em vez de um passo manual (`kubectl apply` fora do Flux), o Namespace e os 3
+Secrets são criados direto pelo `terraform apply` (`kubernetes_namespace_v1.solidarytech`
+e `module.secrets` em `terra/main.tf`/`terra/modules/secrets`), usando os
+mesmos valores de `rds_connection_url`/`sqs_queue_url`/`dynamodb_table_name`
+que já alimentam os parâmetros SSM - mesmo raciocínio de mover para o
+Terraform o que carrega segredo real ou dependeria de reconciliação do Flux
+(ver "Observabilidade via Terraform" em `terra/README.md`). Não há arquivo
+`*-secret.yaml`/`*-secret.example.yaml` neste diretório: a definição de cada
+Secret vive em `terra/modules/secrets/secrets.tf`.
 
-`AWS_SQS_URL` (em `donation-env`) e `AWS_DYNAMODB_TABLE` (em `volunteer-env`) já vêm preenchidos nos próprios `*-secret.example.yaml`, pois não são valores sensíveis.
+`AWS_SQS_URL` (em `donation-env`) e `AWS_DYNAMODB_TABLE` (em `volunteer-env`)
+não são sensíveis, mas ficam nos mesmos Secrets por conveniência (um único
+`envFrom` por Deployment).
 
 ## Exposição externa: NLB única + TargetGroupBinding
 
