@@ -15,7 +15,7 @@ O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a 
 
 <BR>
 
-### 1.1 **Container**
+### 1.1 Docker/Podman - Containers
 
 - Dockerfiles otimizados para o _build_ dos 3 microserviços e implantação no Kubernetes.
     - Os microserviços utilizam imagens reduzidas, como `alpine`.
@@ -59,6 +59,7 @@ Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) 
 
 - Os recursos da AWS foram implementados como módulos do Terraform de modo a facilitar o gerenciamento e possíveis manutenções.
 - Consistência de tags em todos os recursos AWS e Kubernetes, tanto para o ambiente local como para o ambiente _cloud_.
+- Foco em Free-tier deliberado. Alguns custos são inevitáveis, como o control plane do EKS, o NAT Gateway e EBS.
 
 <BR>
 
@@ -66,15 +67,20 @@ Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) 
 
 > **O projeto foi estruturado em plataformas de desenvolvimento e produção.**
 
-🔶 **3.1 K8s local** - Para desenvolver o ambiente, foi utilizado uma infraestrutura de Kubernetes local. Esse desenvolvimento foi iniciado com a implementação de uma _stack_ de serviços com o Docker Compose. Em seguida, a _stack_ foi reorganizada em manifestos para _deploy_ em cluster K8s. Os recursos foram organizados separadamente, e labels padronizadas (`Project: SolidaryTech`, `Environment: dev`, `app.kubernetes.io/part-of`).
+🔶 Para desenvolver o ambiente, foi utilizado uma infraestrutura de Kubernetes local. Esse desenvolvimento foi iniciado com a implementação de uma _stack_ de serviços com o Docker Compose. Em seguida, a _stack_ foi reorganizada em manifestos para _deploy_ em cluster K8s. Os recursos foram organizados separadamente, e labels padronizadas (`Project: SolidaryTech`, `Environment: primary`, `app.kubernetes.io/part-of`). Posteriormente o ambiente foi replicado na AWS.
 
-Deploy testado ponta a ponta no cluster real. Os serviços da SolidaryTech compartilham um único _endpoint_ externo com portas distintas por serviço, aproximando o ambiente local de um cenário de nuvem real com custo reduzido.
+Deploy testado ponta a ponta no cluster remoto. Os serviços da SolidaryTech compartilham um único _endpoint_ externo com portas distintas por serviço, aproximando o ambiente de um cenário de nuvem real com custo reduzido.
 
 <BR>
 
 ### 1.6 Observabilidade e APM
 
-Stack completa rodando (Prometheus, Grafana, Loki e/ou Alloy) e instrumentação dos códigos no APM (Tempo) com Distributed Tracing.
+Stack completa executando Prometheus, Loki e Alloy. Códigos dos microserviços instrumentados para o APM Tempo com Distributed Tracing.
+
+- **Tracing distribuído**: OTLP dos 3 serviços, com correlação log etrace via trace_id nas linhas de log. _equivalente ao "Log-Trace Correlation" do Datadog._
+- **Service map / RED metrics**: o _service-graphs_ processor do Tempo gera o mapa de dependências entre serviços; o _span-metrics_ processor gera traces, incluindo dimensão extra para, cobrir erros 4xx - _equivalente ao Service Map + APM metrics do Datadog._
+- **Auto-instrumentação**: opentelemetry-instrument nos serviços Python; instrumentação manual no Go - _cobre o caso funcional, similar a bibliotecas que o agente Datadog usa._
+- **Infra metrics**: Zabbix cobre a camada de nó/cluster - _papel equivalente ao Infrastructure Monitoring do Datadog._
 
 <BR>
 
