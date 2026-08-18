@@ -31,7 +31,10 @@ spec:
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus"
-            - "--storage.tsdb.retention.time=168h"
+            # 35d (não 168h): folga sobre a janela de 30d usada pelos SLOs
+            # mensais (doc/grafana) - ver observe/040-prometheus/042-pvc.yaml
+            # para o ajuste correspondente de armazenamento.
+            - "--storage.tsdb.retention.time=35d"
             # Habilita o endpoint remote_write (desativado por padrão) para
             # receber as métricas de service-graph/span-metrics do Tempo
             - "--web.enable-remote-write-receiver"

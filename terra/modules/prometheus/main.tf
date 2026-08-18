@@ -19,6 +19,10 @@ resource "kubernetes_persistent_volume_claim_v1" "prometheus_data" {
     storage_class_name = "gp3"
     resources {
       requests = {
+        # Retenção subiu de 168h para 35d (ver retention.time abaixo) para
+        # os SLOs mensais, mas 2Gi segue de sobra: uso medido no cluster
+        # kubeadm-local foi ~7MB/dia (49.8M acumulados nos 168h de retenção
+        # anteriores), o que projeta ~250MB para 35d mesmo sem folga extra.
         storage = "2Gi"
       }
     }
@@ -68,7 +72,9 @@ resource "kubernetes_deployment_v1" "prometheus" {
           args = [
             "--config.file=/etc/prometheus/prometheus.yml",
             "--storage.tsdb.path=/prometheus",
-            "--storage.tsdb.retention.time=168h",
+            # 35d (não 168h): folga sobre a janela de 30d usada pelos SLOs
+            # mensais (doc/grafana).
+            "--storage.tsdb.retention.time=35d",
             # Habilita o endpoint remote_write (desativado por padrão) para
             # receber as métricas de service-graph/span-metrics do Tempo
             "--web.enable-remote-write-receiver",
