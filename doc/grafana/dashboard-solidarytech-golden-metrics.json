@@ -2,37 +2,24 @@
   "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
-    "name": "di9glcm",
-    "namespace": "default",
-    "uid": "87013e7d-99e2-4cf8-8e0f-c96ceb41820d",
-    "resourceVersion": "1787011923787803",
-    "generation": 1,
-    "creationTimestamp": "2026-08-18T00:12:03Z",
-    "labels": {
-      "grafana.app/deprecatedInternalID": "4338942951677952"
-    },
-    "annotations": {
-      "grafana.app/createdBy": "user:afavvwg9f64n4c",
-      "grafana.app/folder": "",
-      "grafana.app/saved-from-ui": "Grafana v13.1.1 (a9cee6e172)"
-    }
+    "name": "di9glcm"
   },
   "spec": {
     "annotations": [
       {
         "kind": "AnnotationQuery",
         "spec": {
-          "query": {
-            "kind": "DataQuery",
-            "group": "grafana",
-            "version": "v0",
-            "spec": {}
-          },
+          "builtIn": true,
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "builtIn": true
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
         }
       }
     ],
@@ -43,10 +30,6 @@
       "panel-101": {
         "kind": "Panel",
         "spec": {
-          "id": 101,
-          "title": "NGO Service: Latência p95 (atual)",
-          "description": "Golden metric - Latência. p95 calculado a partir do histograma traces_spanmetrics_latency_bucket gerado pelo metrics-generator do Tempo (span-metrics).",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -54,32 +37,58 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
                       "datasource": {
-                        "name": "bfts7wbtgac5cf"
+                        "name": "${datasource}"
                       },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
                       "spec": {
                         "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=\"ngo-service\"}[$__rate_interval])))",
                         "legendFormat": "p95"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Golden metric - Latência. p95 calculado a partir do histograma traces_spanmetrics_latency_bucket gerado pelo metrics-generator do Tempo (span-metrics).",
+          "id": 101,
+          "links": [],
+          "title": "NGO Service: Latência p95 (atual)",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 0.5
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 1.5
+                      }
+                    ]
+                  },
+                  "unit": "s"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -96,41 +105,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "s",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 0.5,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 1.5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": "13.1.1"
           }
         }
       },
       "panel-102": {
         "kind": "Panel",
         "spec": {
-          "id": 102,
-          "title": "NGO Service: Latência p95 (período)",
-          "description": "Referencia o painel Stat 'panel-101' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -138,73 +121,37 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 101
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Referencia o painel Stat 'panel-101' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
+          "id": 102,
+          "links": [],
+          "title": "NGO Service: Latência p95 (período)",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "s",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 0.5,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 1.5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  },
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -244,22 +191,58 @@
                     "thresholdsStyle": {
                       "mode": "dashed"
                     }
-                  }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 0.5
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 1.5
+                      }
+                    ]
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-103": {
         "kind": "Panel",
         "spec": {
-          "id": 103,
-          "title": "NGO Service: Taxa de erro (atual)",
-          "description": "Golden metric - Taxa de erro. 5xx via status_code=STATUS_CODE_ERROR (OTel só marca erro em 5xx) + 4xx via dimensão http_response_status_code, sobre traces_spanmetrics_calls_total.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -267,34 +250,61 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
                       "datasource": {
-                        "name": "bfts7wbtgac5cf"
+                        "name": "${datasource}"
                       },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
                         "expr": "100 * (\n  sum(\n    rate(traces_spanmetrics_calls_total{service=\"ngo-service\", status_code=\"STATUS_CODE_ERROR\"}[$__rate_interval])\n    or\n    rate(traces_spanmetrics_calls_total{service=\"ngo-service\", http_response_status_code=~\"4..\"}[$__rate_interval])\n  )\n  or vector(0)\n) / sum(rate(traces_spanmetrics_calls_total{service=\"ngo-service\"}[$__rate_interval]))",
                         "legendFormat": "taxa de erro",
                         "range": true
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Golden metric - Taxa de erro. 5xx via status_code=STATUS_CODE_ERROR (OTel só marca erro em 5xx) + 4xx via dimensão http_response_status_code, sobre traces_spanmetrics_calls_total.",
+          "id": 103,
+          "links": [],
+          "title": "NGO Service: Taxa de erro (atual)",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 1
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 5
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -311,42 +321,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "decimals": 2,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 1,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": "13.1.1"
           }
         }
       },
       "panel-104": {
         "kind": "Panel",
         "spec": {
-          "id": 104,
-          "title": "NGO Service: Taxa de erro (período)",
-          "description": "Referencia o painel Stat 'panel-103' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -354,73 +337,37 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 103
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Referencia o painel Stat 'panel-103' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
+          "id": 104,
+          "links": [],
+          "title": "NGO Service: Taxa de erro (período)",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 1,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  },
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -460,22 +407,58 @@
                     "thresholdsStyle": {
                       "mode": "dashed"
                     }
-                  }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 1
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 5
+                      }
+                    ]
+                  },
+                  "unit": "percent"
                 },
                 "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-111": {
         "kind": "Panel",
         "spec": {
-          "id": 111,
-          "title": "Donation Service: Latência p95 (atual)",
-          "description": "Golden metric - Latência. p95 calculado a partir do histograma traces_spanmetrics_latency_bucket gerado pelo metrics-generator do Tempo (span-metrics).",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -483,32 +466,58 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
                       "datasource": {
-                        "name": "bfts7wbtgac5cf"
+                        "name": "${datasource}"
                       },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
                       "spec": {
                         "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=\"donation-service\"}[$__rate_interval])))",
                         "legendFormat": "p95"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Golden metric - Latência. p95 calculado a partir do histograma traces_spanmetrics_latency_bucket gerado pelo metrics-generator do Tempo (span-metrics).",
+          "id": 111,
+          "links": [],
+          "title": "Donation Service: Latência p95 (atual)",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 0.5
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 1.5
+                      }
+                    ]
+                  },
+                  "unit": "s"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -525,41 +534,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "s",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 0.5,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 1.5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": "13.1.1"
           }
         }
       },
       "panel-112": {
         "kind": "Panel",
         "spec": {
-          "id": 112,
-          "title": "Donation Service: Latência p95 (período)",
-          "description": "Referencia o painel Stat 'panel-111' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -567,73 +550,37 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 111
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Referencia o painel Stat 'panel-111' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
+          "id": 112,
+          "links": [],
+          "title": "Donation Service: Latência p95 (período)",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "s",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 0.5,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 1.5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  },
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -670,22 +617,58 @@
                     "thresholdsStyle": {
                       "mode": "dashed"
                     }
-                  }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 0.5
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 1.5
+                      }
+                    ]
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-113": {
         "kind": "Panel",
         "spec": {
-          "id": 113,
-          "title": "Donation Service: Taxa de erro (atual)",
-          "description": "Golden metric - Taxa de erro. 5xx via status_code=STATUS_CODE_ERROR (OTel só marca erro em 5xx) + 4xx via dimensão http_response_status_code, sobre traces_spanmetrics_calls_total.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -693,32 +676,59 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
                       "datasource": {
-                        "name": "bfts7wbtgac5cf"
+                        "name": "${datasource}"
                       },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
                       "spec": {
                         "expr": "100 * (\n  sum(\n    rate(traces_spanmetrics_calls_total{service=\"donation-service\", status_code=\"STATUS_CODE_ERROR\"}[$__rate_interval])\n    or\n    rate(traces_spanmetrics_calls_total{service=\"donation-service\", http_response_status_code=~\"4..\"}[$__rate_interval])\n  )\n  or vector(0)\n) / sum(rate(traces_spanmetrics_calls_total{service=\"donation-service\"}[$__rate_interval]))",
                         "legendFormat": "taxa de erro"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Golden metric - Taxa de erro. 5xx via status_code=STATUS_CODE_ERROR (OTel só marca erro em 5xx) + 4xx via dimensão http_response_status_code, sobre traces_spanmetrics_calls_total.",
+          "id": 113,
+          "links": [],
+          "title": "Donation Service: Taxa de erro (atual)",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 1
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 5
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -735,42 +745,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "decimals": 2,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 1,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": "13.1.1"
           }
         }
       },
       "panel-114": {
         "kind": "Panel",
         "spec": {
-          "id": 114,
-          "title": "Donation Service: Taxa de erro (período)",
-          "description": "Referencia o painel Stat 'panel-113' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -778,73 +761,37 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 113
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Referencia o painel Stat 'panel-113' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
+          "id": 114,
+          "links": [],
+          "title": "Donation Service: Taxa de erro (período)",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 1,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  },
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -881,138 +828,28 @@
                     "thresholdsStyle": {
                       "mode": "dashed"
                     }
-                  }
-                },
-                "overrides": []
-              }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "panel-121": {
-        "kind": "Panel",
-        "spec": {
-          "id": 121,
-          "title": "Volunteer Service: Latência p95 (atual)",
-          "description": "Golden metric - Latência. p95 calculado a partir do histograma traces_spanmetrics_latency_bucket gerado pelo metrics-generator do Tempo (span-metrics).",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "bfts7wbtgac5cf"
-                      },
-                      "spec": {
-                        "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=\"volunteer-service\"}[$__rate_interval])))",
-                        "legendFormat": "p95"
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "colorMode": "background",
-                "graphMode": "none",
-                "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "s",
+                  },
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": 0,
-                        "color": "dark-green"
+                        "color": "dark-green",
+                        "value": 0
                       },
                       {
-                        "value": 0.5,
-                        "color": "dark-yellow"
+                        "color": "dark-yellow",
+                        "value": 1
                       },
                       {
-                        "value": 1.5,
-                        "color": "dark-red"
+                        "color": "dark-red",
+                        "value": 5
                       }
                     ]
-                  }
+                  },
+                  "unit": "percent"
                 },
                 "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-122": {
-        "kind": "Panel",
-        "spec": {
-          "id": 122,
-          "title": "Volunteer Service: Latência p95 (período)",
-          "description": "Referencia o painel Stat 'panel-121' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "-- Dashboard --"
-                      },
-                      "spec": {
-                        "panelId": 121
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "13.1.1",
-            "spec": {
+              },
               "options": {
                 "annotations": {
                   "clustering": -1,
@@ -1034,27 +871,137 @@
                   "mode": "single",
                   "sort": "none"
                 }
-              },
+              }
+            },
+            "version": "13.1.1"
+          }
+        }
+      },
+      "panel-121": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=\"volunteer-service\"}[$__rate_interval])))",
+                        "legendFormat": "p95"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Golden metric - Latência. p95 calculado a partir do histograma traces_spanmetrics_latency_bucket gerado pelo metrics-generator do Tempo (span-metrics).",
+          "id": 121,
+          "links": [],
+          "title": "Volunteer Service: Latência p95 (atual)",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
               "fieldConfig": {
                 "defaults": {
-                  "unit": "s",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": 0,
-                        "color": "dark-green"
+                        "color": "dark-green",
+                        "value": 0
                       },
                       {
-                        "value": 0.5,
-                        "color": "dark-yellow"
+                        "color": "dark-yellow",
+                        "value": 0.5
                       },
                       {
-                        "value": 1.5,
-                        "color": "dark-red"
+                        "color": "dark-red",
+                        "value": 1.5
                       }
                     ]
                   },
+                  "unit": "s"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.1"
+          }
+        }
+      },
+      "panel-122": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
+                      "group": "datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "panelId": 121
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Referencia o painel Stat 'panel-121' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
+          "id": 122,
+          "links": [],
+          "title": "Volunteer Service: Latência p95 (período)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -1091,22 +1038,58 @@
                     "thresholdsStyle": {
                       "mode": "dashed"
                     }
-                  }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 0.5
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 1.5
+                      }
+                    ]
+                  },
+                  "unit": "s"
                 },
                 "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-123": {
         "kind": "Panel",
         "spec": {
-          "id": 123,
-          "title": "Volunteer Service: Taxa de erro (atual)",
-          "description": "Golden metric - Taxa de erro. 5xx via status_code=STATUS_CODE_ERROR (OTel só marca erro em 5xx) + 4xx via dimensão http_response_status_code, sobre traces_spanmetrics_calls_total.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1114,32 +1097,59 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
                       "datasource": {
-                        "name": "bfts7wbtgac5cf"
+                        "name": "${datasource}"
                       },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
                       "spec": {
                         "expr": "100 * (\n  sum(\n    rate(traces_spanmetrics_calls_total{service=\"volunteer-service\", status_code=\"STATUS_CODE_ERROR\"}[$__rate_interval])\n    or\n    rate(traces_spanmetrics_calls_total{service=\"volunteer-service\", http_response_status_code=~\"4..\"}[$__rate_interval])\n  )\n  or vector(0)\n) / sum(rate(traces_spanmetrics_calls_total{service=\"volunteer-service\"}[$__rate_interval]))",
                         "legendFormat": "taxa de erro"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Golden metric - Taxa de erro. 5xx via status_code=STATUS_CODE_ERROR (OTel só marca erro em 5xx) + 4xx via dimensão http_response_status_code, sobre traces_spanmetrics_calls_total.",
+          "id": 123,
+          "links": [],
+          "title": "Volunteer Service: Taxa de erro (atual)",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 1
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 5
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1156,42 +1166,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "decimals": 2,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 1,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": "13.1.1"
           }
         }
       },
       "panel-124": {
         "kind": "Panel",
         "spec": {
-          "id": 124,
-          "title": "Volunteer Service: Taxa de erro (período)",
-          "description": "Referencia o painel Stat 'panel-123' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1199,73 +1182,37 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 123
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Referencia o painel Stat 'panel-123' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
+          "id": 124,
+          "links": [],
+          "title": "Volunteer Service: Taxa de erro (período)",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "percent",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-green"
-                      },
-                      {
-                        "value": 1,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 5,
-                        "color": "dark-red"
-                      }
-                    ]
-                  },
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -1302,22 +1249,58 @@
                     "thresholdsStyle": {
                       "mode": "dashed"
                     }
-                  }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 1
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 5
+                      }
+                    ]
+                  },
+                  "unit": "percent"
                 },
                 "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-201": {
         "kind": "Panel",
         "spec": {
-          "id": 201,
-          "title": "Donation Service: SLO de erros (30d) - meta 95%",
-          "description": "SLI = 1 - taxa de erro, numa janela fixa de 30d (não segue o time picker). Evento bom = requisição sem erro (5xx via status_code=STATUS_CODE_ERROR, 4xx via http_response_status_code). Meta (SLO): SLI >= 95% no período.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1325,34 +1308,62 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
                       "datasource": {
-                        "name": "bfts7wbtgac5cf"
+                        "name": "${datasource}"
                       },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
                         "expr": "100 - 100 * (\n  (\n    sum(\n      rate(traces_spanmetrics_calls_total{service=\"donation-service\", status_code=\"STATUS_CODE_ERROR\"}[30d])\n      or\n      rate(traces_spanmetrics_calls_total{service=\"donation-service\", http_response_status_code=~\"4..\"}[30d])\n    )\n    or vector(0)\n  )\n  / sum(rate(traces_spanmetrics_calls_total{service=\"donation-service\"}[30d]))\n)",
                         "legendFormat": "SLI de erros",
                         "range": true
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "SLI = 1 - taxa de erro, numa janela fixa de 30d (não segue o time picker). Evento bom = requisição sem erro (5xx via status_code=STATUS_CODE_ERROR, 4xx via http_response_status_code). Meta (SLO): SLI \u003e= 95% no período.",
+          "id": 201,
+          "links": [],
+          "title": "Donation Service: SLO de erros (30d) - meta 95%",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 95
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1369,43 +1380,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "decimals": 2,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 95,
-                        "color": "dark-green"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-202": {
         "kind": "Panel",
         "spec": {
-          "id": 202,
-          "title": "Donation Service: SLO de erros (30d) - período",
-          "description": "Referencia o painel Stat 'panel-201' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1413,74 +1396,37 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 201
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Referencia o painel Stat 'panel-201' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
+          "id": 202,
+          "links": [],
+          "title": "Donation Service: SLO de erros (30d) - período",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "percent",
-                  "max": 100,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 95,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -1517,22 +1463,59 @@
                     "thresholdsStyle": {
                       "mode": "dashed"
                     }
-                  }
+                  },
+                  "max": 100,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 95
+                      }
+                    ]
+                  },
+                  "unit": "percent"
                 },
                 "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-203": {
         "kind": "Panel",
         "spec": {
-          "id": 203,
-          "title": "Donation Service: SLO de latência (30d) - meta 95% <= 512ms",
-          "description": "SLI = % de requisições com duração <= 512ms, numa janela fixa de 30d (não segue o time picker). Usa o bucket le=\"0.512\" do histograma traces_spanmetrics_latency_bucket - um dos buckets default do Tempo (potências de 2 a partir de 2ms), o mais próximo de 500ms sem customizar histogram_buckets no metrics-generator. Meta (SLO): SLI >= 95% no período.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1540,32 +1523,60 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
                       "datasource": {
-                        "name": "bfts7wbtgac5cf"
+                        "name": "${datasource}"
                       },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
                       "spec": {
                         "expr": "100 * sum(rate(traces_spanmetrics_latency_bucket{service=\"donation-service\", le=\"0.512\"}[30d]))\n/ sum(rate(traces_spanmetrics_latency_bucket{service=\"donation-service\", le=\"+Inf\"}[30d]))",
                         "legendFormat": "SLI de latência"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "SLI = % de requisições com duração \u003c= 512ms, numa janela fixa de 30d (não segue o time picker). Usa o bucket le=\"0.512\" do histograma traces_spanmetrics_latency_bucket - um dos buckets default do Tempo (potências de 2 a partir de 2ms), o mais próximo de 500ms sem customizar histogram_buckets no metrics-generator. Meta (SLO): SLI \u003e= 95% no período.",
+          "id": 203,
+          "links": [],
+          "title": "Donation Service: SLO de latência (30d) - meta 95% \u003c= 512ms",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 95
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1582,43 +1593,15 @@
                 "showPercentChange": false,
                 "textMode": "auto",
                 "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "decimals": 2,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 95,
-                        "color": "dark-green"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       },
       "panel-204": {
         "kind": "Panel",
         "spec": {
-          "id": 204,
-          "title": "Donation Service: SLO de latência (30d) - período",
-          "description": "Referencia o painel Stat 'panel-203' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1626,74 +1609,37 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 203
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Referencia o painel Stat 'panel-203' via datasource '-- Dashboard --' (mesma consulta, série histórica).",
+          "id": 204,
+          "links": [],
+          "title": "Donation Service: SLO de latência (30d) - período",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.1.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "percent",
-                  "max": 100,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "dark-red"
-                      },
-                      {
-                        "value": 90,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 95,
-                        "color": "dark-green"
-                      }
-                    ]
-                  },
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -1730,13 +1676,54 @@
                     "thresholdsStyle": {
                       "mode": "dashed"
                     }
-                  }
+                  },
+                  "max": 100,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 90
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 95
+                      }
+                    ]
+                  },
+                  "unit": "percent"
                 },
                 "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.1.1"
+          }
         }
       }
     },
@@ -1747,7 +1734,6 @@
           {
             "kind": "TabsLayoutTab",
             "spec": {
-              "title": "Donation SLO",
               "layout": {
                 "kind": "RowsLayout",
                 "spec": {
@@ -1755,7 +1741,6 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "SLO Mensal - Donation Service (Hot Path)",
                         "collapse": false,
                         "layout": {
                           "kind": "GridLayout",
@@ -1764,69 +1749,70 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-203"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 0,
-                                  "width": 20,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-204"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 20,
+                                  "x": 4,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 6,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-201"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 6
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 6,
-                                  "width": 20,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-202"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 20,
+                                  "x": 4,
+                                  "y": 6
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "SLO Mensal - Donation Service (Hot Path)"
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Donation SLO"
             }
           },
           {
             "kind": "TabsLayoutTab",
             "spec": {
-              "title": "Service SLI",
               "layout": {
                 "kind": "RowsLayout",
                 "spec": {
@@ -1834,7 +1820,6 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Donation Service",
                         "collapse": false,
                         "layout": {
                           "kind": "GridLayout",
@@ -1843,64 +1828,64 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-111"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 0,
-                                  "width": 20,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-112"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 20,
+                                  "x": 4,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 6,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-113"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 6
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 6,
-                                  "width": 20,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-114"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 20,
+                                  "x": 4,
+                                  "y": 6
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "Donation Service"
                       }
                     },
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Volunteer Service",
                         "collapse": false,
                         "layout": {
                           "kind": "GridLayout",
@@ -1909,64 +1894,64 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-121"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 0,
-                                  "width": 20,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-122"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 20,
+                                  "x": 4,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 6,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-123"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 6
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 6,
-                                  "width": 20,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-124"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 20,
+                                  "x": 4,
+                                  "y": 6
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "Volunteer Service"
                       }
                     },
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "NGO Service",
                         "collapse": false,
                         "layout": {
                           "kind": "GridLayout",
@@ -1975,69 +1960,84 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-101"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 0,
-                                  "width": 20,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-102"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 20,
+                                  "x": 4,
+                                  "y": 0
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 6,
-                                  "width": 4,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-103"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 4,
+                                  "x": 0,
+                                  "y": 6
                                 }
                               },
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
-                                  "y": 6,
-                                  "width": 20,
-                                  "height": 6,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-104"
-                                  }
+                                  },
+                                  "height": 6,
+                                  "width": 20,
+                                  "x": 4,
+                                  "y": 6
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "NGO Service"
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Service SLI"
             }
           }
         ]
       }
     },
-    "links": [],
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "external link",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": true,
+        "title": "Source (GitHub)",
+        "tooltip": "View source file in repository",
+        "type": "link",
+        "url": "https://github.com/diasdmhub/hackathon-DCLT/blob/main/doc/grafana/dashboard-solidarytech-golden-metrics.json"
+      }
+    ],
     "liveNow": false,
     "preload": false,
     "tags": [
@@ -2046,9 +2046,6 @@
       "golden-metrics"
     ],
     "timeSettings": {
-      "timezone": "browser",
-      "from": "now-3h",
-      "to": "now",
       "autoRefresh": "30s",
       "autoRefreshIntervals": [
         "30s",
@@ -2060,10 +2057,34 @@
         "2h",
         "1d"
       ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-3h",
       "hideTimepicker": false,
-      "fiscalYearStartMonth": 0
+      "timezone": "browser",
+      "to": "now"
     },
     "title": "SolidaryTech - Golden Metrics (Latência e Erros)",
-    "variables": []
+    "variables": [
+      {
+        "kind": "DatasourceVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "prometheus",
+            "value": "bfts7wbtgac5cf"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Cluster Source",
+          "multi": false,
+          "name": "datasource",
+          "options": [],
+          "pluginId": "prometheus",
+          "refresh": "onDashboardLoad",
+          "regex": "/prometheus/",
+          "skipUrlSync": false
+        }
+      }
+    ]
   }
 }
