@@ -1538,8 +1538,12 @@
                         "value": 0
                       },
                       {
-                        "color": "dark-green",
+                        "color": "dark-yellow",
                         "value": 3
+                      },
+                      {
+                        "color": "dark-green",
+                        "value": 9
                       }
                     ]
                   },
