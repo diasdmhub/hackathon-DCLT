@@ -80,7 +80,7 @@ Stack completa executando Prometheus, Loki e Alloy. Códigos dos microserviços 
 - **Tracing distribuído**: OTLP dos 3 serviços, com correlação log etrace via trace_id nas linhas de log. _equivalente ao "Log-Trace Correlation" do Datadog._
 - **Service map / RED metrics**: o _service-graphs_ processor do Tempo gera o mapa de dependências entre serviços; o _span-metrics_ processor gera traces, incluindo dimensão extra para, cobrir erros 4xx - _equivalente ao Service Map + APM metrics do Datadog._
 - **Auto-instrumentação**: opentelemetry-instrument nos serviços Python; instrumentação manual no Go - _cobre o caso funcional, similar a bibliotecas que o agente Datadog usa._
-- **Infra metrics**: Zabbix cobre a camada de nó/cluster - _papel equivalente ao Infrastructure Monitoring do Datadog._
+- **Infra metrics**: kube-state-metrics (estado de pods/deployments/daemonsets/statefulsets/nodes) e node-exporter (CPU/memória/disco/rede por node), scrapeados pelo próprio Prometheus, cobrem a camada de nó/cluster - _papel equivalente ao Infrastructure Monitoring do Datadog._
 
 <BR>
 

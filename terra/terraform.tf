@@ -76,8 +76,9 @@ provider "kubernetes" {
   }
 }
 
-# Mesma autenticação do provider "kubernetes" acima - usado pelos módulos
-# zabbix (chart zabbix-community/helm-zabbix + kube-state-metrics).
+# Mesma autenticação do provider "kubernetes" acima - usado pelo módulo
+# prometheus (charts kube-state-metrics + prometheus-node-exporter) e pelo
+# módulo lb (chart aws-load-balancer-controller).
 provider "helm" {
   kubernetes = {
     host                   = module.eks.eks_cluster_endpoint

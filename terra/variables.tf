@@ -147,33 +147,3 @@ variable "observe_allowed_cidrs" {
   type        = list(string)
 }
 
-# Variáveis do Zabbix (terra/modules/zabbix)
-#############################
-# DEFINA OS VALORES REAIS NO terraform.tfvars (não versionado) - identificam
-# sua infraestrutura pessoal de Zabbix, por isso sem default.
-variable "zabbix_hostname" {
-  description = "Nome do objeto \"Proxy\" criado manualmente no seu Zabbix server (Data collection -> Proxies, modo Active) - vira zabbixProxy.ZBX_HOSTNAME no chart"
-  type        = string
-}
-
-variable "zabbix_server_host" {
-  description = "Hostname ou IP do seu Zabbix server externo, acessível na porta 10051 - vira zabbixProxy.ZBX_SERVER_HOST no chart"
-  type        = string
-}
-
-variable "zabbix_version" {
-  description = "Versão major.minor do Zabbix Proxy/Agent2 (ex: \"7.4\") - vira a tag de imagem \"ol-<versão>-latest\" (zabbixImageTag no chart, variante Oracle Linux). O chart zabbix-community/helm-zabbix só traz por padrão a versão LTS (7.0) via zabbixImageTag; para usar uma versão non-LTS é preciso sobrescrever essa tag manualmente, ver comentário do values.yaml do chart. Precisa bater com a versão do Zabbix server externo (var.zabbix_server_host) - um proxy mais novo que o server não se conecta."
-  type        = string
-  default     = "7.4"
-}
-
-variable "zabbix_proxy_tls_psk_identity" {
-  description = "Identidade da PSK (Pre-Shared Key) usada na conexão TLS do Zabbix Proxy com o Zabbix server externo - precisa ser igual à identidade configurada na aba Encryption do objeto Proxy no Zabbix server"
-  type        = string
-}
-
-variable "zabbix_proxy_tls_psk" {
-  description = "Valor da PSK em hexadecimal (64 a 128 caracteres, ou seja 256 a 512 bits) - ex: gerado com \"openssl rand -hex 32\". Precisa ser igual ao valor configurado na aba Encryption do objeto Proxy no Zabbix server. DEFINA O VALOR REAL NO terraform.tfvars (não versionado)"
-  type        = string
-  sensitive   = true
-}

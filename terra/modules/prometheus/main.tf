@@ -63,6 +63,10 @@ resource "kubernetes_deployment_v1" "prometheus" {
         }
       }
       spec {
+        # ServiceAccount própria (rbac.tf), não "default": precisa da
+        # ClusterRole "prometheus" para descoberta via kubernetes_sd_configs
+        # e para o job "kubelet-resource" (proxy do apiserver ao kubelet).
+        service_account_name = kubernetes_service_account_v1.prometheus.metadata[0].name
         security_context {
           fs_group = 65534
         }

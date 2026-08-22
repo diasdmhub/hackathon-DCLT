@@ -181,19 +181,6 @@ resource "kubernetes_namespace_v1" "observe" {
   depends_on = [module.eks]
 }
 
-module "zabbix" {
-  source = "./modules/zabbix"
-
-  name_prefix                   = var.name_prefix
-  zabbix_hostname               = var.zabbix_hostname
-  zabbix_server_host            = var.zabbix_server_host
-  zabbix_version                = var.zabbix_version
-  zabbix_proxy_tls_psk_identity = var.zabbix_proxy_tls_psk_identity
-  zabbix_proxy_tls_psk          = var.zabbix_proxy_tls_psk
-
-  depends_on = [module.eks]
-}
-
 # loki/tempo/prometheus dependem de module.lb (não só do namespace/nlb):
 # seus recursos TargetGroupBinding (kubectl_manifest) exigem o CRD que o
 # AWS Load Balancer Controller instala - com essa dependência explícita no

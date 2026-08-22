@@ -19,6 +19,6 @@ output "private_subnet_ids" {
 }
 
 output "nat_gateway_public_ip" {
-  description = "Elastic IP do NAT Gateway - IP de origem visto externamente para todo tráfego de saída de pods em subnet privada (ex: conexão outbound do Zabbix Proxy ao Zabbix server); usado para liberar esse IP em firewalls/NAT fora da AWS"
+  description = "Elastic IP do NAT Gateway - IP de origem visto externamente para todo tráfego de saída de pods em subnet privada; usado para liberar esse IP em firewalls/NAT fora da AWS"
   value       = aws_eip.nat.public_ip
 }

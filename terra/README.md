@@ -22,11 +22,10 @@ nenhum módulo de registry (ECR) foi criado aqui.
 | `lb-iam` | Role IRSA do AWS Load Balancer Controller (kube-system) | Sem custo |
 | `lb` | O AWS Load Balancer Controller em si (ServiceAccount + `helm_release`) | Sem custo AWS - só o compute já contado no node group |
 | `secrets` | Parâmetros SSM Parameter Store (`SecureString`/`String`) + Secrets Kubernetes `ngo-env`/`donation-env`/`volunteer-env` | Camada Standard do SSM é gratuita; Secrets Kubernetes sem custo |
-| `zabbix` | Zabbix Proxy (modo ativo) + Agent2 (DaemonSet) + kube-state-metrics, via `helm_release` | Sem custo AWS - só o compute já contado no node group |
-| `loki` / `tempo` / `prometheus` | Deployment + PVC (`gp3`) + Service + `TargetGroupBinding` cada, via recursos `kubernetes_*`/`kubectl_manifest` | Sem custo AWS além do já contado (node group, NLB, EBS) |
+| `loki` / `tempo` / `prometheus` | Deployment + PVC (`gp3`) + Service + `TargetGroupBinding` cada, via recursos `kubernetes_*`/`kubectl_manifest`; `prometheus` também aplica kube-state-metrics + node-exporter via `helm_release` (ver "Métricas de cluster via Prometheus" abaixo) | Sem custo AWS além do já contado (node group, NLB, EBS) |
 | `alloy` | DaemonSet (coleta de logs + roteamento OTLP) via recursos `kubernetes_*` | Sem custo AWS além do já contado (node group) |
 
-Os últimos 6 módulos não provisionam recursos AWS (`aws_*`) - aplicam
+Os últimos 5 módulos não provisionam recursos AWS (`aws_*`) - aplicam
 Kubernetes/Helm diretamente contra o cluster que os módulos acima acabaram
 de criar, via os providers `kubernetes`/`helm`/`kubectl` (ver "Observabilidade
 via Terraform" abaixo). `lb-iam` é a exceção nesse grupo: continua
@@ -73,8 +72,8 @@ uso para evitar cobrança contínua.
 
 ## Observabilidade e monitoração de infraestrutura via Terraform
 
-Zabbix, Loki, Tempo, Alloy, Prometheus **e o AWS Load Balancer Controller**
-(módulos `zabbix`/`loki`/`tempo`/`alloy`/`prometheus`/`lb` acima) são
+Loki, Tempo, Alloy, Prometheus **e o AWS Load Balancer Controller**
+(módulos `loki`/`tempo`/`alloy`/`prometheus`/`lb` acima) são
 aplicados diretamente por este `terraform apply`, não por uma
 `Kustomization` do FluxCD. Na prática, esses componentes se mostraram pouco
 confiáveis quando geridos pelo Flux neste ambiente - reconciliações que
@@ -98,9 +97,10 @@ importa.
 novos, ambos reaproveitando a mesma autenticação (endpoint/CA do EKS +
 `aws eks get-token` via `exec`):
 
-- `helm` (`hashicorp/helm`): usado pelos módulos `zabbix` (charts
-  `zabbix-community/helm-zabbix` e `prometheus-community/kube-state-metrics`)
-  e `lb` (chart `aws-load-balancer-controller` do repositório `eks-charts`).
+- `helm` (`hashicorp/helm`): usado pelo módulo `prometheus` (charts
+  `prometheus-community/kube-state-metrics` e
+  `prometheus-community/prometheus-node-exporter`) e por `lb` (chart
+  `aws-load-balancer-controller` do repositório `eks-charts`).
 - `kubectl` (`alekc/kubectl`): usado pelos módulos `loki`/`tempo`/`prometheus`
   só para o recurso `TargetGroupBinding` (ver seção abaixo sobre por que não
   `kubernetes_manifest`). Todo o resto
@@ -130,59 +130,42 @@ CRD já existe. Um único `terraform apply` já é suficiente - não é mais
 necessário rodar o Flux bootstrap antes ou reaplicar depois, diferente de
 quando o AWS Load Balancer Controller ainda vivia no Flux.
 
-### `zabbix_hostname`/`zabbix_server_host`
+### Métricas de cluster via Prometheus (substituindo o Zabbix)
 
-Identificam a infraestrutura pessoal do seu Zabbix server externo, por isso
-sem default (`terra/variables.tf`) - defina os valores reais em
-`terraform.tfvars`. O módulo `zabbix` os passa ao chart via `set` em
-`helm.tf`, no lugar do antigo Secret aplicado manualmente fora do Flux -
-`terraform.tfvars` já é a fonte de valores sensíveis deste ambiente (mesmo
-padrão de `db_password`).
+Este ambiente monitorava a camada de nó/cluster com um Zabbix Proxy + Agent2
+externo (`terra/modules/zabbix`, removido). Na prática, cada novo cluster
+exigia reconfigurar várias regras manuais do lado do Zabbix server (criar o
+Proxy, cadastrar a PSK, importar/vincular as templates) antes dos dados
+aparecerem - um passo manual repetido a cada recriação do ambiente. Como o
+Prometheus já roda neste cluster (recebendo via remote_write as métricas de
+RED/service-graph do Tempo), fazia mais sentido concentrar toda a
+observabilidade nele/no Grafana externo, sem um segundo sistema de
+monitoração em paralelo.
 
-### `zabbix_proxy_tls_psk_identity`/`zabbix_proxy_tls_psk`
+`terra/modules/prometheus` agora também aplica, via `helm_release`
+(`helm.tf`):
 
-Criptografam com PSK (Pre-Shared Key) a única conexão do Zabbix Proxy que
-atravessa a borda do cluster (saída para o Zabbix server externo, porta
-10051 via NAT Gateway) - sem isso, esse tráfego vai em texto plano. Também
-sem default, também em `terraform.tfvars`. Diferente de
-`zabbix_hostname`/`zabbix_server_host`, o chart `zabbix-community/helm-zabbix`
-não tem um campo dedicado para nenhuma das 3 variáveis de TLS
-(`ZBX_TLSCONNECT`/`ZBX_TLSPSKIDENTITY`/`ZBX_TLSPSKFILE`), então
-`terra/modules/zabbix/helm.tf` as injeta via `zabbixProxy.extraEnv`. O valor
-da PSK em si (`zabbix_proxy_tls_psk`) nunca vira variável de ambiente
-diretamente - ficaria visível em `kubectl describe pod` - em vez disso
-`terra/modules/zabbix/psk.tf` cria um Secret Kubernetes com o valor, montado
-como arquivo (`ZBX_TLSPSKFILE`) via `extraVolumes`/`extraVolumeMounts`.
+- **kube-state-metrics**: estado dos objetos do Kubernetes - fase dos pods,
+  restarts, réplicas prontas/desejadas de Deployments/DaemonSets/
+  StatefulSets/ReplicaSets, condições dos nodes. `collectors` fica
+  restrito a esses objetos (o chart cobre por padrão praticamente todo tipo
+  de objeto do cluster, incluindo secrets/ingresses/PDBs/webhooks/RBAC, sem
+  uso real aqui) - é a peça que dá a "saúde dos pods da solidarytech".
+- **node-exporter**: métricas de host por node (CPU, memória, disco, rede) -
+  a camada que o Agent2 cobria antes.
 
-Passos manuais (uma vez, no seu Zabbix server - o Terraform não pode
-aplicá-los, essa configuração vive no banco de dados do Zabbix):
-
-1. **Criar o Proxy**: *Data collection → Proxies → Create proxy*. Nome igual
-   ao `zabbix_hostname` de `terraform.tfvars`. Modo: **Active**.
-2. **Configurar a PSK no mesmo Proxy**: aba *Encryption* → marque
-   *Connections from proxy* como **PSK** → preencha *PSK identity* com o
-   valor de `zabbix_proxy_tls_psk_identity` e *PSK* com o valor hexadecimal
-   de `zabbix_proxy_tls_psk` (mesmo par usado em `terraform.tfvars`; gere um
-   novo valor com `openssl rand -hex 32` se ainda não tiver um).
-3. Rodar `terraform apply` com `zabbix_hostname`/`zabbix_server_host`/
-   `zabbix_proxy_tls_psk_identity`/`zabbix_proxy_tls_psk` já preenchidos - a
-   stack sobe junto com o resto do cluster.
-4. **Pegar o token da ServiceAccount de leitura**:
-   ```bash
-   kubectl get secret zabbix-k8s-reader-token -n zabbix \
-     -o jsonpath='{.data.token}' | base64 -d
-   ```
-5. **Pegar a URL da API do EKS**: `terraform output -raw configure_kubectl`.
-6. **Importar as templates nativas do Zabbix** (Zabbix 6.4+, já inclusas):
-   *Data collection → Templates → Kubernetes* - confirme **"Kubernetes nodes
-   by HTTP"** e **"Kubernetes cluster state by HTTP"**.
-7. **Criar os hosts do cluster EKS** a partir dessas templates, vinculados ao
-   **Proxy** do passo 1 (não ao Zabbix server diretamente), preenchendo
-   `{$KUBE.API.SERVER.URL}` (passo 5), `{$KUBE.API.TOKEN}` (passo 4) e
-   `{$KUBE.NAMESPACE}` = `zabbix`.
-8. **Verificar**: `kubectl logs -n zabbix -l app.kubernetes.io/component=proxy`
-   deve mostrar a conexão ativa com o Zabbix server; no Zabbix, o Proxy deve
-   aparecer com "last seen" recente.
+Os dois Services já saem com a anotação `prometheus.io/scrape: "true"`
+(default de ambos os charts), então o job `kubernetes-service-endpoints` em
+`prometheus.yml` os descobre via `kubernetes_sd_configs` sem precisar de
+ServiceMonitor/Prometheus Operator (que este ambiente não usa). Um terceiro
+job, `kubelet-resource`, complementa com CPU/memória por node/pod/container
+direto do kubelet, via proxy do apiserver
+(`/api/v1/nodes/<node>/proxy/metrics/resource` - o endpoint de resumo,
+mais leve que `/metrics/cadvisor` completo); precisa da ClusterRole
+`prometheus` (`rbac.tf`), com acesso a `nodes/proxy`, vinculada à
+ServiceAccount que o Deployment do Prometheus usa (`main.tf`).
+Deliberadamente enxuto: cobre saúde/consumo de cluster e pods, não todo
+detalhe que kube-state-metrics/kubelet conseguem expor.
 
 ## Pré-requisitos
 
@@ -269,7 +252,7 @@ apaga NLB, listeners, target groups e a regra de Security Group na ordem
 certa, sem passo manual.
 
 O mesmo vale para os recursos `kubernetes_*`/`helm_release`/`kubectl_manifest`
-dos módulos `zabbix`/`loki`/`tempo`/`alloy`/`prometheus`: por estarem no
+dos módulos `loki`/`tempo`/`alloy`/`prometheus`: por estarem no
 state do Terraform, `terraform destroy` os remove (Deployments, PVCs,
 `TargetGroupBinding`, releases do Helm) sem passo manual - mas isso exige a
 API do EKS alcançável durante todo o destroy, já que esses providers

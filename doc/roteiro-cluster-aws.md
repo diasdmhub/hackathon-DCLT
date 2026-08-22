@@ -5,7 +5,7 @@
 
 > ⚠️ **_Em construção_**
 
-Esta é uma sequência de passos para a implementação do ambiente EKS, incluindo os recursos de infraestrutura AWS, o AWS Load Balancer Controller, recursos de observabilidade (Loki/Tempo/Alloy/Prometheus self-hosted) e monitoração de do ambiente (Zabbix), tudo via Terraform. Os microsserviços da SolidaryTech ficam sob gestão do FluxCD. Detalhes e justificativas de cada etapa estão em `terra/README.md` e `kube-aws/README.md`; este roteiro só reúne os comandos na ordem correta.
+Esta é uma sequência de passos para a implementação do ambiente EKS, incluindo os recursos de infraestrutura AWS, o AWS Load Balancer Controller e recursos de observabilidade e monitoração do ambiente (Loki/Tempo/Alloy/Prometheus self-hosted, este último complementado por kube-state-metrics e node-exporter para as métricas de cluster/pod), tudo via Terraform. Os microsserviços da SolidaryTech ficam sob gestão do FluxCD. Detalhes e justificativas de cada etapa estão em `terra/README.md` e `kube-aws/README.md`; este roteiro só reúne os comandos na ordem correta.
 
 <BR>
 
@@ -29,9 +29,7 @@ Esta é uma sequência de passos para a implementação do ambiente EKS, incluin
 
 **7.** Apesar de não ser necessário posteriormente, o **`kubectl`** é necessário para a implementação inicial de forma automatizada, e ainda é muito eficiente para gerenciar o cluster Kubernetes e seus recursos, caso necessário. Recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
 
-**8.** Um [Zabbix Server][zabbixdoc] já em operação, acessível pela cluster K8s na porta 10051.
-
-**9.** Um [Grafana][grafanacloud] já em operação.
+**8.** Um [Grafana][grafanacloud] já em operação.
 
 <BR>
 
@@ -68,9 +66,6 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `lb_controller_namespace` | Namespace para o Load Balancer Controller | _`kube-system`_ |
 | `lb_controller_service_account` | ServiceAccount do Load Balancer Controller | _`aws-load-balancer-controller`_ |
 | `observe_allowed_cidrs` | CIDR, IP ou domínio autorizados a alcançar o cluster | _`CHANGE_ME`_ |
-| `zabbix_hostname` | Nome do Proxy criado no Zabbix server | _`CHANGE_ME-proxy-eks-solidarytech`_ |
-| `zabbix_server_host` | Hostname/IP desse do Zabbix Server | _`CHANGE_ME`_ |
-| `zabbix_version` | Versão major do Zabbix Proxy/Agent2 | _`7.4`_ |
 
 <BR>
 
@@ -81,8 +76,8 @@ Neste passo serão provisionados a infraestrutura AWS, Load Balancer Controller,
 ```bash
 cd terra
 cp terraform.tfvars.example terraform.tfvars
-# edite terraform.tfvars: no mínimo `db_password`, `observe_allowed_cidrs`
-# e `zabbix_hostname`/`zabbix_server_host`; não use os valores de exemplo.
+# edite terraform.tfvars: no mínimo `db_password` e `observe_allowed_cidrs`;
+# não use os valores de exemplo.
 
 ./init.sh   # cria bucket S3 + tabela DynamoDB + inicializa Terraform (idempotente)
 
@@ -95,8 +90,8 @@ terraform apply -target=module.eks
 
 # Um segundo `apply` (já num state com o cluster criado) cria os demais recursos 
 # AWS, instala o Load Balancer Controller, e aplica o Loki/Tempo/Alloy/Prometheus
-# e o Zabbix Proxy/Agent2/kube-state-metrics direto no cluster, através dos providers
-# `helm`/`kubernetes`/`kubectl`. Nenhum desses passa pelo FluxCD, (`terra/README.md`).
+# (este último com kube-state-metrics/node-exporter) direto no cluster, através
+# dos providers `helm`/`kubernetes`/`kubectl`. Nenhum desses passa pelo FluxCD, (`terra/README.md`).
 # A ordem entre eles passa por dependências do Terraform. Não precisa de mais um
 # `apply` além do `-target=module.eks` inicial. Em clusters já existentes
 # (`module.eks` criado), siga direto para o `terraform plan`/`apply`.
@@ -172,12 +167,6 @@ terraform output -raw nlb_dns_name   # no diretório `terra/`
 
 <BR>
 
-## 5. Conectar o cluster ao seu Zabbix
-
-Também é necessário configurar o **lado do seu Zabbix Server**. Veja a seção "Observabilidade e monitoração de infraestrutura via Terraform" em `terra/README.md` para mais informações: criar o Proxy, obter o token da ServiceAccount `zabbix-k8s-reader` e importar/vincular as templates do Kubernetes.
-
-<BR>
-
 ## Destruição do ambiente
 
 > **É necessário estar conectado ao cluster AWS.**
@@ -195,5 +184,4 @@ terraform destroy
 [fluxcli]: https://fluxcd.io/flux/installation/#install-the-flux-cli
 [kuberepo]: https://kubernetes.io/docs/tasks/tools
 [tfvars]: /terra/terraform.tfvars.example
-[zabbixdoc]: https://www.zabbix.com/documentation/current/en
 [grafanacloud]: https://grafana.com/products/cloud/

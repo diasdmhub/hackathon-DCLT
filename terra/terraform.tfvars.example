@@ -46,23 +46,3 @@ lb_controller_service_account = "aws-load-balancer-controller"
 #    Nome de domínio "meudominio.com.br" (resolvido via DNS a cada
 #                                        terraform apply, ver terra/dns.tf)
 observe_allowed_cidrs = ["CHANGE_ME"]
-
-# - zabbix_hostname precisa ser o nome do Proxy" criado no Zabbix server
-# (Adminstration -> Proxies, modo Active);
-# - zabbix_server_host é o hostname/IP do Zabbix Server (porta 10051)
-# (ver terra/modules/zabbix/README.md)
-zabbix_hostname    = "CHANGE_ME-proxy-eks-solidarytech"
-zabbix_server_host = "CHANGE_ME"
-
-# Versão major das imagens Docker do Zabbix Proxy/Agent2.
-# Deve ser igual à versão do Zabbix Server externo.
-zabbix_version = "7.4"
-
-# PSK (Pre-Shared Key) da conexão TLS entre o Zabbix Proxy e o Zabbix Server
-# externo (porta 10051) - a única que atravessa a borda do cluster. Os dois
-# valores abaixo precisam ser cadastrados também na aba "Encryption" do
-# objeto Proxy no Zabbix Server (Administration -> Proxies).
-# zabbix_proxy_tls_psk: hexadecimal de 64 a 128 caracteres (256 a 512 bits),
-# gerado por exemplo com "openssl rand -hex 32".
-zabbix_proxy_tls_psk_identity = "CHANGE_ME-psk"
-zabbix_proxy_tls_psk          = "CHANGE_ME"

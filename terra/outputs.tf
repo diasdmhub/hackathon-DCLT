@@ -44,11 +44,6 @@ output "secrets_outputs" {
   value       = module.secrets
 }
 
-output "zabbix_outputs" {
-  description = "Outputs do módulo zabbix (namespace e nome do Secret com o token da ServiceAccount zabbix-k8s-reader)"
-  value       = module.zabbix
-}
-
 output "configure_kubectl" {
   description = "Comando para configurar o kubectl/aws-cli local contra o cluster criado"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.eks_cluster_name}"

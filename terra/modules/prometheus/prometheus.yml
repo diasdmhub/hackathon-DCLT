@@ -1,11 +1,56 @@
 global:
   scrape_interval: 15s
 
-# Backend mínimo, dedicado a receber (remote_write) as métricas de
-# RED/service-graph geradas pelo metrics-generator do Tempo; não faz
-# scraping de outros alvos - métricas de infraestrutura continuam no
-# Zabbix, fora deste repositório.
+# Além de receber (remote_write) as métricas de RED/service-graph geradas
+# pelo metrics-generator do Tempo, este Prometheus também faz scraping das
+# métricas de cluster/pod que antes vinham do Zabbix - ver terra/README.md,
+# seção "Métricas de cluster via Prometheus". Deliberadamente enxuto: só o
+# necessário para a saúde do cluster e dos pods da solidarytech, não todo
+# detalhe que o kube-state-metrics/kubelet conseguem expor.
 scrape_configs:
   - job_name: prometheus
     static_configs:
       - targets: ["localhost:9090"]
+
+  # kube-state-metrics (estado dos pods/deployments/daemonsets/statefulsets/
+  # replicasets/nodes) e node-exporter (CPU/memória/disco/rede por node) -
+  # ambos no namespace "observe" (terra/modules/prometheus/helm.tf),
+  # descobertos pelo convênio "prometheus.io/scrape: true" que os dois
+  # charts já aplicam por padrão ao respectivo Service. O label
+  # "app.kubernetes.io/name" do Service vira o label "job" da série, em vez
+  # do nome completo do release do Helm.
+  - job_name: kubernetes-service-endpoints
+    kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names: [observe]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+        regex: "true"
+        action: keep
+      - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
+        target_label: job
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: node
+
+  # CPU/memória por node/pod/container, direto do kubelet via proxy do
+  # apiserver (endpoint /metrics/resource - resumo enxuto, bem mais leve que
+  # /metrics/cadvisor completo). Exige a ClusterRole "prometheus" (rbac.tf)
+  # com acesso a nodes/proxy; a ServiceAccount "prometheus" (rbac.tf) é a
+  # usada pelo Deployment (main.tf), cujo token/CA montados por padrão em
+  # /var/run/secrets/kubernetes.io/serviceaccount/ autenticam contra a
+  # própria API do EKS.
+  - job_name: kubelet-resource
+    scheme: https
+    kubernetes_sd_configs:
+      - role: node
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    relabel_configs:
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics/resource
