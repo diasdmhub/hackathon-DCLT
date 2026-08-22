@@ -3827,12 +3827,12 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "1825d"
+                "timeFrom": "168h"
               },
               "transformations": []
             }
           },
-          "description": "Total desde o início do histórico disponível no Loki - independente do período selecionado na dashboard (time range override fixo de 1825d).",
+          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
           "id": 71,
           "links": [],
           "title": "Doações (total)",
@@ -3912,12 +3912,12 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "1825d"
+                "timeFrom": "168h"
               },
               "transformations": []
             }
           },
-          "description": "Total desde o início do histórico disponível no Loki - independente do período selecionado na dashboard (time range override fixo de 1825d).",
+          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
           "id": 171,
           "links": [],
           "title": "Doações (total)",
@@ -3997,12 +3997,12 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "1825d"
+                "timeFrom": "168h"
               },
               "transformations": []
             }
           },
-          "description": "Total desde o início do histórico disponível no Loki - independente do período selecionado na dashboard (time range override fixo de 1825d).",
+          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
           "id": 72,
           "links": [],
           "title": "Valor arrecadado (total)",
@@ -4082,12 +4082,12 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "1825d"
+                "timeFrom": "168h"
               },
               "transformations": []
             }
           },
-          "description": "Total desde o início do histórico disponível no Loki - independente do período selecionado na dashboard (time range override fixo de 1825d).",
+          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
           "id": 172,
           "links": [],
           "title": "Valor arrecadado (total)",
@@ -4167,12 +4167,12 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "1825d"
+                "timeFrom": "168h"
               },
               "transformations": []
             }
           },
-          "description": "Total desde o início do histórico disponível no Loki - independente do período selecionado na dashboard (time range override fixo de 1825d).",
+          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
           "id": 73,
           "links": [],
           "title": "ONGs cadastradas (total)",
@@ -4252,12 +4252,12 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "1825d"
+                "timeFrom": "168h"
               },
               "transformations": []
             }
           },
-          "description": "Total desde o início do histórico disponível no Loki - independente do período selecionado na dashboard (time range override fixo de 1825d).",
+          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
           "id": 173,
           "links": [],
           "title": "ONGs cadastradas (total)",
@@ -4337,12 +4337,12 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "1825d"
+                "timeFrom": "168h"
               },
               "transformations": []
             }
           },
-          "description": "Total desde o início do histórico disponível no Loki - independente do período selecionado na dashboard (time range override fixo de 1825d).",
+          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
           "id": 74,
           "links": [],
           "title": "Voluntários cadastrados (total)",
@@ -4422,12 +4422,12 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "1825d"
+                "timeFrom": "168h"
               },
               "transformations": []
             }
           },
-          "description": "Total desde o início do histórico disponível no Loki - independente do período selecionado na dashboard (time range override fixo de 1825d).",
+          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
           "id": 174,
           "links": [],
           "title": "Voluntários cadastrados (total)",
