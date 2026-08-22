@@ -39,7 +39,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -129,7 +129,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "cfts5iiz9ff9cd"
+                        "name": "${datasource_tempo}"
                       },
                       "group": "tempo",
                       "kind": "DataQuery",
@@ -183,7 +183,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -655,7 +655,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -737,7 +737,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -759,7 +759,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -781,7 +781,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -902,7 +902,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -1021,7 +1021,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -1249,7 +1249,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -1351,7 +1351,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "aftoyrqjz77cwb"
+                        "name": "${datasource_loki}"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -2278,6 +2278,33 @@
     "title": "SolidaryTech - Visão Geral",
     "variables": [
       {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Local",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Cluster Source",
+          "multi": false,
+          "name": "cluster",
+          "options": [
+            {
+              "text": "Local",
+              "value": ""
+            },
+            {
+              "text": "AWS",
+              "value": "AWS-"
+            }
+          ],
+          "query": "Local : ,AWS : AWS-",
+          "skipUrlSync": false
+        }
+      },
+      {
         "kind": "DatasourceVariable",
         "spec": {
           "allowCustomValue": false,
@@ -2285,15 +2312,55 @@
             "text": "prometheus",
             "value": "bfts7wbtgac5cf"
           },
-          "hide": "dontHide",
+          "hide": "hideVariable",
           "includeAll": false,
-          "label": "Cluster Source",
+          "label": "Prometheus (interno)",
           "multi": false,
           "name": "datasource",
           "options": [],
           "pluginId": "prometheus",
           "refresh": "onDashboardLoad",
-          "regex": "/prometheus/",
+          "regex": "/^${cluster}prometheus$/",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "DatasourceVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "loki",
+            "value": "aftoyrqjz77cwb"
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Loki (interno)",
+          "multi": false,
+          "name": "datasource_loki",
+          "options": [],
+          "pluginId": "loki",
+          "refresh": "onDashboardLoad",
+          "regex": "/^${cluster}loki$/",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "DatasourceVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "tempo",
+            "value": "cfts5iiz9ff9cd"
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Tempo (interno)",
+          "multi": false,
+          "name": "datasource_tempo",
+          "options": [],
+          "pluginId": "tempo",
+          "refresh": "onDashboardLoad",
+          "regex": "/^${cluster}tempo$/",
           "skipUrlSync": false
         }
       }
