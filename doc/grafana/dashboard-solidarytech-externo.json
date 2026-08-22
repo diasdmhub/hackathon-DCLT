@@ -642,7 +642,7 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "5m"
+                "timeFrom": "30m"
               },
               "transformations": [
                 {
@@ -1108,7 +1108,7 @@
               ],
               "queryOptions": {
                 "hideTimeOverride": true,
-                "timeFrom": "5m"
+                "timeFrom": "30m"
               },
               "transformations": [
                 {
