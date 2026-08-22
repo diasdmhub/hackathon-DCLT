@@ -13,16 +13,38 @@ Este é um resumo da stack de observabilidade da SolidaryTech e de como configur
 
 | Sinal | Coleta | Armazenamento | Consulta |
 | --- | --- | --- | --- |
-| Métricas | Zabbix Agent | Zabbix (pré-existente, fora deste repositório) | Zabbix |
+| Métricas de cluster/pod | kube-state-metrics + node-exporter (`HelmRelease`s, `observe/040-prometheus/`) | Prometheus | Grafana |
 | Logs | Grafana Alloy (DaemonSet, tail dos arquivos CRI em `/var/log/pods`) | Loki | Grafana |
 | Traces | SDK OpenTelemetry nos 3 microserviços, export OTLP ao Alloy, que roteia ao Tempo | Grafana Tempo | Grafana |
 | Métricas de RED / service graph | Metrics-generator do próprio Tempo (deriva das traces) | Prometheus (`observe/040-prometheus/`, dedicado a este fim) | Grafana (via datasource Tempo) |
 
-Os manifestos de Loki, Alloy, Tempo e Prometheus vivem em [`observe/`](/observe) e são aplicados pelo Flux através da Kustomization `observe`. O Prometheus deste diretório é mínimo e dedicado: não faz scraping de infraestrutura (isso continua no Zabbix), serve só para receber via `remote_write` as métricas de service-graph/span-metrics que o Tempo deriva das traces.
+Os manifestos de Loki, Alloy, Tempo e Prometheus vivem em [`observe/`](/observe) e são aplicados pelo Flux através da Kustomization `observe`. Além de receber via `remote_write` as métricas de service-graph/span-metrics que o Tempo deriva das traces, o Prometheus deste diretório também faz scraping das métricas de cluster/pod (ver "Métricas de cluster via Prometheus" abaixo) - papel que antes era do Zabbix, hoje inteiramente concentrado no Grafana.
 
 O Alloy é o único ponto de entrada de telemetria do cluster: coleta os logs de todos os pods (tail dos arquivos CRI) e recebe os traces OTLP dos microserviços, roteando cada sinal ao seu backend (Loki e Tempo, respectivamente).
 
 Os 4 ConfigMaps desse diretório (`loki-config`, `alloy-config`, `tempo-config`, `prometheus-config`) são gerados pelo `configMapGenerator` de [`observe/kustomization.yaml`](/observe/kustomization.yaml), a partir de arquivos de configuração avulsos (`010-loki/config.yaml`, `020-alloy/config.alloy`, `030-tempo/config.yaml`, `040-prometheus/prometheus.yml`), não de um manifesto `ConfigMap` embutido (não existem mais `NNN-configmap.yaml` nesse diretório). Para alterar a configuração de qualquer um desses serviços, edite o arquivo correspondente. Isso também resolve o reinício automático: o nome do ConfigMap gerado carrega um hash do conteúdo, então qualquer edição muda esse nome, o Kustomize reescreve a referência no Deployment/DaemonSet, e o Kubernetes enxerga um pod template diferente e reinicia o serviço sozinho, sem annotation de checksum para manter manualmente.
+
+<BR>
+
+## Métricas de cluster via Prometheus (substituindo o Zabbix)
+
+Este ambiente monitorava a camada de nó/cluster com um Zabbix Proxy + Agent2 (release Helm `zabbix`, namespace `monitoring`, instalado manualmente fora deste repositório - não aparece em nenhum `Kustomization`/`HelmRelease` do Flux). Na prática, cada recriação do cluster exigia reconfigurar várias regras manuais do lado do Zabbix server (criar o Proxy, importar/vincular as templates) antes dos dados aparecerem. Como o Prometheus já roda neste cluster (recebendo via `remote_write` as métricas de RED/service-graph do Tempo), fazia mais sentido concentrar toda a observabilidade nele/no Grafana, sem um segundo sistema de monitoração em paralelo - mesma decisão já aplicada ao cluster EKS (`terra/modules/prometheus`, ver `terra/README.md`).
+
+`observe/040-prometheus/` agora também aplica, via `HelmRelease` (Flux, `helm-controller`):
+
+- **kube-state-metrics** (`046-kube-state-metrics.yaml`): estado dos objetos do Kubernetes - fase dos pods, restarts, réplicas prontas/desejadas de Deployments/DaemonSets/StatefulSets/ReplicaSets, condições dos nodes. `collectors` fica restrito a esses objetos (o chart cobre por padrão praticamente todo tipo de objeto do cluster, incluindo secrets/ingresses/PDBs/webhooks/RBAC, sem uso real aqui) - é a peça que dá a "saúde dos pods da solidarytech".
+- **node-exporter** (`047-node-exporter.yaml`): métricas de host por node (CPU, memória, disco, rede) - a camada que o Agent2 cobria antes.
+
+Os dois Services já saem com a anotação `prometheus.io/scrape: "true"` (default de ambos os charts), então o job `kubernetes-service-endpoints` em `prometheus.yml` os descobre via `kubernetes_sd_configs` sem precisar de ServiceMonitor/Prometheus Operator (que este ambiente não usa). Um terceiro job, `kubelet-resource`, complementa com CPU/memória por node/pod/container direto do kubelet, via proxy do apiserver (`/api/v1/nodes/<node>/proxy/metrics/resource` - o endpoint de resumo, mais leve que `/metrics/cadvisor` completo); precisa da ClusterRole `prometheus` (`044-rbac.yaml`), vinculada à ServiceAccount que o Deployment do Prometheus usa (`043-prometheus.yaml`, antes rodava como `default`). Deliberadamente enxuto: cobre saúde/consumo de cluster e pods, não todo detalhe que kube-state-metrics/kubelet conseguem expor.
+
+**Descomissionar o Zabbix** (fora deste repositório, ação manual no cluster):
+
+```bash
+helm uninstall zabbix -n monitoring
+kubectl delete namespace monitoring   # opcional, se nada mais usar esse namespace
+```
+
+O template Zabbix de métricas de negócio/health-check dos 3 microsserviços (`doc/zabbix/template-solidarytech-by-http.yaml`, seção "Template Zabbix" abaixo) é independente disso - cobre health/contagens via HTTP, não métricas de nó/cluster, e não foi alterado por esta migração.
 
 <BR>
 
@@ -134,6 +156,8 @@ O `trace_id` retornado pela busca também aparece no fim da linha de log corresp
 ## Dashboard modelo
 
 [`doc/grafana/dashboard-solidarytech.json`](/doc/grafana/dashboard-solidarytech.json) é um modelo de dashboard (Grafana 13.1.1, importável via **Dashboards → New → Import**) com as métricas de negócio (Loki), RED por serviço e o mapa de serviços (Tempo/Prometheus), e infraestrutura dos 2 nodes (Zabbix). Os painéis de Zabbix usam o filtro de item pelo nome padrão dos templates oficiais (`CPU utilization`, `Memory utilization`, `Load average (1m avg)`, condição `Ready` dos nodes e réplicas disponíveis dos deployments de `ngo`/`donation`/`volunteer` no host `kubernetes_cluster`); como o esquema exato do target JSON do datasource Zabbix varia por versão do plugin, pode ser necessário reselecionar host/item na edição do painel após a importação. A importação hoje é manual (colar o JSON ou fazer upload do arquivo); ainda não há sincronização automática a partir do Git.
+
+> ⚠️ Com a migração da seção "Métricas de cluster via Prometheus" acima, os painéis de infraestrutura desse modelo ainda apontam para o datasource Zabbix (que deixa de existir no cluster). Ainda não foram reconstruídos contra kube-state-metrics/node-exporter/Prometheus - pendente.
 
 Os painéis de RED (`Taxa de erro por serviço (%)`, `donation-service: requisições/s e erros/s`) contam 4xx e 5xx como erro, pelo motivo explicado em [Taxa de erro incluindo 4xx](#taxa-de-erro-incluindo-4xx); o mapa de serviços continua refletindo só 5xx (limitação do Tempo, não da configuração). O modelo não tem painel dedicado a listar traces de erro individualmente: o tipo de painel `traces` do Grafana, nessa versão (13.1.1), só renderiza a visualização em lista quando a query retorna um trace específico, não uma busca com múltiplos resultados — a query em si funciona (confirmado alternando o mesmo painel para "table view" e para o tipo `table`), só a visualização de lista de traces não desenha nada. Para investigar um erro específico, use o Explore do datasource Tempo diretamente.
 

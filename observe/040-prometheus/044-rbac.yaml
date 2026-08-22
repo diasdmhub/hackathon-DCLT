@@ -1,0 +1,51 @@
+# Identidade que o próprio Prometheus usa para (1) descoberta via
+# kubernetes_sd_configs (role: endpoints/node em prometheus.yml) e (2)
+# alcançar o endpoint de métricas de recurso do kubelet através do proxy do
+# apiserver (job "kubelet-resource" - GET /api/v1/nodes/<node>/proxy/metrics/
+# resource). Só leitura; nenhum verbo de escrita. Equivalente ao módulo
+# terra/modules/prometheus/rbac.tf do cluster EKS.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: secondary
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: secondary
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "services", "endpoints", "pods"]
+    verbs: ["get", "list", "watch"]
+  # nodes/proxy é o que permite ao Prometheus alcançar
+  # /api/v1/nodes/<node>/proxy/metrics/resource no kubelet - ver job
+  # "kubelet-resource" em prometheus.yml.
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: secondary
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: observe

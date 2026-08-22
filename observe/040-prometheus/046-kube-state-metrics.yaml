@@ -1,0 +1,45 @@
+# kube-state-metrics: expõe /metrics com o estado dos objetos do Kubernetes
+# (pods, deployments, daemonsets, statefulsets, replicasets, nodes) - é a
+# peça que dá ao Prometheus visão de saúde dos pods (fase, restarts,
+# réplicas prontas/desejadas), não só uso de recurso. "collectors" restringe
+# o chart só aos objetos relevantes aqui: por padrão ele cobre praticamente
+# todo tipo de objeto do cluster (secrets, ingresses, PDBs, webhooks,
+# RBAC...), sem uso real nos dashboards deste ambiente. Equivalente ao
+# helm_release homônimo em terra/modules/prometheus/helm.tf (cluster EKS).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-state-metrics
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: secondary
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: kube-state-metrics
+      version: "8.4.0"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: observe
+  values:
+    collectors:
+      - nodes
+      - pods
+      - deployments
+      - daemonsets
+      - statefulsets
+      - replicasets
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    # O Service já sai com "prometheus.io/scrape: true" por padrão
+    # (prometheusScrape=true) - é assim que o job "kubernetes-service-
+    # endpoints" em prometheus.yml o descobre.

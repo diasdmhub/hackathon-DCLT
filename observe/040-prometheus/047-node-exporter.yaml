@@ -1,0 +1,33 @@
+# node-exporter: métricas de host por node (CPU, memória, disco, rede) - a
+# camada que o antigo Zabbix Agent2 cobria. DaemonSet com hostNetwork/hostPID
+# (default do chart), um pod por node do cluster. Equivalente ao helm_release
+# homônimo em terra/modules/prometheus/helm.tf (cluster EKS).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: node-exporter
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: secondary
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: prometheus-node-exporter
+      version: "4.56.1"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: observe
+  values:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+    # Mesmo convênio "prometheus.io/scrape: true" do kube-state-metrics
+    # acima - já vem por padrão no Service deste chart.

@@ -23,6 +23,10 @@ spec:
         Project: SolidaryTech
         Environment: secondary
     spec:
+      # ServiceAccount própria (044-rbac.yaml), não "default": precisa da
+      # ClusterRole "prometheus" para descoberta via kubernetes_sd_configs e
+      # para o job "kubelet-resource" (proxy do apiserver ao kubelet).
+      serviceAccountName: prometheus
       securityContext:
         fsGroup: 65534
       containers:

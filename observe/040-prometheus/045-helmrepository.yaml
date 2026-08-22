@@ -1,0 +1,14 @@
+# Repositório Helm compartilhado pelas HelmReleases de kube-state-metrics
+# (046) e node-exporter (047) abaixo.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: prometheus-community
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: secondary
+spec:
+  interval: 1h
+  url: https://prometheus-community.github.io/helm-charts
