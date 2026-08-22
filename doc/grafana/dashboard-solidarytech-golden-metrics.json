@@ -40,7 +40,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -253,7 +253,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -469,7 +469,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -679,7 +679,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -890,7 +890,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1100,7 +1100,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1311,7 +1311,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1526,7 +1526,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -2089,26 +2089,6 @@
             }
           ],
           "query": "Local : ,AWS : AWS-",
-          "skipUrlSync": false
-        }
-      },
-      {
-        "kind": "DatasourceVariable",
-        "spec": {
-          "allowCustomValue": false,
-          "current": {
-            "text": "prometheus",
-            "value": "bfts7wbtgac5cf"
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "label": "Prometheus (interno)",
-          "multi": false,
-          "name": "datasource",
-          "options": [],
-          "pluginId": "prometheus",
-          "refresh": "onDashboardLoad",
-          "regex": "/^${cluster}prometheus$/",
           "skipUrlSync": false
         }
       }

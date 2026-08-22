@@ -39,7 +39,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -129,7 +129,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_tempo}"
+                        "name": "${cluster}tempo"
                       },
                       "group": "tempo",
                       "kind": "DataQuery",
@@ -183,7 +183,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -273,7 +273,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -391,7 +391,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -498,7 +498,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -517,7 +517,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -536,7 +536,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -655,7 +655,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -737,7 +737,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -759,7 +759,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -781,7 +781,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -902,7 +902,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -1021,7 +1021,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -1103,7 +1103,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1122,7 +1122,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1249,7 +1249,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -1351,7 +1351,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${cluster}loki"
                       },
                       "group": "loki",
                       "kind": "DataQuery",
@@ -1415,7 +1415,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1500,7 +1500,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1586,7 +1586,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1668,7 +1668,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1687,7 +1687,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1803,7 +1803,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "${cluster}prometheus"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -2301,66 +2301,6 @@
             }
           ],
           "query": "Local : ,AWS : AWS-",
-          "skipUrlSync": false
-        }
-      },
-      {
-        "kind": "DatasourceVariable",
-        "spec": {
-          "allowCustomValue": false,
-          "current": {
-            "text": "prometheus",
-            "value": "bfts7wbtgac5cf"
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "label": "Prometheus (interno)",
-          "multi": false,
-          "name": "datasource",
-          "options": [],
-          "pluginId": "prometheus",
-          "refresh": "onDashboardLoad",
-          "regex": "/^${cluster}prometheus$/",
-          "skipUrlSync": false
-        }
-      },
-      {
-        "kind": "DatasourceVariable",
-        "spec": {
-          "allowCustomValue": false,
-          "current": {
-            "text": "loki",
-            "value": "aftoyrqjz77cwb"
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "label": "Loki (interno)",
-          "multi": false,
-          "name": "datasource_loki",
-          "options": [],
-          "pluginId": "loki",
-          "refresh": "onDashboardLoad",
-          "regex": "/^${cluster}loki$/",
-          "skipUrlSync": false
-        }
-      },
-      {
-        "kind": "DatasourceVariable",
-        "spec": {
-          "allowCustomValue": false,
-          "current": {
-            "text": "tempo",
-            "value": "cfts5iiz9ff9cd"
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "label": "Tempo (interno)",
-          "multi": false,
-          "name": "datasource_tempo",
-          "options": [],
-          "pluginId": "tempo",
-          "refresh": "onDashboardLoad",
-          "regex": "/^${cluster}tempo$/",
           "skipUrlSync": false
         }
       }
