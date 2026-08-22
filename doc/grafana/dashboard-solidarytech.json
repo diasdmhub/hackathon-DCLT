@@ -273,6 +273,9 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
                       "group": "prometheus",
                       "version": "v0",
                       "spec": {
@@ -392,6 +395,9 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
                       "group": "prometheus",
                       "version": "v0",
                       "spec": {
@@ -500,6 +506,9 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
                       "group": "prometheus",
                       "version": "v0",
                       "spec": {
@@ -520,6 +529,9 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
                       "group": "prometheus",
                       "version": "v0",
                       "spec": {
@@ -540,6 +552,9 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
                       "group": "prometheus",
                       "version": "v0",
                       "spec": {
@@ -1143,6 +1158,9 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
                       "group": "prometheus",
                       "version": "v0",
                       "spec": {
@@ -1163,6 +1181,9 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
                       "group": "prometheus",
                       "version": "v0",
                       "spec": {
@@ -1433,6 +1454,9 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
                       "group": "prometheus",
                       "version": "v0",
                       "spec": {
@@ -1502,12 +1526,12 @@
           }
         }
       },
-      "panel-60": {
+      "panel-65": {
         "kind": "Panel",
         "spec": {
-          "id": 60,
-          "title": "CPU utilization - nodes",
-          "description": "",
+          "id": 65,
+          "title": "Pods em execução (ngo/donation/volunteer)",
+          "description": "kube-state-metrics: contagem de pods da solidarytech na fase Running.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -1518,58 +1542,14 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "alexanderzobnin-zabbix-datasource",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
                       "version": "v0",
                       "spec": {
-                        "application": {
-                          "filter": ""
-                        },
-                        "countTriggersBy": "",
-                        "evaltype": "0",
-                        "functions": [],
-                        "group": {
-                          "filter": "Applications"
-                        },
-                        "host": {
-                          "filter": "/kube.*/"
-                        },
-                        "item": {
-                          "filter": "CPU utilization"
-                        },
-                        "itemTag": {
-                          "filter": ""
-                        },
-                        "macro": {
-                          "filter": ""
-                        },
-                        "options": {
-                          "count": false,
-                          "disableDataAlignment": false,
-                          "showDisabledItems": false,
-                          "skipEmptyValues": false,
-                          "useTrends": "default",
-                          "useZabbixValueMapping": false
-                        },
-                        "proxy": {
-                          "filter": ""
-                        },
-                        "queryType": "0",
-                        "resultFormat": "time_series",
-                        "schema": 12,
-                        "table": {
-                          "skipEmptyValues": false
-                        },
-                        "tags": {
-                          "filter": ""
-                        },
-                        "textFilter": "",
-                        "trigger": {
-                          "filter": ""
-                        }
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
+                        "expr": "sum(kube_pod_status_phase{namespace=\"solidarytech\", phase=\"Running\"})",
+                        "instant": true
                       }
                     },
                     "refId": "A",
@@ -1583,33 +1563,30 @@
           },
           "vizConfig": {
             "kind": "VizConfig",
-            "group": "timeseries",
+            "group": "stat",
             "version": "13.1.1",
             "spec": {
               "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
                 },
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "percent",
-                  "min": 0,
-                  "max": 100,
+                  "unit": "short",
+                  "decimals": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1622,43 +1599,6 @@
                         "color": "red"
                       }
                     ]
-                  },
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "right",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
                   }
                 },
                 "overrides": []
@@ -1667,12 +1607,12 @@
           }
         }
       },
-      "panel-61": {
+      "panel-66": {
         "kind": "Panel",
         "spec": {
-          "id": 61,
-          "title": "Memory utilization - nodes",
-          "description": "",
+          "id": 66,
+          "title": "Pods não prontos (ngo/donation/volunteer)",
+          "description": "kube-state-metrics: pods da solidarytech com Ready=false. Deve ficar em 0 fora de rollouts/falhas.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -1683,58 +1623,14 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "alexanderzobnin-zabbix-datasource",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
                       "version": "v0",
                       "spec": {
-                        "application": {
-                          "filter": ""
-                        },
-                        "countTriggersBy": "",
-                        "evaltype": "0",
-                        "functions": [],
-                        "group": {
-                          "filter": "Applications"
-                        },
-                        "host": {
-                          "filter": "/kube.*/"
-                        },
-                        "item": {
-                          "filter": "Memory utilization"
-                        },
-                        "itemTag": {
-                          "filter": ""
-                        },
-                        "macro": {
-                          "filter": ""
-                        },
-                        "options": {
-                          "count": false,
-                          "disableDataAlignment": false,
-                          "showDisabledItems": false,
-                          "skipEmptyValues": false,
-                          "useTrends": "default",
-                          "useZabbixValueMapping": false
-                        },
-                        "proxy": {
-                          "filter": ""
-                        },
-                        "queryType": "0",
-                        "resultFormat": "time_series",
-                        "schema": 12,
-                        "table": {
-                          "skipEmptyValues": false
-                        },
-                        "tags": {
-                          "filter": ""
-                        },
-                        "textFilter": "",
-                        "trigger": {
-                          "filter": ""
-                        }
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
+                        "expr": "sum(kube_pod_status_ready{namespace=\"solidarytech\", condition=\"false\"}) or vector(0)",
+                        "instant": true
                       }
                     },
                     "refId": "A",
@@ -1748,78 +1644,42 @@
           },
           "vizConfig": {
             "kind": "VizConfig",
-            "group": "timeseries",
+            "group": "stat",
             "version": "13.1.1",
             "spec": {
               "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
                 },
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "percent",
-                  "min": 0,
-                  "max": 100,
+                  "unit": "short",
+                  "decimals": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
                         "value": 0,
                         "color": "green"
+                      },
+                      {
+                        "value": 1,
+                        "color": "red"
                       }
                     ]
-                  },
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "right",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
                   }
                 },
                 "overrides": []
@@ -1828,12 +1688,12 @@
           }
         }
       },
-      "panel-62": {
+      "panel-67": {
         "kind": "Panel",
         "spec": {
-          "id": 62,
-          "title": "Load average (1m) - nodes",
-          "description": "",
+          "id": 67,
+          "title": "Réplicas disponíveis vs desejadas por serviço",
+          "description": "kube-state-metrics: kube_deployment_status_replicas_available x kube_deployment_spec_replicas, por Deployment da solidarytech.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -1844,61 +1704,36 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "alexanderzobnin-zabbix-datasource",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
                       "version": "v0",
                       "spec": {
-                        "application": {
-                          "filter": ""
-                        },
-                        "countTriggersBy": "",
-                        "evaltype": "0",
-                        "functions": [],
-                        "group": {
-                          "filter": "Applications"
-                        },
-                        "host": {
-                          "filter": "/kube.*/"
-                        },
-                        "item": {
-                          "filter": "Load average (1m avg)"
-                        },
-                        "itemTag": {
-                          "filter": ""
-                        },
-                        "macro": {
-                          "filter": ""
-                        },
-                        "options": {
-                          "count": false,
-                          "disableDataAlignment": false,
-                          "showDisabledItems": false,
-                          "skipEmptyValues": false,
-                          "useTrends": "default",
-                          "useZabbixValueMapping": false
-                        },
-                        "proxy": {
-                          "filter": ""
-                        },
-                        "queryType": "0",
-                        "resultFormat": "time_series",
-                        "schema": 12,
-                        "table": {
-                          "skipEmptyValues": false
-                        },
-                        "tags": {
-                          "filter": ""
-                        },
-                        "textFilter": "",
-                        "trigger": {
-                          "filter": ""
-                        }
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
+                        "expr": "kube_deployment_status_replicas_available{namespace=\"solidarytech\"}",
+                        "legendFormat": "{{deployment}} disponíveis"
                       }
                     },
                     "refId": "A",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "version": "v0",
+                      "spec": {
+                        "expr": "kube_deployment_spec_replicas{namespace=\"solidarytech\"}",
+                        "legendFormat": "{{deployment}} desejadas"
+                      }
+                    },
+                    "refId": "B",
                     "hidden": false
                   }
                 }
@@ -1934,6 +1769,7 @@
               "fieldConfig": {
                 "defaults": {
                   "unit": "short",
+                  "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1963,7 +1799,7 @@
                       "viz": false
                     },
                     "insertNulls": false,
-                    "lineInterpolation": "smooth",
+                    "lineInterpolation": "linear",
                     "lineWidth": 1,
                     "pointSize": 5,
                     "scaleDistribution": {
@@ -1987,177 +1823,12 @@
           }
         }
       },
-      "panel-63": {
+      "panel-68": {
         "kind": "Panel",
         "spec": {
-          "id": 63,
-          "title": "Node Ready",
-          "description": "",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
-                      "spec": {
-                        "application": {
-                          "filter": ""
-                        },
-                        "countTriggersBy": "",
-                        "evaltype": "0",
-                        "functions": [
-                          {
-                            "added": true,
-                            "def": {
-                              "category": "Alias",
-                              "defaultParams": [
-                                "/(.*)/",
-                                "$1"
-                              ],
-                              "name": "replaceAlias",
-                              "params": [
-                                {
-                                  "name": "regexp",
-                                  "type": "string"
-                                },
-                                {
-                                  "name": "newAlias",
-                                  "type": "string"
-                                }
-                              ]
-                            },
-                            "params": [
-                              "/(Node \\[.*\\]) Conditions: Ready/",
-                              "$1"
-                            ],
-                            "text": "replaceAlias(/(.*)/, $1)"
-                          }
-                        ],
-                        "group": {
-                          "filter": "Applications"
-                        },
-                        "host": {
-                          "filter": "kubernetes_nodes"
-                        },
-                        "item": {
-                          "filter": "/Node \\[kube[mw]1?\\] Conditions: Ready/"
-                        },
-                        "itemTag": {
-                          "filter": ""
-                        },
-                        "macro": {
-                          "filter": ""
-                        },
-                        "options": {
-                          "count": false,
-                          "disableDataAlignment": false,
-                          "showDisabledItems": false,
-                          "skipEmptyValues": false,
-                          "useTrends": "default",
-                          "useZabbixValueMapping": false
-                        },
-                        "proxy": {
-                          "filter": ""
-                        },
-                        "queryType": "0",
-                        "resultFormat": "time_series",
-                        "schema": 12,
-                        "table": {
-                          "skipEmptyValues": false
-                        },
-                        "tags": {
-                          "filter": ""
-                        },
-                        "textFilter": "",
-                        "trigger": {
-                          "filter": ""
-                        }
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
-                      }
-                    },
-                    "refId": "B",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "colorMode": "background",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "value_and_name",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "mappings": [
-                    {
-                      "type": "value",
-                      "options": {
-                        "0": {
-                          "text": "NotReady",
-                          "color": "red"
-                        },
-                        "1": {
-                          "text": "Ready",
-                          "color": "green"
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-64": {
-        "kind": "Panel",
-        "spec": {
-          "id": 64,
+          "id": 68,
           "title": "SolidaryTech - Containers restarts (ngo/donation/volunteer)",
-          "description": "Cai para 0 durante rollout do Flux Image Automation ou falha do pod - sinal de indisponibilidade do serviço.",
+          "description": "kube-state-metrics: kube_pod_container_status_restarts_total por pod. Uma nova série iniciando do zero indica rollout do Flux Image Automation; um salto no meio da série indica falha do pod - sinal de indisponibilidade do serviço.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -2168,58 +1839,14 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "alexanderzobnin-zabbix-datasource",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
                       "version": "v0",
                       "spec": {
-                        "application": {
-                          "filter": ""
-                        },
-                        "countTriggersBy": "",
-                        "evaltype": "0",
-                        "functions": [],
-                        "group": {
-                          "filter": "Applications"
-                        },
-                        "host": {
-                          "filter": "kubernetes_cluster"
-                        },
-                        "item": {
-                          "filter": "/Namespace \\[solidarytech\\] Pod \\[(ngo|donation|volunteer).*\\]: Containers restarts/"
-                        },
-                        "itemTag": {
-                          "filter": ""
-                        },
-                        "macro": {
-                          "filter": ""
-                        },
-                        "options": {
-                          "count": false,
-                          "disableDataAlignment": false,
-                          "showDisabledItems": false,
-                          "skipEmptyValues": false,
-                          "useTrends": "default",
-                          "useZabbixValueMapping": false
-                        },
-                        "proxy": {
-                          "filter": ""
-                        },
-                        "queryType": "0",
-                        "resultFormat": "time_series",
-                        "schema": 12,
-                        "table": {
-                          "skipEmptyValues": false
-                        },
-                        "tags": {
-                          "filter": ""
-                        },
-                        "textFilter": "",
-                        "trigger": {
-                          "filter": ""
-                        }
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "Zabbix Diasdm"
+                        "expr": "kube_pod_container_status_restarts_total{namespace=\"solidarytech\", pod=~\"(ngo|donation|volunteer).*\"}",
+                        "legendFormat": "{{pod}}"
                       }
                     },
                     "refId": "A",
@@ -2590,7 +2217,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Infraestrutura (Zabbix)",
+              "title": "Saúde dos pods - SolidaryTech (Prometheus)",
               "collapse": true,
               "layout": {
                 "kind": "GridLayout",
@@ -2601,50 +2228,11 @@
                       "spec": {
                         "x": 0,
                         "y": 0,
-                        "width": 8,
-                        "height": 8,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-60"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 8,
-                        "y": 0,
-                        "width": 8,
-                        "height": 8,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-61"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 16,
-                        "y": 0,
-                        "width": 8,
-                        "height": 8,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-62"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 0,
-                        "y": 8,
                         "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-63"
+                          "name": "panel-65"
                         }
                       }
                     },
@@ -2652,12 +2240,38 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 6,
-                        "y": 8,
-                        "width": 18,
+                        "y": 0,
+                        "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-64"
+                          "name": "panel-66"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 0,
+                        "width": 12,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-67"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 6,
+                        "width": 24,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-68"
                         }
                       }
                     }
@@ -2695,6 +2309,27 @@
       "fiscalYearStartMonth": 0
     },
     "title": "SolidaryTech - Visão Geral",
-    "variables": []
+    "variables": [
+      {
+        "kind": "DatasourceVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "prometheus",
+            "value": "bfts7wbtgac5cf"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Cluster Source",
+          "multi": false,
+          "name": "datasource",
+          "options": [],
+          "pluginId": "prometheus",
+          "refresh": "onDashboardLoad",
+          "regex": "/prometheus/",
+          "skipUrlSync": false
+        }
+      }
+    ]
   }
 }
