@@ -13,7 +13,7 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations \u0026 Alerts",
+          "name": "Annotations & Alerts",
           "query": {
             "group": "grafana",
             "kind": "DataQuery",
@@ -40,7 +40,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${cluster}prometheus"
+                        "name": "${datasource}"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -253,7 +253,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${cluster}prometheus"
+                        "name": "${datasource}"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -469,7 +469,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${cluster}prometheus"
+                        "name": "${datasource}"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -679,7 +679,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${cluster}prometheus"
+                        "name": "${datasource}"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -890,7 +890,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${cluster}prometheus"
+                        "name": "${datasource}"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1100,7 +1100,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${cluster}prometheus"
+                        "name": "${datasource}"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1311,7 +1311,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${cluster}prometheus"
+                        "name": "${datasource}"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1331,7 +1331,7 @@
               "transformations": []
             }
           },
-          "description": "SLI = 1 - taxa de erro, numa janela fixa de 30d (não segue o time picker). Evento bom = requisição sem erro (5xx via status_code=STATUS_CODE_ERROR, 4xx via http_response_status_code). Meta (SLO): SLI \u003e= 95% no período.",
+          "description": "SLI = 1 - taxa de erro, numa janela fixa de 30d (não segue o time picker). Evento bom = requisição sem erro (5xx via status_code=STATUS_CODE_ERROR, 4xx via http_response_status_code). Meta (SLO): SLI >= 95% no período.",
           "id": 201,
           "links": [],
           "title": "Donation Service: SLO de erros (30d) - meta 95%",
@@ -1526,7 +1526,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${cluster}prometheus"
+                        "name": "${datasource}"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -1544,10 +1544,10 @@
               "transformations": []
             }
           },
-          "description": "SLI = % de requisições com duração \u003c= 512ms, numa janela fixa de 30d (não segue o time picker). Usa o bucket le=\"0.512\" do histograma traces_spanmetrics_latency_bucket - um dos buckets default do Tempo (potências de 2 a partir de 2ms), o mais próximo de 500ms sem customizar histogram_buckets no metrics-generator. Meta (SLO): SLI \u003e= 95% no período.",
+          "description": "SLI = % de requisições com duração <= 512ms, numa janela fixa de 30d (não segue o time picker). Usa o bucket le=\"0.512\" do histograma traces_spanmetrics_latency_bucket - um dos buckets default do Tempo (potências de 2 a partir de 2ms), o mais próximo de 500ms sem customizar histogram_buckets no metrics-generator. Meta (SLO): SLI >= 95% no período.",
           "id": 203,
           "links": [],
-          "title": "Donation Service: SLO de latência (30d) - meta 95% \u003c= 512ms",
+          "title": "Donation Service: SLO de latência (30d) - meta 95% <= 512ms",
           "transparent": true,
           "vizConfig": {
             "group": "stat",
@@ -2066,29 +2066,22 @@
     "title": "SolidaryTech - Golden Metrics (Latência e Erros)",
     "variables": [
       {
-        "kind": "CustomVariable",
+        "kind": "DatasourceVariable",
         "spec": {
           "allowCustomValue": false,
           "current": {
-            "text": "Local",
-            "value": ""
+            "text": "prometheus",
+            "value": "bfts7wbtgac5cf"
           },
           "hide": "dontHide",
           "includeAll": false,
           "label": "Cluster Source",
           "multi": false,
-          "name": "cluster",
-          "options": [
-            {
-              "text": "Local",
-              "value": ""
-            },
-            {
-              "text": "AWS",
-              "value": "AWS-"
-            }
-          ],
-          "query": "Local : ,AWS : AWS-",
+          "name": "datasource",
+          "options": [],
+          "pluginId": "prometheus",
+          "refresh": "onDashboardLoad",
+          "regex": "/prometheus/",
           "skipUrlSync": false
         }
       }
