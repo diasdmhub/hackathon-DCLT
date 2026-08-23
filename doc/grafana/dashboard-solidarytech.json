@@ -2067,17 +2067,13 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${datasource}"
                       },
-                      "group": "loki",
+                      "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "sum(count_over_time({namespace=\"solidarytech\", container=\"donation\"} |~ \"POST /donations -> 201\" [$__range]))",
-                        "instant": true,
-                        "queryType": "instant",
-                        "range": false
+                        "expr": "max(solidarytech_donations_total)",
+                        "instant": true
                       },
                       "version": "v0"
                     },
@@ -2085,14 +2081,11 @@
                   }
                 }
               ],
-              "queryOptions": {
-                "hideTimeOverride": true,
-                "timeFrom": "168h"
-              },
+              "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
+          "description": "Calculado direto no Postgres a cada coleta do Prometheus (métrica solidarytech_donations_total, exposta em /metrics pelo donation-service), refletindo o total real da tabela donations. max() colapsa as 2 réplicas do pod (cada uma calcula o mesmo total, de forma independente, a partir da mesma fonte) numa única série. Substitui o antigo painel baseado em count_over_time() sobre o Loki, preso à retenção de 168h (retention_period em observe/010-loki/config.yaml e terra/modules/loki/config.yaml).",
           "id": 171,
           "links": [],
           "title": "Doações (total)",
@@ -2151,17 +2144,13 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${datasource}"
                       },
-                      "group": "loki",
+                      "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "sum(sum_over_time({namespace=\"solidarytech\", container=\"donation\"} |~ \"POST /donations -> 201\" | regexp \"valor=(?P<valor>[0-9]+\\\\.[0-9]+)\" | unwrap valor [$__range]))",
-                        "instant": true,
-                        "queryType": "instant",
-                        "range": false
+                        "expr": "max(solidarytech_donations_amount_sum)",
+                        "instant": true
                       },
                       "version": "v0"
                     },
@@ -2169,14 +2158,11 @@
                   }
                 }
               ],
-              "queryOptions": {
-                "hideTimeOverride": true,
-                "timeFrom": "168h"
-              },
+              "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
+          "description": "Calculado direto no Postgres a cada coleta do Prometheus (métrica solidarytech_donations_amount_sum, exposta em /metrics pelo donation-service), somando o campo amount de todas as doações. max() colapsa as 2 réplicas do pod (cada uma calcula o mesmo total, de forma independente, a partir da mesma fonte) numa única série. Substitui o antigo painel baseado em sum_over_time() sobre o Loki, preso à retenção de 168h (retention_period em observe/010-loki/config.yaml e terra/modules/loki/config.yaml).",
           "id": 172,
           "links": [],
           "title": "Valor arrecadado (total)",
@@ -2236,17 +2222,13 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${datasource}"
                       },
-                      "group": "loki",
+                      "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "sum(count_over_time({namespace=\"solidarytech\", container=\"ngo\"} |~ \"POST /ngos -> 201\" [$__range]))",
-                        "instant": true,
-                        "queryType": "instant",
-                        "range": false
+                        "expr": "max(solidarytech_ngos_total)",
+                        "instant": true
                       },
                       "version": "v0"
                     },
@@ -2254,14 +2236,11 @@
                   }
                 }
               ],
-              "queryOptions": {
-                "hideTimeOverride": true,
-                "timeFrom": "168h"
-              },
+              "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
+          "description": "Calculado direto no Postgres a cada coleta do Prometheus (métrica solidarytech_ngos_total, exposta em /metrics pelo ngo-service), refletindo o total real da tabela ngos. max() colapsa as 2 réplicas do pod (cada uma calcula o mesmo total, de forma independente, a partir da mesma fonte) numa única série. Substitui o antigo painel baseado em count_over_time() sobre o Loki, preso à retenção de 168h (retention_period em observe/010-loki/config.yaml e terra/modules/loki/config.yaml).",
           "id": 173,
           "links": [],
           "title": "ONGs cadastradas (total)",
@@ -2321,17 +2300,13 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${datasource}"
                       },
-                      "group": "loki",
+                      "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "sum(count_over_time({namespace=\"solidarytech\", container=\"volunteer\"} |~ \"POST /volunteers -> 201\" [$__range]))",
-                        "instant": true,
-                        "queryType": "instant",
-                        "range": false
+                        "expr": "max(solidarytech_volunteers_total)",
+                        "instant": true
                       },
                       "version": "v0"
                     },
@@ -2339,14 +2314,11 @@
                   }
                 }
               ],
-              "queryOptions": {
-                "hideTimeOverride": true,
-                "timeFrom": "168h"
-              },
+              "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
+          "description": "Calculado direto no DynamoDB a cada coleta do Prometheus (métrica solidarytech_volunteers_total, exposta em /metrics pelo volunteer-service via Scan com Select=COUNT), refletindo o total real da tabela. max() colapsa as 2 réplicas do pod (cada uma calcula o mesmo total, de forma independente, a partir da mesma fonte) numa única série. Coletado num job próprio, com scrape_interval de 5m (não o padrão de 15s), para não competir com a capacidade provisionada da tabela (5 RCU). Substitui o antigo painel baseado em count_over_time() sobre o Loki, preso à retenção de 168h (retention_period em observe/010-loki/config.yaml e terra/modules/loki/config.yaml).",
           "id": 174,
           "links": [],
           "title": "Voluntários cadastrados (total)",
@@ -4146,17 +4118,13 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${datasource}"
                       },
-                      "group": "loki",
+                      "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "sum(count_over_time({namespace=\"solidarytech\", container=\"donation\"} |~ \"POST /donations -> 201\" [$__range]))",
-                        "instant": true,
-                        "queryType": "instant",
-                        "range": false
+                        "expr": "max(solidarytech_donations_total)",
+                        "instant": true
                       },
                       "version": "v0"
                     },
@@ -4164,14 +4132,11 @@
                   }
                 }
               ],
-              "queryOptions": {
-                "hideTimeOverride": true,
-                "timeFrom": "168h"
-              },
+              "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
+          "description": "Calculado direto no Postgres a cada coleta do Prometheus (métrica solidarytech_donations_total, exposta em /metrics pelo donation-service), refletindo o total real da tabela donations. max() colapsa as 2 réplicas do pod (cada uma calcula o mesmo total, de forma independente, a partir da mesma fonte) numa única série. Substitui o antigo painel baseado em count_over_time() sobre o Loki, preso à retenção de 168h (retention_period em observe/010-loki/config.yaml e terra/modules/loki/config.yaml).",
           "id": 71,
           "links": [],
           "title": "Doações (total)",
@@ -4231,17 +4196,13 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${datasource}"
                       },
-                      "group": "loki",
+                      "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "sum(sum_over_time({namespace=\"solidarytech\", container=\"donation\"} |~ \"POST /donations -> 201\" | regexp \"valor=(?P<valor>[0-9]+\\\\.[0-9]+)\" | unwrap valor [$__range]))",
-                        "instant": true,
-                        "queryType": "instant",
-                        "range": false
+                        "expr": "max(solidarytech_donations_amount_sum)",
+                        "instant": true
                       },
                       "version": "v0"
                     },
@@ -4249,14 +4210,11 @@
                   }
                 }
               ],
-              "queryOptions": {
-                "hideTimeOverride": true,
-                "timeFrom": "168h"
-              },
+              "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
+          "description": "Calculado direto no Postgres a cada coleta do Prometheus (métrica solidarytech_donations_amount_sum, exposta em /metrics pelo donation-service), somando o campo amount de todas as doações. max() colapsa as 2 réplicas do pod (cada uma calcula o mesmo total, de forma independente, a partir da mesma fonte) numa única série. Substitui o antigo painel baseado em sum_over_time() sobre o Loki, preso à retenção de 168h (retention_period em observe/010-loki/config.yaml e terra/modules/loki/config.yaml).",
           "id": 72,
           "links": [],
           "title": "Valor arrecadado (total)",
@@ -4316,17 +4274,13 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${datasource}"
                       },
-                      "group": "loki",
+                      "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "sum(count_over_time({namespace=\"solidarytech\", container=\"ngo\"} |~ \"POST /ngos -> 201\" [$__range]))",
-                        "instant": true,
-                        "queryType": "instant",
-                        "range": false
+                        "expr": "max(solidarytech_ngos_total)",
+                        "instant": true
                       },
                       "version": "v0"
                     },
@@ -4334,14 +4288,11 @@
                   }
                 }
               ],
-              "queryOptions": {
-                "hideTimeOverride": true,
-                "timeFrom": "168h"
-              },
+              "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
+          "description": "Calculado direto no Postgres a cada coleta do Prometheus (métrica solidarytech_ngos_total, exposta em /metrics pelo ngo-service), refletindo o total real da tabela ngos. max() colapsa as 2 réplicas do pod (cada uma calcula o mesmo total, de forma independente, a partir da mesma fonte) numa única série. Substitui o antigo painel baseado em count_over_time() sobre o Loki, preso à retenção de 168h (retention_period em observe/010-loki/config.yaml e terra/modules/loki/config.yaml).",
           "id": 73,
           "links": [],
           "title": "ONGs cadastradas (total)",
@@ -4401,17 +4352,13 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource_loki}"
+                        "name": "${datasource}"
                       },
-                      "group": "loki",
+                      "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "sum(count_over_time({namespace=\"solidarytech\", container=\"volunteer\"} |~ \"POST /volunteers -> 201\" [$__range]))",
-                        "instant": true,
-                        "queryType": "instant",
-                        "range": false
+                        "expr": "max(solidarytech_volunteers_total)",
+                        "instant": true
                       },
                       "version": "v0"
                     },
@@ -4419,14 +4366,11 @@
                   }
                 }
               ],
-              "queryOptions": {
-                "hideTimeOverride": true,
-                "timeFrom": "168h"
-              },
+              "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Total das últimas 168h (7 dias) - o máximo de retenção configurado no Loki (retention_period: 168h em observe/010-loki/config.yaml e terra/modules/loki/config.yaml); independente do período selecionado na dashboard (time range override fixo).",
+          "description": "Calculado direto no DynamoDB a cada coleta do Prometheus (métrica solidarytech_volunteers_total, exposta em /metrics pelo volunteer-service via Scan com Select=COUNT), refletindo o total real da tabela. max() colapsa as 2 réplicas do pod (cada uma calcula o mesmo total, de forma independente, a partir da mesma fonte) numa única série. Coletado num job próprio, com scrape_interval de 5m (não o padrão de 15s), para não competir com a capacidade provisionada da tabela (5 RCU). Substitui o antigo painel baseado em count_over_time() sobre o Loki, preso à retenção de 168h (retention_period em observe/010-loki/config.yaml e terra/modules/loki/config.yaml).",
           "id": 74,
           "links": [],
           "title": "Voluntários cadastrados (total)",
