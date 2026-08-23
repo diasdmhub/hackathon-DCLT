@@ -6,6 +6,8 @@ import psycopg2
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
 from opentelemetry import trace
+from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, generate_latest
+from prometheus_client.core import GaugeMetricFamily
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import SimpleConnectionPool
 
@@ -33,7 +35,7 @@ except psycopg2.Error as e:
 
 @app.after_request
 def log_request(response):
-    if request.path != '/health':
+    if request.path not in ('/health', '/metrics'):
         # g.log_detail é preenchido pelos handlers com dados da requisição (ex.: nome da ONG)
         # trace_id correlaciona a linha de log com o trace no Tempo; fica vazio quando o SDK OTel está desativado
         ctx = trace.get_current_span().get_span_context()
@@ -91,6 +93,30 @@ def get_ngos():
         return jsonify({"error": "Erro interno"}), 500
     finally:
         pool.putconn(conn)
+
+class NgoMetricsCollector:
+    # Consulta o total direto no Postgres a cada coleta do Prometheus (em vez de
+    # manter um contador em memória), para o valor nunca divergir do estado real
+    # da tabela - a mesma divergência que motivou esta métrica quando o total
+    # vinha de um painel Grafana baseado em contagem de linhas de log no Loki.
+    def collect(self):
+        conn = pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) AS total FROM ngos")
+                total = cur.fetchone()['total']
+        finally:
+            pool.putconn(conn)
+        gauge = GaugeMetricFamily('solidarytech_ngos_total', 'Total de ONGs cadastradas na plataforma')
+        gauge.add_metric([], total)
+        yield gauge
+
+metrics_registry = CollectorRegistry()
+metrics_registry.register(NgoMetricsCollector())
+
+@app.route('/metrics')
+def metrics():
+    return generate_latest(metrics_registry), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", "8081"))

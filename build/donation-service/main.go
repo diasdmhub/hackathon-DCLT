@@ -18,6 +18,8 @@ import (
         "github.com/aws/aws-sdk-go-v2/service/sqs"
         _ "github.com/jackc/pgx/v4/stdlib"
         "github.com/joho/godotenv"
+        "github.com/prometheus/client_golang/prometheus"
+        "github.com/prometheus/client_golang/prometheus/promhttp"
         "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
         "go.opentelemetry.io/otel"
         "go.opentelemetry.io/otel/attribute"
@@ -60,7 +62,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
                 rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
                 next.ServeHTTP(rec, r)
-                if r.URL.Path != "/health" {
+                if r.URL.Path != "/health" && r.URL.Path != "/metrics" {
                         // trace_id correlaciona a linha de log com o trace no Tempo; fica vazio quando o tracing está desativado
                         traceRef := ""
                         if sc := oteltrace.SpanContextFromContext(r.Context()); sc.IsValid() {
@@ -149,14 +151,19 @@ func main() {
 
         app := &App{DB: db, DBName: dbName, SqsSvc: sqsSvc, SqsQueueURL: queueURL}
 
+        metricsRegistry := prometheus.NewRegistry()
+        metricsRegistry.MustRegister(newDonationMetricsCollector(db))
+
         mux := http.NewServeMux()
         mux.HandleFunc("/health", app.HealthHandler)
         mux.HandleFunc("/donations", app.DonationHandler)
+        mux.Handle("/metrics", promhttp.HandlerFor(metricsRegistry, promhttp.HandlerOpts{}))
 
         // otelhttp cria o span de servidor e injeta o contexto do trace na requisição;
-        // /health fica de fora para não poluir o Tempo com as sondas de liveness/readiness
+        // /health e /metrics ficam de fora para não poluir o Tempo com sondas de
+        // liveness/readiness e coletas do Prometheus
         handler := otelhttp.NewHandler(loggingMiddleware(mux), "http.server",
-                otelhttp.WithFilter(func(r *http.Request) bool { return r.URL.Path != "/health" }),
+                otelhttp.WithFilter(func(r *http.Request) bool { return r.URL.Path != "/health" && r.URL.Path != "/metrics" }),
                 otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
                         return r.Method + " " + r.URL.Path
                 }),
@@ -260,6 +267,41 @@ func (a *App) DonationHandler(w http.ResponseWriter, r *http.Request) {
         }
 
         http.Error(w, `{"error":"Método não permitido"}`, http.StatusMethodNotAllowed)
+}
+
+// donationMetricsCollector consulta o total e o somatório direto no Postgres a
+// cada coleta do Prometheus (em vez de manter contadores em memória), para o
+// valor nunca divergir do estado real da tabela - a mesma divergência que
+// motivou estas métricas quando o total vinha de um painel Grafana baseado em
+// contagem de linhas de log no Loki.
+type donationMetricsCollector struct {
+        db            *sql.DB
+        totalDesc     *prometheus.Desc
+        amountSumDesc *prometheus.Desc
+}
+
+func newDonationMetricsCollector(db *sql.DB) *donationMetricsCollector {
+        return &donationMetricsCollector{
+                db:            db,
+                totalDesc:     prometheus.NewDesc("solidarytech_donations_total", "Total de doações registradas na plataforma", nil, nil),
+                amountSumDesc: prometheus.NewDesc("solidarytech_donations_amount_sum", "Soma do valor de todas as doações registradas", nil, nil),
+        }
+}
+
+func (c *donationMetricsCollector) Describe(ch chan<- *prometheus.Desc) {
+        ch <- c.totalDesc
+        ch <- c.amountSumDesc
+}
+
+func (c *donationMetricsCollector) Collect(ch chan<- prometheus.Metric) {
+        var total int64
+        var amountSum float64
+        if err := c.db.QueryRow("SELECT COUNT(*), COALESCE(SUM(amount), 0) FROM donations").Scan(&total, &amountSum); err != nil {
+                log.Printf("Erro ao coletar métricas de doações: %v", err)
+                return
+        }
+        ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(total))
+        ch <- prometheus.MustNewConstMetric(c.amountSumDesc, prometheus.GaugeValue, amountSum)
 }
 
 func (a *App) sendNotificationEvent(ctx context.Context, d Donation) {

@@ -57,9 +57,9 @@ spec:
               value: none
             - name: OTEL_LOGS_EXPORTER
               value: none
-            # Exclui as sondas de liveness/readiness dos traces
+            # Exclui as sondas de liveness/readiness e as coletas do Prometheus dos traces
             - name: OTEL_PYTHON_EXCLUDED_URLS
-              value: /health
+              value: /health,/metrics
           resources:
             requests:
               cpu: 25m
@@ -90,9 +90,15 @@ metadata:
   name: ngo
   namespace: solidarytech
   labels:
+    app.kubernetes.io/name: ngo
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
     Environment: primary
+  annotations:
+    # Descoberto pelo job "solidarytech-service-endpoints" em
+    # terra/modules/prometheus/prometheus.yml (endpoint /metrics, mesma porta
+    # do Service)
+    prometheus.io/scrape: "true"
 spec:
   # ClusterIP, não LoadBalancer: a exposição externa é a NLB única
   # provisionada por terra/modules/nlb, via TargetGroupBinding abaixo - ver

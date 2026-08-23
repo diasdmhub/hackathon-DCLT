@@ -48,6 +48,23 @@ O template Zabbix de métricas de negócio/health-check dos 3 microsserviços (`
 
 <BR>
 
+## Métricas de negócio via Prometheus
+
+Os painéis Grafana "(total)" de doações/ONGs/voluntários eram calculados com `count_over_time(...)` sobre o Loki, presos à retenção de 168h configurada em `010-loki/config.yaml` (`retention_period`) - por isso nunca refletiam o total histórico real, só o que ainda cabia nesse período. Cada um dos 3 microsserviços agora expõe um `/metrics` próprio (mesma porta HTTP do serviço), calculado direto na fonte de dados a cada coleta, sem estado em memória:
+
+- **ngo-service**: `solidarytech_ngos_total` (`SELECT COUNT(*) FROM ngos`).
+- **donation-service**: `solidarytech_donations_total` e `solidarytech_donations_amount_sum` (`SELECT COUNT(*), COALESCE(SUM(amount), 0) FROM donations`).
+- **volunteer-service**: `solidarytech_volunteers_total` (Scan completo da tabela DynamoDB com `Select=COUNT`, paginando por `LastEvaluatedKey`).
+
+Os Services de `ngo`/`donation`/`volunteer` em [`kube/`](/kube) carregam a anotação `prometheus.io/scrape: "true"` e o label `app.kubernetes.io/name`, no mesmo convênio usado por kube-state-metrics/node-exporter acima. Dois jobs em `040-prometheus/prometheus.yml` descobrem esses alvos via `kubernetes_sd_configs` (namespace `solidarytech`, não `observe`):
+
+- `solidarytech-service-endpoints`: ngo-service e donation-service, no `scrape_interval` global (15s).
+- `solidarytech-volunteer-metrics`: só volunteer-service, com `scrape_interval: 5m` próprio - o `Scan` com `Select=COUNT` ainda consome as mesmas RCUs de um scan normal (só evita transferir os itens), e a tabela está provisionada em apenas 5 RCU/5 WCU; um scrape a cada 15s competiria por essa capacidade conforme a tabela cresce.
+
+`/metrics` fica fora dos logs de requisição e das traces (mesmo tratamento já dado a `/health`), para não virar ruído a cada coleta.
+
+<BR>
+
 ## Traces
 
 ### Instrumentação

@@ -9,6 +9,8 @@ from botocore.exceptions import BotoCoreError, ClientError
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
 from opentelemetry import trace
+from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, generate_latest
+from prometheus_client.core import GaugeMetricFamily
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ except (BotoCoreError, ClientError) as e:
 
 @app.after_request
 def log_request(response):
-    if request.path != '/health':
+    if request.path not in ('/health', '/metrics'):
         # g.log_detail é preenchido pelos handlers com dados da requisição (ex.: nome do voluntário)
         # trace_id correlaciona a linha de log com o trace no Tempo; fica vazio quando o SDK OTel está desativado
         ctx = trace.get_current_span().get_span_context()
@@ -93,6 +95,33 @@ def get_volunteers_by_ngo(ngo_id):
     except (BotoCoreError, ClientError) as e:
         log.error(f"Erro ao buscar dados no DynamoDB: {e}")
         return jsonify({"error": "Erro interno"}), 500
+
+class VolunteerMetricsCollector:
+    # Scan completo da tabela a cada coleta do Prometheus, Select='COUNT' evita
+    # transferir os itens (só a contagem), mas ainda consome as mesmas RCUs de
+    # um scan normal - por isso este endpoint é coletado num job à parte, com
+    # intervalo de 5m em vez do padrão de 15s (ver observe/040-prometheus/prometheus.yml),
+    # para não competir com a capacidade provisionada da tabela (5 RCU).
+    def collect(self):
+        total = 0
+        scan_kwargs = {'Select': 'COUNT'}
+        while True:
+            response = table.scan(**scan_kwargs)
+            total += response['Count']
+            last_key = response.get('LastEvaluatedKey')
+            if not last_key:
+                break
+            scan_kwargs['ExclusiveStartKey'] = last_key
+        gauge = GaugeMetricFamily('solidarytech_volunteers_total', 'Total de voluntários cadastrados na plataforma')
+        gauge.add_metric([], total)
+        yield gauge
+
+metrics_registry = CollectorRegistry()
+metrics_registry.register(VolunteerMetricsCollector())
+
+@app.route('/metrics')
+def metrics():
+    return generate_latest(metrics_registry), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", "8083"))

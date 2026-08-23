@@ -33,6 +33,50 @@ scrape_configs:
       - source_labels: [__meta_kubernetes_pod_node_name]
         target_label: node
 
+  # Métricas de negócio dos 3 microsserviços da solidarytech (ex.:
+  # solidarytech_ngos_total, solidarytech_donations_total/amount_sum),
+  # calculadas na fonte (Postgres) a cada coleta, não a partir de logs -
+  # substitui os antigos painéis Grafana "(total)" baseados em
+  # count_over_time() sobre o Loki, presos à retenção de 168h do Loki (ver
+  # observe/README.md). Mesmo convênio "prometheus.io/scrape: true" usado
+  # acima, mas namespace solidarytech; volunteer-service fica de fora (ver
+  # job abaixo) por causa da diferença de custo do scrape.
+  - job_name: solidarytech-service-endpoints
+    kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names: [solidarytech]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+        regex: "true"
+        action: keep
+      - source_labels: [__meta_kubernetes_service_name]
+        regex: volunteer
+        action: drop
+      - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
+        target_label: job
+
+  # volunteer-service num job à parte, com scrape_interval de 5m em vez do
+  # padrão global de 15s: sua métrica de total é calculada com um Scan
+  # completo da tabela DynamoDB (Select=COUNT), que consome as mesmas RCUs
+  # de um scan normal - a 15s isso competiria com a capacidade provisionada
+  # da tabela (5 RCU, ver terra/README.md).
+  - job_name: solidarytech-volunteer-metrics
+    scrape_interval: 5m
+    kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names: [solidarytech]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+        regex: "true"
+        action: keep
+      - source_labels: [__meta_kubernetes_service_name]
+        regex: volunteer
+        action: keep
+      - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
+        target_label: job
+
   # CPU/memória por node/pod/container, direto do kubelet via proxy do
   # apiserver (endpoint /metrics/resource - resumo enxuto, bem mais leve que
   # /metrics/cadvisor completo). Exige a ClusterRole "prometheus"

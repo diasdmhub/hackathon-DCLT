@@ -167,6 +167,22 @@ ServiceAccount que o Deployment do Prometheus usa (`main.tf`).
 Deliberadamente enxuto: cobre saúde/consumo de cluster e pods, não todo
 detalhe que kube-state-metrics/kubelet conseguem expor.
 
+### Métricas de negócio via Prometheus
+
+Mesmo mecanismo do cluster `kubeadm-local` (ver "Métricas de negócio via
+Prometheus" em `observe/README.md`), aplicado aqui em
+`terra/modules/prometheus/prometheus.yml`: dois jobs adicionais
+(`solidarytech-service-endpoints` e `solidarytech-volunteer-metrics`, este
+último com `scrape_interval: 5m` em vez do padrão de 15s, por causa do custo
+em RCU de um `Scan` completo na tabela DynamoDB provisionada em 5 RCU/5 WCU)
+descobrem, via `kubernetes_sd_configs` no namespace `solidarytech`, o
+`/metrics` que cada um dos 3 microsserviços (`kube-aws/`) agora expõe -
+`solidarytech_ngos_total`, `solidarytech_donations_total`/`_amount_sum`,
+`solidarytech_volunteers_total` -, calculado direto na fonte de dados
+(RDS/DynamoDB) a cada coleta. Substitui os antigos painéis Grafana "(total)"
+baseados em `count_over_time()` sobre o Loki, presos à retenção de 168h
+configurada em `terra/modules/loki/config.yaml`.
+
 ## Pré-requisitos
 
 - Terraform >= 1.6
