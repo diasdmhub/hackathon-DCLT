@@ -75,7 +75,7 @@ spec:
                 || echo "Tabela já existe, seguindo em frente."
       containers:
         - name: volunteer
-          image: docker.io/diasdmhub/volunteer:20260802185214 # {"$imagepolicy": "flux-system:volunteer"}
+          image: docker.io/diasdmhub/volunteer:20260823004654 # {"$imagepolicy": "flux-system:volunteer"}
           ports:
             - containerPort: 8083
           envFrom:

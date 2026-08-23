@@ -55,7 +55,7 @@ spec:
               done
       containers:
         - name: donation
-          image: docker.io/diasdmhub/donation:20260802185155 # {"$imagepolicy": "flux-system:donation"}
+          image: docker.io/diasdmhub/donation:20260823004734 # {"$imagepolicy": "flux-system:donation"}
           ports:
             - containerPort: 8082
           envFrom:
