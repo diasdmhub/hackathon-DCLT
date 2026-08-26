@@ -634,7 +634,7 @@
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=\"donation-service\"}[$__rate_interval])))",
+                        "expr": "histogram_quantile(0.95, sum by (le) (increase(traces_spanmetrics_latency_bucket{service=\"donation-service\"}[$__range])))",
                         "instant": true
                       },
                       "version": "v0"
@@ -3615,7 +3615,7 @@
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=\"donation-service\"}[$__rate_interval])))",
+                        "expr": "histogram_quantile(0.95, sum by (le) (increase(traces_spanmetrics_latency_bucket{service=\"donation-service\"}[$__range])))",
                         "instant": true
                       },
                       "version": "v0"
