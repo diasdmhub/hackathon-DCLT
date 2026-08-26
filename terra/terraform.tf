@@ -58,8 +58,9 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = "SolidaryTech"
-      Environment = "primary"
+      Environment = "Production"
       ManagedBy   = "Terraform"
+      CostCenter  = "NGO-Core"
     }
   }
 }

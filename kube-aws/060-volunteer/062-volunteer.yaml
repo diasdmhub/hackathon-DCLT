@@ -7,7 +7,7 @@ metadata:
     app: volunteer
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: primary
+    Environment: Production
 spec:
   replicas: 2
   selector:
@@ -19,7 +19,7 @@ spec:
         app: volunteer
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: primary
+        Environment: Production
     spec:
       # Preferencial (não hard) para não travar o rollout com só 2 nodes: um
       # required exigiria um 3º node livre durante o maxSurge do deploy.
@@ -94,7 +94,7 @@ metadata:
     app.kubernetes.io/name: volunteer
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: primary
+    Environment: Production
   annotations:
     # Descoberto pelo job "solidarytech-volunteer-metrics" em
     # terra/modules/prometheus/prometheus.yml (scrape de 5m, não o padrão de
@@ -119,7 +119,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: primary
+    Environment: Production
 spec:
   serviceRef:
     name: volunteer

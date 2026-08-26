@@ -17,7 +17,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: solidarytech
     Project: SolidaryTech
-    Environment: primary
+    Environment: Production
   annotations:
     # Jobs são imutáveis - sem isso, o Flux tentaria substituir o Job já
     # concluído a cada reconciliação e falharia.
@@ -30,7 +30,7 @@ spec:
         app: rds-init
         app.kubernetes.io/part-of: solidarytech
         Project: SolidaryTech
-        Environment: primary
+        Environment: Production
     spec:
       restartPolicy: OnFailure
       containers:
