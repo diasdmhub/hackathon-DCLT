@@ -107,7 +107,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -153,7 +153,7 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "thresholds"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -236,7 +236,7 @@
                 }
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -323,7 +323,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -369,7 +369,7 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "thresholds"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -408,6 +408,8 @@
                       "mode": "dashed"
                     }
                   },
+                  "max": 100,
+                  "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -421,7 +423,7 @@
                       },
                       {
                         "color": "dark-red",
-                        "value": 5
+                        "value": 2
                       }
                     ]
                   },
@@ -452,7 +454,7 @@
                 }
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -536,7 +538,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -582,7 +584,7 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "thresholds"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -662,7 +664,7 @@
                 }
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -747,7 +749,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -793,7 +795,7 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "thresholds"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -829,6 +831,8 @@
                       "mode": "dashed"
                     }
                   },
+                  "max": 100,
+                  "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -842,7 +846,7 @@
                       },
                       {
                         "color": "dark-red",
-                        "value": 5
+                        "value": 2
                       }
                     ]
                   },
@@ -873,7 +877,7 @@
                 }
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -957,7 +961,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -1003,7 +1007,7 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "thresholds"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -1083,7 +1087,7 @@
                 }
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -1168,7 +1172,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -1214,7 +1218,7 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "thresholds"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -1250,6 +1254,8 @@
                       "mode": "dashed"
                     }
                   },
+                  "max": 100,
+                  "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1263,7 +1269,7 @@
                       },
                       {
                         "color": "dark-red",
-                        "value": 5
+                        "value": 2
                       }
                     ]
                   },
@@ -1294,7 +1300,7 @@
                 }
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -1351,12 +1357,12 @@
                         "value": 0
                       },
                       {
-                        "color": "dark-yellow",
-                        "value": 90
+                        "color": "dark-orange",
+                        "value": 95
                       },
                       {
                         "color": "dark-green",
-                        "value": 95
+                        "value": 98
                       }
                     ]
                   },
@@ -1382,7 +1388,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -1428,7 +1434,7 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "thresholds"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -1448,6 +1454,9 @@
                     },
                     "insertNulls": false,
                     "lineInterpolation": "smooth",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
                     "lineWidth": 2,
                     "pointSize": 5,
                     "scaleDistribution": {
@@ -1465,6 +1474,7 @@
                     }
                   },
                   "max": 100,
+                  "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1474,11 +1484,11 @@
                       },
                       {
                         "color": "dark-yellow",
-                        "value": 90
+                        "value": 95
                       },
                       {
                         "color": "dark-green",
-                        "value": 95
+                        "value": 98
                       }
                     ]
                   },
@@ -1509,7 +1519,7 @@
                 }
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -1564,12 +1574,12 @@
                         "value": 0
                       },
                       {
-                        "color": "dark-yellow",
-                        "value": 90
+                        "color": "dark-orange",
+                        "value": 95
                       },
                       {
                         "color": "dark-green",
-                        "value": 95
+                        "value": 98
                       }
                     ]
                   },
@@ -1595,7 +1605,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       },
@@ -1641,7 +1651,7 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "thresholds"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -1678,6 +1688,7 @@
                     }
                   },
                   "max": 100,
+                  "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1687,11 +1698,11 @@
                       },
                       {
                         "color": "dark-yellow",
-                        "value": 90
+                        "value": 95
                       },
                       {
                         "color": "dark-green",
-                        "value": 95
+                        "value": 98
                       }
                     ]
                   },
@@ -1722,7 +1733,7 @@
                 }
               }
             },
-            "version": "13.1.1"
+            "version": "13.2.0"
           }
         }
       }
@@ -2024,20 +2035,7 @@
         ]
       }
     },
-    "links": [
-      {
-        "asDropdown": false,
-        "icon": "external link",
-        "includeVars": false,
-        "keepTime": false,
-        "tags": [],
-        "targetBlank": true,
-        "title": "Source (GitHub)",
-        "tooltip": "View source file in repository",
-        "type": "link",
-        "url": "https://github.com/diasdmhub/hackathon-DCLT/blob/main/doc/grafana/dashboard-solidarytech-golden-metrics.json"
-      }
-    ],
+    "links": [],
     "liveNow": false,
     "preload": false,
     "tags": [
@@ -2058,7 +2056,7 @@
         "1d"
       ],
       "fiscalYearStartMonth": 0,
-      "from": "now-3h",
+      "from": "now-7d",
       "hideTimepicker": false,
       "timezone": "browser",
       "to": "now"
