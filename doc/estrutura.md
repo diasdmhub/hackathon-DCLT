@@ -96,7 +96,18 @@ A quebra do SLO, implicará no congelamento imediato de atualizações programad
 
 ## FinOps
 
-O ambiente foi inteiramente implementado com o uso das tags abaixo
+- O ambiente foi inteiramente implementado com o **Terraform** aplicando as tags abaixo:
+
+| Tag | Valor |
+| :---: | :---: |
+| Project | `SolidaryTech` |
+| Environment | `Production` |
+| CostCenter | `NGO-Core` |
+| ManagedBy | `Terraform` |
+
+- O padrão de "Tag Name" por recurso (`${name_prefix}-<recurso>`) está presente em praticamente todo recurso do Terraform, para identificação individual ou por filtros na AWS.
+- Foi utilizado somente o **recurso de HPA** para os serviços da SolidaryTech no cluster K8s, pois ele pode escalar a quantidade de pods automaticamente e absorver picos de carga. Caso, a carga seja reduzida, os pods são reduzidos e o consumo de recursos também.
+- O VPA foi descartado dessa implementação pois causaria divergência entre entre o repositório Git remoto com o cluster, e o FluxCD teria um _drift_ a cada reconciliação.
 
 <BR>
 
