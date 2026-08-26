@@ -86,9 +86,17 @@ Stack completa executando Prometheus, Loki e Alloy. Códigos dos microserviços 
 
 ## SRE
 
+Definidos **SLIs de latência e erros** para todos os serviços da SolidaryTech. Devido à relevância do Donation Service (_hot-path_), foi especificado um SLO de `98%`, estabelecendo, assim, um _error budget_ de `2%`.
+
+Essa especificação é relativa ao um **período mensal** de `720h`, contabilizando o mínimo de `705,6h` de disponibilidade do serviço e `14.4h` de tolerância a erros. Esses valores estabelecem uma margem segura de manutenções e atualizações do ambiente, caso necessário, e mantêm um alta disponibilidade para os clientes.
+
+A quebra do SLO, implicará no congelamento imediato de atualizações programadas do Donation Service e exige a estabilização do ambiente até o próximo período mensal. 
+
 <BR>
 
 ## FinOps
+
+O ambiente foi inteiramente implementado com o uso das tags abaixo
 
 <BR>
 
