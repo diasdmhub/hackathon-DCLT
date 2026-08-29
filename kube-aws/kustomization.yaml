@@ -18,5 +18,8 @@ resources:
   - 020-rds-init/021-configmap.yaml
   - 020-rds-init/022-rds-init.yaml
   - 040-ngo/042-ngo.yaml
+  - 040-ngo/043-hpa.yaml
   - 050-donation/052-donation.yaml
+  - 050-donation/053-hpa.yaml
   - 060-volunteer/062-volunteer.yaml
+  - 060-volunteer/063-hpa.yaml

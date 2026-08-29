@@ -1,0 +1,42 @@
+# Serve a API metrics.k8s.io (CPU/memória por pod), consumida pelos
+# HorizontalPodAutoscaler de kube/ (ver 0NN-hpa.yaml em cada serviço) -
+# sem isso o HPA fica preso em "unknown"/FailedGetResourceMetric. Não
+# alimenta o Prometheus (diferente de kube-state-metrics/node-exporter
+# acima): é uma API agregada consultada sob demanda pelo
+# horizontal-pod-autoscaler controller e por "kubectl top".
+#
+# --kubelet-insecure-tls: os certificados de serving do kubelet num
+# cluster kubeadm são autoassinados, sem uma CA que o metrics-server
+# reconheça por padrão - gotcha comum e bem documentado em clusters
+# kubeadm "puros". Aceitável neste laboratório de 2 nodes; o equivalente
+# em EKS (terra/modules/eks, addon "metrics-server") não precisa disso,
+# pois os certificados do kubelet lá já são assinados pela CA do cluster.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: metrics-server
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: secondary
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: metrics-server
+      version: "3.14.0"
+      sourceRef:
+        kind: HelmRepository
+        name: metrics-server
+        namespace: observe
+  values:
+    args:
+      - --kubelet-insecure-tls
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi

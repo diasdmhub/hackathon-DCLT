@@ -1,0 +1,15 @@
+# Repositório Helm oficial do metrics-server (separado do
+# prometheus-community usado em 040-prometheus/: chart mantido pelo próprio
+# projeto kubernetes-sigs, não pela comunidade Prometheus).
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: metrics-server
+  namespace: observe
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: secondary
+spec:
+  interval: 1h
+  url: https://kubernetes-sigs.github.io/metrics-server/

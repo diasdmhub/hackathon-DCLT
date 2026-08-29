@@ -9,7 +9,10 @@ metadata:
     Project: SolidaryTech
     Environment: Production
 spec:
-  replicas: 2
+  # Sem "replicas" fixo: a contagem passa a ser controlada pelo HPA
+  # (053-hpa.yaml). Se o campo ficasse aqui, a cada reconciliação da
+  # Kustomization "solidarytech" (5m) o Flux reaplicaria o valor fixo,
+  # brigando com o HPA.
   selector:
     matchLabels:
       app: donation

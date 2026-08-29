@@ -23,6 +23,8 @@ resources:
   - 040-prometheus/045-helmrepository.yaml
   - 040-prometheus/046-kube-state-metrics.yaml
   - 040-prometheus/047-node-exporter.yaml
+  - 050-metrics-server/051-helmrepository.yaml
+  - 050-metrics-server/052-metrics-server.yaml
 
 configMapGenerator:
   - name: loki-config

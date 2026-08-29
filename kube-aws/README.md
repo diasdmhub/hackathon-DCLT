@@ -18,6 +18,7 @@ vez dos emuladores locais.
 | Exposição externa | 3x `Service` `LoadBalancer` compartilhando um IP fixo do MetalLB (`allow-shared-ip`), diferenciados por porta | `Service` `ClusterIP` + `TargetGroupBinding` por serviço, apontando para uma NLB única (`terra/modules/nlb`) |
 | Tag de imagem | Timestamp UTC, atualizada pelo Flux Image Automation | `:latest` - este cluster não roda a Kustomization `image-automation` (só `kubeadm-local`, para evitar dois Flux commitando a mesma alteração em `./kube`) |
 | Schema do banco | `docker-entrypoint-initdb.d` do `Dockerfile-psql` roda `db/init.sql` automaticamente na subida do container | Job `rds-init` (`020-rds-init/`) roda os mesmos `db/init.sql` contra o RDS - ver seção abaixo |
+| Backend do HPA (`0NN-hpa.yaml`, min 1/max 4 em cada serviço) | `metrics-server` via `HelmRelease` Flux (`observe/050-metrics-server/`), com `--kubelet-insecure-tls` (certificado autoassinado do kubelet no kubeadm) | Addon EKS `metrics-server` (`terra/modules/eks`), gerenciado pela AWS - sem flag de TLS inseguro, o certificado do kubelet já é confiável |
 
 ## Inicialização do schema (RDS)
 

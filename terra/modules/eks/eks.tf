@@ -167,6 +167,17 @@ resource "aws_eks_addon" "vpc_cni" {
   depends_on = [aws_eks_node_group.main]
 }
 
+# Serve a API metrics.k8s.io (CPU/memória por pod) consumida pelos
+# HorizontalPodAutoscaler de kube-aws/ (ver 0NN-hpa.yaml em cada serviço).
+# Addon gerenciado pela AWS: certificados do kubelet já são confiáveis no
+# EKS, sem precisar do --kubelet-insecure-tls exigido no kubeadm-local
+# (ver observe/050-metrics-server/).
+resource "aws_eks_addon" "metrics_server" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "metrics-server"
+  depends_on   = [aws_eks_node_group.main]
+}
+
 # OIDC provider do cluster - necessário para IRSA (usado pelo módulo iam
 # para as roles de donation-service/volunteer-service e aqui pelo EBS CSI)
 data "tls_certificate" "eks" {
