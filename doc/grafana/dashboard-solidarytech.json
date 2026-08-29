@@ -4416,6 +4416,1038 @@
             "version": "13.2.0"
           }
         }
+      },
+      "panel-75": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "1000 * quantile_over_time(0.95, avg(rate(container_cpu_usage_seconds_total{namespace=\"solidarytech\", container=\"ngo\"}[5m]))[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de CPU por pod (ngo), em millicores, ao longo do período selecionado - sugestão de ajuste para requests.cpu/limits.cpu em kube/040-ngo/042-ngo.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=25m, limit=150m - reajustar aqui se o Deployment mudar.",
+          "id": 75,
+          "links": [],
+          "title": "ngo - CPU sugerida (p95, millicores)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 25
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 150
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-76": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "quantile_over_time(0.95, avg(container_memory_working_set_bytes{namespace=\"solidarytech\", container=\"ngo\"})[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de memória (working set) por pod (ngo), ao longo do período selecionado - sugestão de ajuste para requests.memory/limits.memory em kube/040-ngo/042-ngo.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=96Mi, limit=256Mi - reajustar aqui se o Deployment mudar.",
+          "id": 76,
+          "links": [],
+          "title": "ngo - Memória sugerida (p95)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 100663296
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 268435456
+                      }
+                    ]
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-175": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "1000 * quantile_over_time(0.95, avg(rate(container_cpu_usage_seconds_total{namespace=\"solidarytech\", container=\"ngo\"}[5m]))[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de CPU por pod (ngo), em millicores, ao longo do período selecionado - sugestão de ajuste para requests.cpu/limits.cpu em kube/040-ngo/042-ngo.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=25m, limit=150m - reajustar aqui se o Deployment mudar.",
+          "id": 175,
+          "links": [],
+          "title": "ngo - CPU sugerida (p95, millicores)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 25
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 150
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-176": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "quantile_over_time(0.95, avg(container_memory_working_set_bytes{namespace=\"solidarytech\", container=\"ngo\"})[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de memória (working set) por pod (ngo), ao longo do período selecionado - sugestão de ajuste para requests.memory/limits.memory em kube/040-ngo/042-ngo.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=96Mi, limit=256Mi - reajustar aqui se o Deployment mudar.",
+          "id": 176,
+          "links": [],
+          "title": "ngo - Memória sugerida (p95)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 100663296
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 268435456
+                      }
+                    ]
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-77": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "1000 * quantile_over_time(0.95, avg(rate(container_cpu_usage_seconds_total{namespace=\"solidarytech\", container=\"donation\"}[5m]))[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de CPU por pod (donation), em millicores, ao longo do período selecionado - sugestão de ajuste para requests.cpu/limits.cpu em kube/050-donation/052-donation.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=40m, limit=200m - reajustar aqui se o Deployment mudar.",
+          "id": 77,
+          "links": [],
+          "title": "donation - CPU sugerida (p95, millicores)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 40
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 200
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-78": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "quantile_over_time(0.95, avg(container_memory_working_set_bytes{namespace=\"solidarytech\", container=\"donation\"})[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de memória (working set) por pod (donation), ao longo do período selecionado - sugestão de ajuste para requests.memory/limits.memory em kube/050-donation/052-donation.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=64Mi, limit=256Mi - reajustar aqui se o Deployment mudar.",
+          "id": 78,
+          "links": [],
+          "title": "donation - Memória sugerida (p95)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 67108864
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 268435456
+                      }
+                    ]
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-177": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "1000 * quantile_over_time(0.95, avg(rate(container_cpu_usage_seconds_total{namespace=\"solidarytech\", container=\"donation\"}[5m]))[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de CPU por pod (donation), em millicores, ao longo do período selecionado - sugestão de ajuste para requests.cpu/limits.cpu em kube/050-donation/052-donation.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=40m, limit=200m - reajustar aqui se o Deployment mudar.",
+          "id": 177,
+          "links": [],
+          "title": "donation - CPU sugerida (p95, millicores)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 40
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 200
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-178": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "quantile_over_time(0.95, avg(container_memory_working_set_bytes{namespace=\"solidarytech\", container=\"donation\"})[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de memória (working set) por pod (donation), ao longo do período selecionado - sugestão de ajuste para requests.memory/limits.memory em kube/050-donation/052-donation.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=64Mi, limit=256Mi - reajustar aqui se o Deployment mudar.",
+          "id": 178,
+          "links": [],
+          "title": "donation - Memória sugerida (p95)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 67108864
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 268435456
+                      }
+                    ]
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-79": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "1000 * quantile_over_time(0.95, avg(rate(container_cpu_usage_seconds_total{namespace=\"solidarytech\", container=\"volunteer\"}[5m]))[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de CPU por pod (volunteer), em millicores, ao longo do período selecionado - sugestão de ajuste para requests.cpu/limits.cpu em kube/060-volunteer/062-volunteer.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=25m, limit=150m - reajustar aqui se o Deployment mudar.",
+          "id": 79,
+          "links": [],
+          "title": "volunteer - CPU sugerida (p95, millicores)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 25
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 150
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-80": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "quantile_over_time(0.95, avg(container_memory_working_set_bytes{namespace=\"solidarytech\", container=\"volunteer\"})[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de memória (working set) por pod (volunteer), ao longo do período selecionado - sugestão de ajuste para requests.memory/limits.memory em kube/060-volunteer/062-volunteer.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=128Mi, limit=256Mi - reajustar aqui se o Deployment mudar.",
+          "id": 80,
+          "links": [],
+          "title": "volunteer - Memória sugerida (p95)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 134217728
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 268435456
+                      }
+                    ]
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-179": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "1000 * quantile_over_time(0.95, avg(rate(container_cpu_usage_seconds_total{namespace=\"solidarytech\", container=\"volunteer\"}[5m]))[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de CPU por pod (volunteer), em millicores, ao longo do período selecionado - sugestão de ajuste para requests.cpu/limits.cpu em kube/060-volunteer/062-volunteer.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=25m, limit=150m - reajustar aqui se o Deployment mudar.",
+          "id": 179,
+          "links": [],
+          "title": "volunteer - CPU sugerida (p95, millicores)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 25
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 150
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-180": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "quantile_over_time(0.95, avg(container_memory_working_set_bytes{namespace=\"solidarytech\", container=\"volunteer\"})[$__range:5m])",
+                        "instant": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "kubelet-resource (kubelet /metrics/resource): p95 do uso médio de memória (working set) por pod (volunteer), ao longo do período selecionado - sugestão de ajuste para requests.memory/limits.memory em kube/060-volunteer/062-volunteer.yaml (e no equivalente kube-aws/). Thresholds calibrados para os valores atuais: request=128Mi, limit=256Mi - reajustar aqui se o Deployment mudar.",
+          "id": 180,
+          "links": [],
+          "title": "volunteer - Memória sugerida (p95)",
+          "transparent": true,
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-green",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-yellow",
+                        "value": 134217728
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": 268435456
+                      }
+                    ]
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
       }
     },
     "layout": {
@@ -4811,6 +5843,98 @@
                           }
                         },
                         "title": "Saúde dos pods - SolidaryTech (Prometheus)"
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-75"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-77"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 8,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-79"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-76"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 0,
+                                  "y": 8
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-78"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 8,
+                                  "y": 8
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-80"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 8
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "title": "Recursos dos Pods"
                       }
                     }
                   ]
@@ -5267,6 +6391,98 @@
                           }
                         },
                         "title": "Saúde dos pods - SolidaryTech (Prometheus)"
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-175"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-177"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 8,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-179"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-176"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 0,
+                                  "y": 8
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-178"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 8,
+                                  "y": 8
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-180"
+                                  },
+                                  "height": 8,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 8
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "title": "Recursos dos Pods"
                       }
                     }
                   ]
