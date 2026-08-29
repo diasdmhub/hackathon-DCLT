@@ -125,7 +125,7 @@ Similar à fase 4 do curso DCLT, **não é viável a implementação das ferrame
 - New Relic: o [**portal continua indisponível**][newrelic], pois tem recusado conexões (_ERR_CONNECTION_REFUSED_) durante o desenvolvimento desta fase. Não foi possível acessar os recursos desse serviço.
 - Diante dessas políticas e restrições, entendo ser invasivo e inviável a filiação às instituições acima. _Fico à disposição para maiores esclarecimentos._
 
-Quanto aos aspectos de ITSM, foi utilizado o Zabbix para detecção e tratamento de eventos e incidentes, o que inclue:
+Quanto aos aspectos de ITSM, o Zabbix é utilizado como ferramenta central de eventos devido sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é open-source. Integrado a ele, estão recursos de tratamento e automatção de eventos. No ambiente implementado, ele inclui:
 
 - alta performance em monitoramento e observabilidade;
 - integração diversificada com plataformas de notificação;
@@ -133,8 +133,6 @@ Quanto aos aspectos de ITSM, foi utilizado o Zabbix para detecção e tratamento
 - personalização de mensagens e relatórios;
 - ausência de custos de licenciameto;
 - integração com IA;
-
-Assim, todos eventos são tratados pelo Zabbix, incluindo automação e gerenciamento de incidentes.
 
 <BR>
 
