@@ -88,9 +88,9 @@ Stack completa executando Prometheus, Loki e Alloy. Códigos dos microserviços 
 
 Definidos **SLIs de latência e erros** para todos os serviços da SolidaryTech. Devido à relevância do Donation Service (_hot-path_), foi especificado um SLO de `98%`, estabelecendo, assim, um _error budget_ de `2%`.
 
-Essa especificação é relativa ao um **período mensal** de `720h`, contabilizando o mínimo de `705,6h` de disponibilidade do serviço e `14.4h` de tolerância a erros. Esses valores estabelecem uma margem segura de manutenções e atualizações do ambiente, caso necessário, e mantêm um alta disponibilidade para os clientes.
+Essa especificação é relativa a um **período mensal** de `720h`, contabilizando o mínimo de `705,6h` de disponibilidade do serviço e `14.4h` de tolerância a erros. Esses valores estabelecem uma margem segura de manutenções e atualizações do ambiente, caso necessário, e mantêm um alta disponibilidade para os clientes.
 
-A quebra do SLO, implicará no congelamento imediato de atualizações programadas do Donation Service e exige a estabilização do ambiente até o próximo período mensal. 
+A quebra do SLO, implicará no congelamento imediato de atualizações programadas do Donation Service e exige a estabilização do ambiente até o próximo período mensal e alívio do _error budget_.
 
 <BR>
 
@@ -105,13 +105,36 @@ A quebra do SLO, implicará no congelamento imediato de atualizações programad
 | CostCenter | `NGO-Core` |
 | ManagedBy | `Terraform` |
 
-- O padrão de "Tag Name" por recurso (`${name_prefix}-<recurso>`) está presente em praticamente todo recurso do Terraform, para identificação individual ou por filtros na AWS.
+- O padrão de "Tag Name" por recurso (`${name_prefix}-<recurso>`) está presente em praticamente todos recursos do Terraform, para identificação individual ou por filtros na AWS.
+- Os recursos de CPU e memória disponibilizados aos serviços da SolidaryTech foram otimizados com base no histórico de uso, tendo os _requests_ e _limits_ sido aplicados conforme esse histórico.
 - Foi utilizado somente o **recurso de HPA** para os serviços da SolidaryTech no cluster K8s, pois ele pode escalar a quantidade de pods automaticamente e absorver picos de carga. Caso, a carga seja reduzida, os pods são reduzidos e o consumo de recursos também.
 - O VPA foi descartado dessa implementação pois causaria divergência entre entre o repositório Git remoto com o cluster, e o FluxCD teria um _drift_ a cada reconciliação.
 
 <BR>
 
 ## ITSM e AIOps
+
+Similar à fase 4 do curso DCLT, **não é viável a implementação das ferramentas de APM a seguir.**
+
+- Datadog:
+    - [Exige conexão com serviços de terceiros (GitHub)][datadog_edu] para acesso educativo.
+    - O GitHub exige, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e um rastreamento biométrico altamente invasivo para registro.
+    - Ambas as empresas coletam dados pessoais, comportamentais, biométricos e de rastreamento de usuários, que podem ser compartilhados com terceiros, utilizados em perfilarizações comerciais, marketing, treinamento de IA, entre outras ações. Tudo isso ocorre sem um prazo de retenção definido ou garantias reais de privacidade.
+    - Tentativas de registro no programa educacional do GitHub **foram rejeitadas**. Uma das justificativas alega que não há proximidade geográfica do aluno com a instituição, a qual não indicou a oferta de estudo virtual.
+    ![Github Rejection](./reject.png)
+- New Relic: o [**portal continua indisponível**][newrelic], pois tem recusado conexões (_ERR_CONNECTION_REFUSED_) durante o desenvolvimento desta fase. Não foi possível acessar os recursos desse serviço.
+- Diante dessas políticas e restrições, entendo ser invasivo e inviável a filiação às instituições acima. _Fico à disposição para maiores esclarecimentos._
+
+Quanto aos aspectos de ITSM, foi utilizado o Zabbix para detecção e tratamento de eventos e incidentes, o que inclue:
+
+- alta performance em monitoramento e observabilidade;
+- integração diversificada com plataformas de notificação;
+- gerenciamento de eventos;
+- personalização de mensagens e relatórios;
+- ausência de custos de licenciameto;
+- integração com IA;
+
+Assim, todos eventos são tratados pelo Zabbix, incluindo automação e gerenciamento de incidentes.
 
 <BR>
 
@@ -135,3 +158,6 @@ A quebra do SLO, implicará no congelamento imediato de atualizações programad
 [observe]: /observe/
 [imageauto]: /image-automation/
 [dockerhub]: https://hub.docker.com/u/diasdmhub
+[datadog_edu]: https://studentpack.datadoghq.com
+[github_edu]: https://education.github.com/pack
+[newrelic]: https://newrelic.com
