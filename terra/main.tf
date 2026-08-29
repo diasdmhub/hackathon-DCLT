@@ -27,16 +27,32 @@ module "eks" {
 module "rds" {
   source = "./modules/rds"
 
-  name_prefix        = var.name_prefix
-  db_name            = var.db_name
-  db_username        = var.db_username
-  db_password        = var.db_password
-  instance_class     = var.rds_instance_class
-  vpc_id             = module.vpc.vpc_id
-  vpc_cidr           = module.vpc.vpc_cidr
-  private_subnet_ids = module.vpc.private_subnet_ids
+  name_prefix             = var.name_prefix
+  db_name                 = var.db_name
+  db_username             = var.db_username
+  db_password             = var.db_password
+  instance_class          = var.rds_instance_class
+  vpc_id                  = module.vpc.vpc_id
+  vpc_cidr                = module.vpc.vpc_cidr
+  private_subnet_ids      = module.vpc.private_subnet_ids
+  backup_retention_period = var.rds_backup_retention_period
 
   depends_on = [module.vpc]
+}
+
+# Replicação cross-region dos backups automatizados do RDS para a região do
+# ambiente passivo (terra-dr/) - a peça "sempre viva" (e barata: só storage
+# S3 dos backups) da estratégia de DR ativo-passivo. Não cria a instância
+# RDS do ambiente passivo em si - isso só acontece quando terra-dr/ é
+# aplicado, restaurando a partir do backup mais recente replicado aqui (ver
+# aws_db_instance.restored em terra/modules/rds e terra-dr/README.md).
+resource "aws_db_instance_automated_backups_replication" "dr" {
+  count = var.enable_dr ? 1 : 0
+
+  provider               = aws.dr
+  source_db_instance_arn = module.rds.rds_arn
+
+  depends_on = [module.rds]
 }
 
 # Módulos independentes (não dependem de VPC/EKS)
@@ -52,6 +68,11 @@ module "dynamo" {
 
   name_prefix = var.name_prefix
   table_name  = var.dynamodb_table_name
+
+  # Réplica contínua (Global Tables) na região do ambiente passivo - ver
+  # "Disaster Recovery" em terra/README.md. terra-dr/ não cria seu próprio
+  # module "dynamo": a tabela já existe nessa região como réplica desta.
+  replica_regions = var.enable_dr ? [var.dr_aws_region] : []
 }
 
 # IAM/IRSA - depende do OIDC provider do EKS e dos ARNs de SQS/DynamoDB
@@ -222,4 +243,50 @@ module "alloy" {
   namespace = kubernetes_namespace_v1.observe.metadata[0].name
 
   depends_on = [kubernetes_namespace_v1.observe]
+}
+
+# Hosted zone + failover DNS da estratégia de DR ativo-passivo (ver
+# "Disaster Recovery" em terra/README.md). Só o registro PRIMARY e a zone em
+# si vivem aqui - terra-dr/ cria o registro SECONDARY + seu próprio health
+# check, referenciando esta zone por ID (var.route53_zone_id em
+# terra-dr/terraform.tfvars, copiado do output route53_zone_id abaixo) em
+# vez de terraform_remote_state, para não acoplar os dois states.
+resource "aws_route53_zone" "dr" {
+  count = var.manage_dns ? 1 : 0
+  name  = var.dns_zone_name
+
+  tags = { Name = "${var.name_prefix}-dr-zone" }
+}
+
+# Health check HTTP no /health do ngo-service (porta 8081) como
+# representante de "esta região está servindo tráfego" - mesmo endpoint já
+# usado pelo smoke-test (build/scripts/smoke-test.sh) e pelos
+# readiness/liveness probes dos Deployments.
+resource "aws_route53_health_check" "primary" {
+  count = var.manage_dns ? 1 : 0
+
+  fqdn              = module.nlb.nlb_dns_name
+  port              = 8081
+  type              = "HTTP"
+  resource_path     = "/health"
+  request_interval  = 30
+  failure_threshold = 3
+
+  tags = { Name = "${var.name_prefix}-primary-health" }
+}
+
+resource "aws_route53_record" "primary" {
+  count = var.manage_dns ? 1 : 0
+
+  zone_id = aws_route53_zone.dr[0].zone_id
+  name    = var.dns_record_name
+  type    = "CNAME"
+  ttl     = 30
+  records = [module.nlb.nlb_dns_name]
+
+  set_identifier = "primary"
+  failover_routing_policy {
+    type = "PRIMARY"
+  }
+  health_check_id = aws_route53_health_check.primary[0].id
 }

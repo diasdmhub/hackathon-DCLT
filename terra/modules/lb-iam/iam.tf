@@ -29,10 +29,10 @@ data "aws_iam_policy_document" "lb_controller_assume_role" {
 }
 
 resource "aws_iam_role" "lb_controller" {
-  name               = "${var.name_prefix}-aws-load-balancer-controller-irsa"
+  name               = "${var.name_prefix}-aws-load-balancer-controller-irsa${var.role_name_suffix}"
   assume_role_policy = data.aws_iam_policy_document.lb_controller_assume_role.json
 
-  tags = { Name = "${var.name_prefix}-aws-load-balancer-controller-irsa" }
+  tags = { Name = "${var.name_prefix}-aws-load-balancer-controller-irsa${var.role_name_suffix}" }
 }
 
 resource "aws_iam_role_policy" "lb_controller" {

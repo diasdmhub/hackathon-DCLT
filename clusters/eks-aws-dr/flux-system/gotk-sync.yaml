@@ -1,0 +1,21 @@
+# Idêntico a clusters/eks-aws/flux-system/gotk-sync.yaml - mesmo motivo
+# (ver o comentário lá para o porquê de não usar `flux bootstrap`) e mesmo
+# repositório/branch: o cluster do ambiente passivo lê o mesmo ./kube-aws
+# que o ambiente ativo, sem nenhuma diferenciação de conteúdo - ver
+# "Disaster Recovery" em terra/README.md e terra-dr/README.md.
+#
+# Aplicado manualmente uma única vez (`kubectl apply -f`), depois de
+# `flux install` no cluster do ambiente passivo (terra-dr/), junto com
+# solidarytech-kustomization.yaml e irsa-role-arns-secret.yaml - ver
+# terra-dr/README.md.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: main
+  # Repositório público: leitura via HTTPS anônimo, sem secretRef de token.
+  url: https://github.com/diasdmhub/hackathon-DCLT.git

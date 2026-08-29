@@ -1,0 +1,26 @@
+# Idêntico a clusters/eks-aws/solidarytech-kustomization.yaml - mesmo path
+# (./kube-aws) e mesmo mecanismo de substituição de ARNs via
+# postBuild.substituteFrom. Não há "kube-aws-dr/": os manifests são
+# reaproveitados como estão (Service/TargetGroupBinding usam nomes
+# determinísticos que já batem com terra-dr/, e os ARNs de IRSA vêm do
+# Secret irsa-role-arns próprio deste cluster) - ver "Disaster Recovery" em
+# terra/README.md.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: solidarytech
+  namespace: flux-system
+spec:
+  interval: 5m0s
+  path: ./kube-aws
+  prune: true
+  # Sem dependsOn - mesmo raciocínio do ambiente ativo: o AWS Load Balancer
+  # Controller (e o CRD TargetGroupBinding) é aplicado pelo terra-dr/
+  # (module.lb), antes do `flux install` deste cluster.
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: irsa-role-arns

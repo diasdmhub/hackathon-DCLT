@@ -32,3 +32,11 @@ variable "write_capacity" {
   type        = number
   default     = 5
 }
+
+# Variável de Disaster Recovery (ver "Disaster Recovery" em terra/README.md)
+#############################
+variable "replica_regions" {
+  description = "Regiões AWS onde criar uma réplica desta tabela via DynamoDB Global Tables (v2). Usado só pelo ambiente ativo (terra/), para manter a tabela de voluntários replicada continuamente na região do ambiente passivo - terra-dr/ não instancia este módulo, só referencia a tabela já existente (mesmo nome) por lá. Vazio ([], padrão) = tabela sem réplica, comportamento anterior."
+  type        = list(string)
+  default     = []
+}

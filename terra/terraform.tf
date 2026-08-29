@@ -67,6 +67,27 @@ provider "aws" {
 
 provider "dns" {}
 
+# Segunda região da AWS, usada apenas pela estratégia de Disaster Recovery
+# ativo-passivo (ver "Disaster Recovery" em terra/README.md): o único
+# recurso deste state que precisa "escrever" na região do ambiente passivo
+# é aws_db_instance_automated_backups_replication (terra/main.tf), que
+# replica os backups automatizados do RDS para lá continuamente. O restante
+# do ambiente passivo (VPC/EKS/RDS/NLB/etc.) é criado por um root Terraform
+# separado, terra-dr/, aplicado só na ativação - não por este alias.
+provider "aws" {
+  alias  = "dr"
+  region = var.dr_aws_region
+
+  default_tags {
+    tags = {
+      Project     = "SolidaryTech"
+      Environment = "Production"
+      ManagedBy   = "Terraform"
+      CostCenter  = "NGO-Core"
+    }
+  }
+}
+
 provider "kubernetes" {
   host                   = module.eks.eks_cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.eks_cluster_ca)

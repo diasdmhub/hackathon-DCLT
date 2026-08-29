@@ -14,9 +14,9 @@ output "rds_outputs" {
   sensitive   = true
 }
 
-output "dynamo_outputs" {
-  description = "Outputs do módulo dynamo"
-  value       = module.dynamo
+output "dynamodb_table_arn" {
+  description = "ARN da tabela DynamoDB nesta região (réplica da Global Table do ambiente ativo - não gerenciada por este state, ver local.dynamodb_table_arn em main.tf)"
+  value       = local.dynamodb_table_arn
 }
 
 output "sqs_outputs" {
@@ -25,7 +25,7 @@ output "sqs_outputs" {
 }
 
 output "iam_outputs" {
-  description = "Outputs do módulo iam (ARNs das roles IRSA)"
+  description = "Outputs do módulo iam (ARNs das roles IRSA desta região - usar no Secret irsa-role-arns de clusters/eks-aws-dr/flux-system)"
   value       = module.iam
 }
 
@@ -44,12 +44,7 @@ output "secrets_outputs" {
   value       = module.secrets
 }
 
-output "route53_zone_id" {
-  description = "Zone ID da hosted zone Route53 (existe só quando var.manage_dns = true) - copiar para route53_zone_id em terra-dr/terraform.tfvars, para o registro SECONDARY de failover do ambiente passivo."
-  value       = var.manage_dns ? aws_route53_zone.dr[0].zone_id : null
-}
-
 output "configure_kubectl" {
-  description = "Comando para configurar o kubectl/aws-cli local contra o cluster criado"
+  description = "Comando para configurar o kubectl/aws-cli local contra o cluster do ambiente passivo"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.eks_cluster_name}"
 }

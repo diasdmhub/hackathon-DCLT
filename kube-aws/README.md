@@ -102,3 +102,17 @@ e `doc/roteiro-cluster-aws.md`.
 ## Flux
 
 `clusters/eks-aws/solidarytech-kustomization.yaml` já aponta para `./kube-aws`. Falta rodar o bootstrap do Flux nesse cluster (`flux bootstrap ...` com `--path=./clusters/eks-aws`) para que `flux-system/` seja gerado e essa Kustomization passe a ser reconciliada de fato - ver `clusters/eks-aws/`.
+
+## Disaster Recovery
+
+Este diretório é **100% compartilhado** entre o cluster ativo
+(`clusters/eks-aws/`) e o cluster passivo da estratégia de DR
+(`clusters/eks-aws-dr/`, provisionado por `terra-dr/`) - nenhum manifest
+aqui muda entre os dois. Isso funciona porque as duas únicas coisas que
+diferem por ambiente já são resolvidas fora deste diretório: os ARNs de IRSA
+(`005-serviceaccounts.yaml`) vêm de um Secret `irsa-role-arns` próprio de
+cada cluster (via `postBuild.substituteFrom`), e os `targetGroupName` dos
+`TargetGroupBinding` usam um nome determinístico que não depende de região
+(`${name_prefix}-<service>-tg`, com o mesmo `name_prefix` nos dois roots
+Terraform). Ver "Disaster Recovery" em `terra/README.md` e
+`terra-dr/README.md` para a estratégia completa.

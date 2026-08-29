@@ -28,3 +28,9 @@ variable "service_account" {
   type        = string
   default     = "aws-load-balancer-controller"
 }
+
+variable "role_name_suffix" {
+  description = "Sufixo aplicado ao nome da IAM role IRSA - mesmo raciocínio de terra/modules/iam (IAM é um namespace global por conta AWS, diferente da maioria dos recursos deste repositório). terra-dr/ define algo como \"-dr\" para não colidir com a role já criada pelo ambiente ativo. Vazio (padrão) no ambiente ativo."
+  type        = string
+  default     = ""
+}

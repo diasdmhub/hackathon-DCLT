@@ -25,10 +25,10 @@ data "aws_iam_policy_document" "donation_assume_role" {
 }
 
 resource "aws_iam_role" "donation_service" {
-  name               = "${var.name_prefix}-donation-service-irsa"
+  name               = "${var.name_prefix}-donation-service-irsa${var.role_name_suffix}"
   assume_role_policy = data.aws_iam_policy_document.donation_assume_role.json
 
-  tags = { Name = "${var.name_prefix}-donation-service-irsa" }
+  tags = { Name = "${var.name_prefix}-donation-service-irsa${var.role_name_suffix}" }
 }
 
 data "aws_iam_policy_document" "donation_sqs" {
@@ -72,10 +72,10 @@ data "aws_iam_policy_document" "volunteer_assume_role" {
 }
 
 resource "aws_iam_role" "volunteer_service" {
-  name               = "${var.name_prefix}-volunteer-service-irsa"
+  name               = "${var.name_prefix}-volunteer-service-irsa${var.role_name_suffix}"
   assume_role_policy = data.aws_iam_policy_document.volunteer_assume_role.json
 
-  tags = { Name = "${var.name_prefix}-volunteer-service-irsa" }
+  tags = { Name = "${var.name_prefix}-volunteer-service-irsa${var.role_name_suffix}" }
 }
 
 data "aws_iam_policy_document" "volunteer_dynamodb" {

@@ -147,3 +147,44 @@ variable "observe_allowed_cidrs" {
   type        = list(string)
 }
 
+# Variáveis de Disaster Recovery (ambiente ativo-passivo)
+#############################
+# Ver "Disaster Recovery" em terra/README.md para a estratégia completa e
+# terra-dr/README.md para o runbook de ativação do ambiente passivo.
+
+variable "dr_aws_region" {
+  description = "Região AWS do ambiente passivo (terra-dr/) - usada aqui só para configurar o provider aws.dr (terraform.tf), que replica os backups automatizados do RDS para essa região. Precisa ser igual ao aws_region definido em terra-dr/terraform.tfvars."
+  type        = string
+  default     = "us-west-2"
+}
+
+variable "enable_dr" {
+  description = "Habilita a proteção contínua de dados da estratégia de DR: replicação cross-region de backups automatizados do RDS (aws_db_instance_automated_backups_replication) + réplica da tabela DynamoDB via Global Tables (module.dynamo, replica_regions). Desligado por padrão para não alterar custo/comportamento do ambiente já em produção sem opt-in explícito."
+  type        = bool
+  default     = false
+}
+
+variable "rds_backup_retention_period" {
+  description = "Dias de retenção de backup automatizado do RDS - precisa ser > 0 para var.enable_dr funcionar (pré-requisito de aws_db_instance_automated_backups_replication). Mantido configurável mesmo com enable_dr = false porque também é um bom padrão de resiliência por si só (permite restore point-in-time dentro da mesma região)."
+  type        = number
+  default     = 7
+}
+
+variable "manage_dns" {
+  description = "Cria a hosted zone Route53 + health check + registro de failover PRIMARY apontando para a NLB do ambiente ativo - pré-requisito para o failover automático de DNS que terra-dr/ completa com o registro SECONDARY. Desligado por padrão: exige ter (ou registrar/delegar) o domínio em var.dns_zone_name."
+  type        = bool
+  default     = false
+}
+
+variable "dns_zone_name" {
+  description = "Domínio da hosted zone Route53 criada quando var.manage_dns = true (ex.: \"solidarytech.diasdm.com.br\"). Se o domínio raiz já está registrado em outro provedor/DNS, delegue este subdomínio para os nameservers da zone criada aqui (registros NS) - ver terra/README.md."
+  type        = string
+  default     = ""
+}
+
+variable "dns_record_name" {
+  description = "FQDN do registro de failover que aponta para a NLB ativa - normalmente igual a var.dns_zone_name ou um subdomínio dele (ex.: \"api.solidarytech.diasdm.com.br\"). Só usado quando var.manage_dns = true."
+  type        = string
+  default     = ""
+}
+

@@ -45,3 +45,9 @@ variable "dynamodb_table_arn" {
   description = "ARN da tabela DynamoDB (output do módulo dynamo)"
   type        = string
 }
+
+variable "role_name_suffix" {
+  description = "Sufixo aplicado ao nome das IAM roles IRSA. Diferente da maioria dos recursos deste repositório (escopados por região, sem risco de colisão entre terra/ e terra-dr/ na mesma conta AWS), nomes de IAM role são um namespace global por conta - por isso terra-dr/ define este valor (ex.: \"-dr\") para não colidir com a role já criada pelo ambiente ativo com o mesmo name_prefix. Vazio (padrão) no ambiente ativo."
+  type        = string
+  default     = ""
+}

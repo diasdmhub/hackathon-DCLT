@@ -183,6 +183,66 @@ descobrem, via `kubernetes_sd_configs` no namespace `solidarytech`, o
 baseados em `count_over_time()` sobre o Loki, presos à retenção de 168h
 configurada em `terra/modules/loki/config.yaml`.
 
+## Disaster Recovery (ambiente ativo-passivo)
+
+Estratégia de DR ativo-passivo entre duas regiões AWS: este diretório
+(`terra/`) é sempre o ambiente **ativo**; `../terra-dr/` é o ambiente
+**passivo**, um root Terraform separado que reaplica os mesmos módulos
+(`terra/modules/*`) numa segunda região, normalmente sem nenhum recurso de
+compute rodando (nem cobrando) - "ativar" o ambiente passivo é rodar
+`terraform apply` em `terra-dr/`. Ver `terra-dr/README.md` para o runbook
+completo de ativação/failback.
+
+O que fica sempre protegido, independente de ativação, custando pouco:
+
+- **RDS**: `backup_retention_period` (variável `rds_backup_retention_period`,
+  passo obrigatório - antes era `0`, sem backup algum) habilita backups
+  automatizados; quando `enable_dr = true`, o recurso
+  `aws_db_instance_automated_backups_replication` (`terra/main.tf`) replica
+  esses backups continuamente para a região do ambiente passivo (via o
+  provider `aws.dr`, o único uso de uma segunda região neste state). A
+  restauração em si só acontece quando `terra-dr/` é aplicado
+  (`aws_db_instance.restored`, `restore_to_point_in_time`, em
+  `terra/modules/rds`) - o RPO é limitado pela frequência/latência dessa
+  replicação contínua, não por um snapshot manual agendado.
+- **DynamoDB**: `module.dynamo` recebe `replica_regions = [var.dr_aws_region]`
+  quando `enable_dr = true`, transformando a tabela numa Global Table (v2)
+  com uma réplica sempre viva na região do ambiente passivo -
+  `terra-dr/` não cria sua própria tabela, só referencia essa réplica pelo
+  nome (idêntico em toda região de uma Global Table).
+- **DNS/failover**: quando `manage_dns = true`, uma hosted zone Route53 +
+  health check + registro `PRIMARY` (`aws_route53_record.primary`) são
+  criados aqui, apontando para a NLB deste state; `terra-dr/` completa o par
+  com o registro `SECONDARY` da sua própria NLB, referenciando esta zone via
+  `route53_zone_id` (var, copiada do output `route53_zone_id` abaixo - sem
+  `terraform_remote_state`, para não acoplar os dois states). O Route53
+  troca de `PRIMARY` para `SECONDARY` sozinho quando o health check do
+  ambiente ativo falhar, dentro do TTL configurado (30s) - sem depender de
+  IPs fixos: a NLB de cada região tem seu próprio DNS name, o nome que o
+  cliente usa (`dns_record_name`) é o único que fica constante.
+
+O que **não** replica continuamente, por escolha: a fila **SQS** (eventos em
+trânsito no momento do desastre não são reprocessados - a fila é recriada
+vazia em `terra-dr/`) e o **EKS/VPC/NLB/observabilidade** do ambiente
+passivo em si (só existem depois de `terra-dr/` ser aplicado).
+
+`enable_dr` e `manage_dns` vêm desligados por padrão (`false`) - habilitá-los
+muda o comportamento/custo do ambiente já em produção, então é opt-in
+explícito via `terraform.tfvars` (ver `terraform.tfvars.example`).
+
+**IAM entre as duas regiões**: como IAM é um namespace global por conta AWS
+(diferente de quase todo o resto deste repositório, escopado por região),
+`terra/modules/iam` e `terra/modules/lb-iam` aceitam `role_name_suffix`
+(vazio aqui, `"-dr"` em `terra-dr/`) para as roles IRSA de cada ambiente não
+colidirem, mesmo usando o mesmo `name_prefix`. O `name_prefix` em si
+**precisa** ficar igual entre os dois roots: os target groups da NLB usam
+nomes determinísticos (`${name_prefix}-<service>-tg`) que `kube-aws/*.yaml`
+já referencia via `targetGroupName` - um `name_prefix` diferente quebraria
+esse binding sem exigir nenhuma mudança em `kube-aws/`, que continua
+100% compartilhado entre os dois clusters (a diferenciação de ARNs de IRSA
+já passa pelo Secret `irsa-role-arns` por cluster, não por conteúdo
+diferente em `kube-aws/` - ver `clusters/eks-aws-dr/`).
+
 ## Pré-requisitos
 
 - Terraform >= 1.6
