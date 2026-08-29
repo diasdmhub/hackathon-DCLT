@@ -25,7 +25,7 @@
     ],
     "cursorSync": "Crosshair",
     "description": "Visão geral interna da saúde da SolidaryTech",
-    "editable": false,
+    "editable": true,
     "elements": {
       "panel-1": {
         "kind": "Panel",
@@ -1687,7 +1687,7 @@
                       },
                       {
                         "color": "dark-green",
-                        "value": 9
+                        "value": 6
                       }
                     ]
                   },
@@ -5206,7 +5206,7 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "collapse": true,
+                        "collapse": false,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
