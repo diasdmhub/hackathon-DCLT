@@ -126,27 +126,36 @@ kubectl get kustomization solidarytech -n flux-system  # Alternativa sem o Flux 
 
 <BR>
 
-## 4. Preparar o `terraform.tfvars` do ambiente passivo (`terra-dr/`)
+## 4. Preparar o ambiente passivo
 
-Aproveite que o ambiente ativo já está de pé e saudável para deixar pronto o `terraform.tfvars` do ambiente passivo (`terra-dr/`) - não espere um desastre real para descobrir esses dados. Parte deles depende de rodar `terraform output` contra o `terra/`, o que exige que o bucket S3/tabela DynamoDB do backend remoto (fixos em `us-east-1`, ver `terra/terraform.tf`) estejam acessíveis - justamente o que pode não estar disponível numa indisponibilidade real da região ativa.
+Aproveite que o ambiente principal está de ativo e saudável para deixar pronto o `terraform.tfvars` do ambiente passivo (`terra-dr/`).
+
+> **Não espere um desastre real para preparar os dados.**
+
+Parte dos dados dependem do `terraform output` no ambiente ativo, o `terra/`, o que exige que o bucket S3 e a tabela DynamoDB do backend remoto estejam acessíveis.
 
 ```bash
 cd terra-dr
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-A maioria das variáveis é configuração estática, sem nenhuma consulta ao ambiente ativo: `name_prefix`, `aws_region`/`dr_aws_region`, `subnet_prefix`, tamanhos do EKS, `dynamodb_table_name`, `k8s_namespace`/service accounts, `lb_controller_*`, `flux_chart_version`, `observe_allowed_cidrs`, `dns_record_name`. Preencha com os mesmos valores (ou equivalentes) do `terra/terraform.tfvars` já usado no passo 2.
+A maioria das variáveis é de configuração estática, sem nenhuma consulta ao ambiente ativo. Elas também são similares às variáveis do passo1: `name_prefix`, `aws_region`/`dr_aws_region`, `subnet_prefix`, tamanhos do EKS, `dynamodb_table_name`, `k8s_namespace`/service accounts, `lb_controller_*`, `flux_chart_version`, `observe_allowed_cidrs`, `dns_record_name`. Preencha elas com os mesmos valores (ou equivalentes) do `terra/terraform.tfvars` já usado no passo 2.
 
-Duas variáveis merecem atenção especial:
+Duas variáveis merecem atenção:
 
-- **`db_password`**: precisa ser IGUAL à senha real do ambiente ativo, mas não deve depender de consultar o parâmetro SSM criado por `module.secrets` (que também vive em `us-east-1`). Preencha aqui e guarde este arquivo completo (com a senha) num local seguro **fora** da AWS - um gerenciador de senhas, por exemplo - não só no disco local.
-- **`route53_zone_id`**: dá para capturar agora, direto do `terra/` (Route53 é um serviço global da AWS, mas o valor já está pronto no state ativo):
+- **`db_password`**: precisa ser **IGUAL** à senha real do ambiente ativo, mas não de consulta ao parâmetro SSM criado por `module.secrets`.
+
+> **Preencha os dados no host de controle da infraestrutura e guarde o arquivo completo em um local seguro fora da AWS. Um gerenciador de senhas, por exemplo, não somente no disco local.**
+
+- **`route53_zone_id`**: copie neste momento, direto do `terra/` (_Route53 é um serviço global da AWS, mas o valor já está pronto no state ativo_):
 
   ```bash
-  terraform -chdir=../terra output -raw route53_zone_id
+  terraform output -raw route53_zone_id
   ```
 
-O único dado que **não** dá para preencher com antecedência é `rds_restore_source_arn`: ele identifica o backup mais recente no momento exato da ativação, então só é descoberto ali - deixe comentado, como já vem no `.example`. Ver "Ativação (runbook)" em `terra-dr/README.md` para o passo a passo completo quando o DR precisar ser ativado de verdade.
+O único dado que **não** dá para preencher com antecedência é `rds_restore_source_arn`, pois ele identifica o backup mais recente no momento exato da ativação. No arquivo `.example` ele está comentado.
+
+> **Vide ["Ativação (runbook)" em `terra-dr/README.md`][ativadr] para o passo a passo completo quando o DR precisar ser ativado.**
 
 <BR>
 
@@ -182,3 +191,4 @@ terraform destroy
 [kuberepo]: https://kubernetes.io/docs/tasks/tools
 [tfvars]: /terra/terraform.tfvars.example
 [grafanacloud]: https://grafana.com/products/cloud/
+[ativadr]: /terra/README.md
