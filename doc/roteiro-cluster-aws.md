@@ -138,8 +138,6 @@ terraform output -raw nlb_dns_name   # no diretório `terra/`
 - Tempo: `http://<nlb_dns_name>:3200`
 - Prometheus: `http://<nlb_dns_name>:9090`
 
-> **Ver `doc/observabilidade.md` para o restante da configuração para mais informação.**
-
 <BR>
 
 ## Destruição do ambiente
