@@ -137,6 +137,14 @@ variable "lb_controller_service_account" {
   default     = "aws-load-balancer-controller"
 }
 
+# Variáveis do FluxCD
+#############################
+variable "flux_chart_version" {
+  description = "Versão do chart Helm flux2 (terra/modules/flux) - ver https://github.com/fluxcd-community/helm-charts/releases antes de atualizar"
+  type        = string
+  default     = "2.19.0"
+}
+
 # Variáveis da NLB (observabilidade)
 #############################
 # DEFINA O VALOR REAL NO terraform.tfvars (não versionado) - sem default de

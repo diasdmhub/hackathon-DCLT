@@ -66,8 +66,9 @@ Cole o valor retornado em `rds_restore_source_arn` no `terraform.tfvars`
 
 > Este passo não tem, hoje, um data source Terraform equivalente estável -
 > por isso é uma consulta AWS CLI manual antes do `apply`, não algo que o
-> Terraform resolva sozinho. É a única etapa não totalmente automatizada da
-> ativação.
+> Terraform resolva sozinho. Com o FluxCD também instalado pelo Terraform
+> (ver passo 5 abaixo), esta é a única etapa não totalmente automatizada de
+> toda a ativação.
 
 **3. Suba a infraestrutura:**
 
@@ -88,35 +89,22 @@ $(terraform output -raw configure_kubectl 2>/dev/null) || \
   aws eks update-kubeconfig --region us-west-2 --name solidarytech-eks-cluster
 ```
 
-**5. Instale o FluxCD neste cluster** (mesmo procedimento de
-`doc/roteiro-cluster-aws.md`, passo 3 - `flux install`, nunca `flux
-bootstrap`, pelo mesmo motivo do cluster ativo: este `GitRepository` só lê
-do GitHub, nunca escreve nele):
+**5. Verifique o FluxCD e os microsserviços.** O `terraform apply` do passo
+3 já instalou o FluxCD neste cluster (`../terra/modules/flux`, mesmo módulo
+de `terra/` - ver "FluxCD via Terraform" em `terra/README.md`) e aplicou o
+`GitRepository`, a `Kustomization` `solidarytech` e o Secret
+`irsa-role-arns` (com os ARNs reais **deste** state, `role_name_suffix =
+"-dr"`, vindos direto de `module.iam` - sem copiar/colar manual). Nenhum
+`flux install`/`kubectl apply -f` é necessário aqui; este passo só confirma
+que os 3 microsserviços (mesmos manifests de `kube-aws/`, sem nenhum
+ajuste) subiram saudáveis:
 
 ```bash
-flux check --pre
-flux install
-
-kubectl apply -f ../clusters/eks-aws-dr/flux-system/gotk-sync.yaml
-kubectl apply -f ../clusters/eks-aws-dr/solidarytech-kustomization.yaml
-
-cp ../clusters/eks-aws-dr/flux-system/irsa-role-arns-secret.example.yaml \
-   ../clusters/eks-aws-dr/flux-system/irsa-role-arns-secret.yaml
-# edite com os ARNs reais DESTE state (não os de terra/):
-terraform output -json iam_outputs
-
-kubectl apply -f ../clusters/eks-aws-dr/flux-system/irsa-role-arns-secret.yaml
-```
-
-**6. Confira que os 3 microsserviços subiram saudáveis** (mesmos manifests
-de `kube-aws/`, sem nenhum ajuste):
-
-```bash
-flux get kustomizations
+flux get kustomizations       # requer o Flux CLI - opcional
 kubectl get pods -n solidarytech
 ```
 
-**7. Confirme o failover de DNS.** Se `manage_dns = true` em `terra/` e
+**6. Confirme o failover de DNS.** Se `manage_dns = true` em `terra/` e
 `route53_zone_id`/`dns_record_name` definidos aqui, o health check
 `aws_route53_health_check.secondary` já está registrado - assim que o
 `aws_route53_health_check.primary` do ambiente ativo (`terra/`) começar a

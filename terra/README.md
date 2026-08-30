@@ -24,15 +24,16 @@ nenhum módulo de registry (ECR) foi criado aqui.
 | `secrets` | Parâmetros SSM Parameter Store (`SecureString`/`String`) + Secrets Kubernetes `ngo-env`/`donation-env`/`volunteer-env` | Camada Standard do SSM é gratuita; Secrets Kubernetes sem custo |
 | `loki` / `tempo` / `prometheus` | Deployment + PVC (`gp3`) + Service + `TargetGroupBinding` cada, via recursos `kubernetes_*`/`kubectl_manifest`; `prometheus` também aplica kube-state-metrics + node-exporter via `helm_release` (ver "Métricas de cluster via Prometheus" abaixo) | Sem custo AWS além do já contado (node group, NLB, EBS) |
 | `alloy` | DaemonSet (coleta de logs + roteamento OTLP) via recursos `kubernetes_*` | Sem custo AWS além do já contado (node group) |
+| `flux` | Controladores do FluxCD (`helm_release`) + `GitRepository`/`Kustomization` `solidarytech` + Secret `irsa-role-arns`, via recursos `kubernetes_*`/`kubectl_manifest` (ver "FluxCD via Terraform" abaixo) | Sem custo AWS além do já contado (node group) |
 
-Os últimos 5 módulos não provisionam recursos AWS (`aws_*`) - aplicam
+Os últimos 6 módulos não provisionam recursos AWS (`aws_*`) - aplicam
 Kubernetes/Helm diretamente contra o cluster que os módulos acima acabaram
 de criar, via os providers `kubernetes`/`helm`/`kubectl` (ver "Observabilidade
-via Terraform" abaixo). `lb-iam` é a exceção nesse grupo: continua
-puramente IAM (`aws_iam_role`/`aws_iam_role_policy`), como antes (só o nome
-mudou, de `lb-controller` para `lb-iam`, para não ser confundido com o
-módulo `lb`) - só o lado Kubernetes do AWS Load Balancer Controller (`lb`)
-é novo.
+via Terraform" e "FluxCD via Terraform" abaixo). `lb-iam` é a exceção nesse
+grupo: continua puramente IAM (`aws_iam_role`/`aws_iam_role_policy`), como
+antes (só o nome mudou, de `lb-controller` para `lb-iam`, para não ser
+confundido com o módulo `lb`) - só o lado Kubernetes do AWS Load Balancer
+Controller (`lb`) é novo.
 
 ### Resolução de domínio em `observe_allowed_cidrs`
 
@@ -182,6 +183,44 @@ descobrem, via `kubernetes_sd_configs` no namespace `solidarytech`, o
 (RDS/DynamoDB) a cada coleta. Substitui os antigos painéis Grafana "(total)"
 baseados em `count_over_time()` sobre o Loki, presos à retenção de 168h
 configurada em `terra/modules/loki/config.yaml`.
+
+## FluxCD via Terraform
+
+Diferente da observabilidade acima (movida para o Terraform porque o Flux
+se mostrou pouco confiável rodando *essas* cargas específicas -
+reconciliações que exigiam intervenção manual, autodestruição ocasional), o
+Flux em si continua a peça que reconcilia `./kube-aws` (os 3
+microsserviços) neste cluster - ele não foi removido, nem substituído. O
+que mudou é só a forma como os controladores chegam no cluster: em vez de
+`flux install` (CLI) seguido de `kubectl apply -f` manual em dois objetos
+(`GitRepository` e `Kustomization` `solidarytech`) e num terceiro (Secret
+`irsa-role-arns`), o módulo `flux` (`terra/modules/flux`) instala os
+controladores via `helm_release` (chart `fluxcd-community/flux2`) e aplica
+os mesmos dois objetos - lidos do YAML já versionado em
+`clusters/eks-aws/flux-system/gotk-sync.yaml` e
+`clusters/eks-aws/solidarytech-kustomization.yaml` via `file()`, sem
+duplicar o conteúdo - mais o Secret `irsa-role-arns`, cujos valores agora
+vêm direto de `module.iam` em vez de copiados manualmente de `terraform
+output -json iam_outputs`. Um único `terraform apply` cobre tudo: a
+instalação inicial e qualquer atualização futura (nova versão do Flux via
+`flux_chart_version`, ou mudança de `url`/`branch`/`path`/`interval` nesses
+dois objetos).
+
+Isso **não** muda a decisão de não usar `flux bootstrap` neste cluster (ver
+o comentário em `clusters/eks-aws/flux-system/gotk-sync.yaml` para o porquê
+- o push mirror unidirecional Gitea→GitHub apagaria qualquer commit que o
+Flux fizesse aqui): o Flux instalado por este módulo continua só lendo do
+`GitRepository`, nunca escrevendo nele. Só os 4 controladores padrão do
+`flux install` sem `--components-extra` são habilitados
+(`sourceController`/`kustomizeController`/`helmController`/
+`notificationController`); `imageReflectionController`/
+`imageAutomationController` ficam desligados, porque o loop de Image
+Automation já roda uma única vez no cluster `kubeadm-local` (ver CLAUDE.md).
+
+O mesmo módulo `flux` é reaplicado, sem alteração, pelo `terra-dr/` (ver
+`terra-dr/README.md`) - a mesma simplificação vale para a ativação do
+ambiente passivo, que antes também exigia `flux install` + 3 `kubectl
+apply -f` manuais.
 
 ## Disaster Recovery (ambiente ativo-passivo)
 

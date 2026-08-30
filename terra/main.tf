@@ -184,6 +184,40 @@ module "secrets" {
   depends_on = [module.rds, module.sqs, module.dynamo, kubernetes_namespace_v1.solidarytech]
 }
 
+# FluxCD (controladores + o GitRepository/Kustomization "solidarytech" de
+# bootstrap) instalado via Helm em vez de `flux install` + `kubectl apply -f`
+# manual - reduz a passos manuais tanto a implementação inicial quanto
+# atualizações futuras (nova versão do Flux, ou mudança de url/branch/path/
+# interval nesses dois objetos) a um único `terraform apply`, no mesmo
+# padrão do resto deste diretório - ver "FluxCD via Terraform" em
+# terra/README.md. O YAML aplicado é o mesmo já versionado em
+# clusters/eks-aws/ (lido abaixo via file(), única fonte de verdade) - isso
+# não muda a decisão de não autogerenciar o Flux via `flux bootstrap` (ver
+# clusters/eks-aws/flux-system/gotk-sync.yaml), só a forma como os
+# controladores e esses dois objetos chegam no cluster.
+locals {
+  flux_git_repository_yaml = file("${path.module}/../clusters/eks-aws/flux-system/gotk-sync.yaml")
+  flux_kustomization_yaml  = file("${path.module}/../clusters/eks-aws/solidarytech-kustomization.yaml")
+}
+
+module "flux" {
+  source = "./modules/flux"
+
+  chart_version              = var.flux_chart_version
+  git_repository_yaml        = local.flux_git_repository_yaml
+  kustomization_yaml         = local.flux_kustomization_yaml
+  donation_service_role_arn  = module.iam.donation_service_role_arn
+  volunteer_service_role_arn = module.iam.volunteer_service_role_arn
+
+  # module.lb: o CRD TargetGroupBinding usado pelos manifests de ./kube-aws
+  # (reconciliados pela Kustomization aplicada aqui) precisa existir antes -
+  # mesmo raciocínio de terra/modules/{loki,tempo,prometheus}. module.secrets
+  # e kubernetes_namespace_v1.solidarytech: a Kustomization espera que o
+  # namespace e os Secrets ngo-env/donation-env/volunteer-env já existam
+  # (ver kube-aws/README.md).
+  depends_on = [module.eks, module.lb, module.iam, kubernetes_namespace_v1.solidarytech, module.secrets]
+}
+
 # Observabilidade e métricas de infraestrutura, aplicadas direto pelo
 # Terraform (providers helm/kubernetes/kubectl) em vez do FluxCD - ver
 # "Observabilidade via Terraform" em terra/README.md para o porquê. Só os

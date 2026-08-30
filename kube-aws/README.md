@@ -93,11 +93,11 @@ pode ser copiado por terceiros. O arquivo usa `${DONATION_SERVICE_ROLE_ARN}`/
 `${VOLUNTEER_SERVICE_ROLE_ARN}`, substituídas em tempo de reconciliação pelo
 `postBuild.substituteFrom` da Kustomization `solidarytech`
 (`clusters/eks-aws/solidarytech-kustomization.yaml`), que lê o Secret
-`irsa-role-arns` no namespace `flux-system` - aplicado manualmente uma única
-vez, com os ARNs reais (`terraform output -json iam_outputs`), o mesmo
-padrão já usado para `gotk-sync.yaml`/`solidarytech-kustomization.yaml`
-neste cluster. Ver `clusters/eks-aws/flux-system/irsa-role-arns-secret.example.yaml`
-e `doc/roteiro-cluster-aws.md`.
+`irsa-role-arns` no namespace `flux-system` - criado diretamente pelo
+Terraform (`terra/modules/flux`, com os ARNs vindos de `module.iam`), sem
+nenhum passo manual, o mesmo módulo que também aplica
+`gotk-sync.yaml`/`solidarytech-kustomization.yaml` neste cluster. Ver
+"FluxCD via Terraform" em `terra/README.md`.
 
 ## Flux
 

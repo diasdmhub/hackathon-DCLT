@@ -1,9 +1,11 @@
 # Diferente de clusters/kubeadm-local/flux-system/gotk-sync.yaml, este
 # GitRepository não é gerenciado por uma Kustomization "flux-system"
-# autogerenciada (o que `flux bootstrap` cria por padrão) - é aplicado uma
-# única vez, manualmente (`kubectl apply -f`), depois de `flux install`.
+# autogerenciada (o que `flux bootstrap` cria por padrão) - é aplicado pelo
+# Terraform (terra/modules/flux, via kubectl_manifest, lendo este arquivo
+# com file()), não por `kubectl apply -f` manual - ver "FluxCD via
+# Terraform" em terra/README.md.
 #
-# Motivo: o Gitea (autoritativo, é nele que os commits são feitos) tem um
+# Motivo de não usar `flux bootstrap`: o Gitea (autoritativo, é nele que os commits são feitos) tem um
 # push mirror unidirecional para este repositório no GitHub, que força a
 # branch main do GitHub a ficar idêntica à do Gitea a cada push - inclusive
 # apagando commits que existam só no GitHub. O EKS não alcança o Gitea pela

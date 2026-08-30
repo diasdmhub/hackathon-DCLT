@@ -16,7 +16,8 @@ spec:
   prune: true
   # Sem dependsOn - mesmo raciocínio do ambiente ativo: o AWS Load Balancer
   # Controller (e o CRD TargetGroupBinding) é aplicado pelo terra-dr/
-  # (module.lb), antes do `flux install` deste cluster.
+  # (module.lb), e o próprio Terraform garante essa ordem (module.flux
+  # depende de module.lb em terra-dr/main.tf) antes deste objeto existir.
   sourceRef:
     kind: GitRepository
     name: flux-system

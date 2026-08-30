@@ -4,10 +4,10 @@
 # que o ambiente ativo, sem nenhuma diferenciação de conteúdo - ver
 # "Disaster Recovery" em terra/README.md e terra-dr/README.md.
 #
-# Aplicado manualmente uma única vez (`kubectl apply -f`), depois de
-# `flux install` no cluster do ambiente passivo (terra-dr/), junto com
-# solidarytech-kustomization.yaml e irsa-role-arns-secret.yaml - ver
-# terra-dr/README.md.
+# Aplicado pelo Terraform (../terra/modules/flux, reaplicado por
+# terra-dr/main.tf, via kubectl_manifest, lendo este arquivo com file()),
+# não por `kubectl apply -f` manual - ver "FluxCD via Terraform" em
+# terra/README.md.
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:

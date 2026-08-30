@@ -41,6 +41,9 @@ volunteer_service_account  = "volunteer-service"
 lb_controller_namespace       = "kube-system"
 lb_controller_service_account = "aws-load-balancer-controller"
 
+# FluxCD - versão do chart Helm flux2 (../terra/modules/flux)
+flux_chart_version = "2.19.0"
+
 # NLB - mesmas regras de terra/terraform.tfvars (ver lá para os exemplos de
 # formato aceito: CIDR, IP solto ou domínio)
 observe_allowed_cidrs = ["CHANGE_ME"]

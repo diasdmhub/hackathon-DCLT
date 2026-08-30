@@ -23,13 +23,11 @@ Esta é uma sequência de passos para a implementação do ambiente EKS, incluin
 
 **4.** É necessário [**instalar o Terraform**][terraform] no ambiente de execução/desenvolvimento local para implementar os serviços da AWS que serão utilizados pela SolidaryTech;
 
-**5.** Um **Personal Access Token do GitHub** com escopo `repo` (_e `admin:public_key`/`admin:org` se o repositório for de uma organização_). Ele é utilizado para autenticação e commits do FluxCD e deve ser definido como uma variável de ambiente `GITHUB_TOKEN`.
+**5.** O **`kubectl`** é muito eficiente para gerenciar o cluster Kubernetes e seus recursos, caso necessário. Recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
 
-**6.** O [FluxCD CLI][fluxcli] é utilizado para a inicialização dos microsserviços e para validar a instalação, caso necessário.
+**6.** O [FluxCD CLI][fluxcli] é opcional - o Terraform instala e configura o FluxCD (controladores, `GitRepository`, `Kustomization` e o Secret `irsa-role-arns`, ver passo 3 abaixo), mas o CLI continua útil para consultar o estado da reconciliação (`flux get kustomizations`) ou depurar, caso necessário. **Não** é preciso um Personal Access Token do GitHub: o `GitRepository` deste cluster só lê do repositório público (leitura anônima), nunca escreve nele - ver o comentário em `clusters/eks-aws/flux-system/gotk-sync.yaml` para o porquê.
 
-**7.** Apesar de não ser estritamente necessário, o **`kubectl`** é necessário para a implementação inicial de forma automatizada, e ainda é muito eficiente para gerenciar o cluster Kubernetes e seus recursos, caso necessário. Recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
-
-**8.** Um [Grafana][grafanacloud] já em operação.
+**7.** Um [Grafana][grafanacloud] já em operação.
 
 <BR>
 
@@ -71,7 +69,7 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 
 ## 2. Provisionamento de infraestrutura
 
-Neste passo serão provisionados a infraestrutura AWS, Load Balancer Controller, serviços de observabilidade e monitoramento com o Terraform.
+Neste passo serão provisionados a infraestrutura AWS, o Load Balancer Controller, o FluxCD (controladores + bootstrap dos microsserviços) e os serviços de observabilidade e monitoramento, tudo com o Terraform.
 
 > **Os comandos abaixo devem ser executados a partir de um host de controle da infraestrutura.**
 
@@ -99,7 +97,7 @@ terraform plan -target=module.eks
 terraform apply -target=module.eks
 ```
 
-Um segundo `apply` (já com o cluster criado) gera os demais recursos AWS: instala o "Load Balancer Controller", e aplica o `Loki/Tempo/Alloy/Prometheus` direto no cluster, através dos providers `helm/kubernetes/kubectl`. Nenhum desses passa pelo FluxCD, (_vide `terra/README.md`_). A ordem entre eles passa por dependências do Terraform. Não precisa de mais um `apply` além do `-target=module.eks` inicial. Em clusters já existentes (com o `module.eks` criado), siga direto para o `terraform plan`/`apply`.
+Um segundo `apply` (já com o cluster criado) gera os demais recursos AWS: instala o "Load Balancer Controller", instala o FluxCD e aplica o `GitRepository`/`Kustomization` que fazem os 3 microsserviços (`./kube-aws`) subirem, e aplica o `Loki/Tempo/Alloy/Prometheus` direto no cluster, através dos providers `helm/kubernetes/kubectl`. Nenhum desses passa por um `flux bootstrap` autogerenciado (_vide `terra/README.md`_) - o próprio Terraform instala e configura o Flux. A ordem entre eles passa por dependências do Terraform. Não precisa de mais um `apply` além do `-target=module.eks` inicial. Em clusters já existentes (com o `module.eks` criado), siga direto para o `terraform plan`/`apply`.
 
 ```bash
 terraform plan
@@ -115,44 +113,17 @@ $(terraform output -raw configure_kubectl 2>/dev/null) || \
 
 <BR>
 
-## 3. Inicializar o FluxCD no cluster (microsserviços)
+## 3. Verificar o FluxCD no cluster (microsserviços)
 
-Com o Flux CLI instalado e o `kubectl` já apontando para o cluster criado no passo anterior, valide os pré-requisitos e instale os controladores do FluxCD.
+O `terraform apply` do passo 2 já instalou os controladores do FluxCD (via `terra/modules/flux`, chart Helm `fluxcd-community/flux2`) e aplicou o `GitRepository` (`clusters/eks-aws/flux-system/gotk-sync.yaml`), a `Kustomization` `solidarytech` (`clusters/eks-aws/solidarytech-kustomization.yaml`) e o Secret `irsa-role-arns` (com os ARNs reais das roles IRSA, vindos direto de `module.iam` - nenhum passo manual de copiar/colar ARN). Não há mais nada a instalar ou aplicar manualmente neste passo - ele só confirma que a reconciliação está funcionando.
 
-> Ao contrário do cluster local (`clusters/kubeadm-local/`), aqui **não** se usa `flux bootstrap` (que faz o Flux se autogerenciar, commitando seus próprios manifests de volta no repositório). O repositório canônico deste projeto é o Gitea (`gitea.diasdm.com.br`), que mantém um *push mirror* unidirecional para o GitHub - a cada push no Gitea, a branch `main` do GitHub é forçada a ficar idêntica à do Gitea, apagando qualquer commit que exista só no lado do GitHub. Como o EKS não alcança o Gitea pela rede (só o GitHub), qualquer commit que o Flux fizesse aqui ficaria só no GitHub e seria apagado no próximo push feito no Gitea. Por isso, aqui o Flux só lê do GitHub, nunca escreve nele.
+> Ao contrário do cluster local (`clusters/kubeadm-local/`), aqui **não** se usa `flux bootstrap` (que faz o Flux se autogerenciar, commitando seus próprios manifests de volta no repositório). O repositório canônico deste projeto é o Gitea (`gitea.diasdm.com.br`), que mantém um *push mirror* unidirecional para o GitHub - a cada push no Gitea, a branch `main` do GitHub é forçada a ficar idêntica à do Gitea, apagando qualquer commit que exista só no lado do GitHub. Como o EKS não alcança o Gitea pela rede (só o GitHub), qualquer commit que o Flux fizesse aqui ficaria só no GitHub e seria apagado no próximo push feito no Gitea. Por isso, aqui o Flux só lê do GitHub, nunca escreve nele - isso não muda com a instalação via Terraform, só a forma como os controladores chegam no cluster mudou (ver "FluxCD via Terraform" em `terra/README.md`).
 
-```bash
-flux check --pre
-flux install
-```
-
-Em seguida, aplique manualmente o `GitRepository` já versionado em `clusters/eks-aws/flux-system/gotk-sync.yaml` (aponta para `https://github.com/diasdmhub/hackathon-DCLT.git`, leitura anônima já que o repositório é público) e o `Kustomization` `solidarytech` (`clusters/eks-aws/solidarytech-kustomization.yaml`):
+Se um dia o `url`/`branch` do `GitRepository`, o `path`/`interval` da `Kustomization`, ou os ARNs de IRSA mudarem (ex.: `terraform destroy`/`apply` recriando as roles), basta rodar `terraform apply` de novo - o Terraform reconcilia a diferença, sem `kubectl apply -f` manual.
 
 ```bash
-kubectl apply -f clusters/eks-aws/flux-system/gotk-sync.yaml
-kubectl apply -f clusters/eks-aws/solidarytech-kustomization.yaml
-```
-
-Aplique também, do mesmo jeito e uma única vez, o Secret `irsa-role-arns`
-com os ARNs reais das roles IRSA (contêm o account ID da AWS, por isso não
-ficam versionados em `kube-aws/`, que é público - ver `kube-aws/README.md`,
-seção "IRSA"):
-
-```bash
-cp clusters/eks-aws/flux-system/irsa-role-arns-secret.example.yaml \
-   clusters/eks-aws/flux-system/irsa-role-arns-secret.yaml
-# edite irsa-role-arns-secret.yaml com os ARNs reais:
-terraform -chdir=terra output -json iam_outputs
-
-kubectl apply -f clusters/eks-aws/flux-system/irsa-role-arns-secret.yaml
-```
-
-Diferente do cluster local, nenhum desses dois objetos é reconciliado por uma `Kustomization` raiz autogerenciada - não existe mais, aqui, um `Kustomization` que fique observando `./clusters/eks-aws` e aplicando sozinho qualquer YAML novo naquela pasta. Os dois são aplicados uma única vez, à mão; a partir daí, é o `Kustomization` `solidarytech` (já aplicado) que passa a reconciliar sozinho, criando os serviços da SolidaryTech (`./kube-aws`). Se um dos dois arquivos mudar no futuro (novo `url`/`branch` no `GitRepository`, ou ajuste no `path`/`interval` do `Kustomization`), é preciso reaplicar manualmente de novo - não há reconciliação automática desse nível. O Secret `irsa-role-arns` é outro caso: não é reconciliado por nenhuma `Kustomization` (não está versionado, só consumido via `postBuild.substituteFrom`), então só precisa ser reaplicado se os ARNs mudarem (ex.: `terraform destroy`/`apply` recriando as roles IRSA).
-
-O Namespace `solidarytech` e os Secrets `ngo-env`, `donation-env` e `volunteer-env` (string de conexão real do RDS) já existem nesse ponto, pois foram criados pelo `terraform apply` do passo 2 (`kubernetes_namespace_v1.solidarytech` e `module.secrets`), não pelo Flux (vide `kube-aws/README.md`, seção "Secrets").
-
-```bash
-flux get kustomizations  # Consulta
+flux get kustomizations  # Consulta (requer o Flux CLI - opcional, ver Pré-requisitos)
+kubectl get kustomization solidarytech -n flux-system  # Alternativa sem o Flux CLI
 ```
 
 <BR>

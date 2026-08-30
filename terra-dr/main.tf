@@ -183,6 +183,27 @@ module "secrets" {
   depends_on = [module.rds, module.sqs, kubernetes_namespace_v1.solidarytech]
 }
 
+# FluxCD - mesmo módulo compartilhado de terra/main.tf, aplicado com o YAML
+# próprio deste cluster (clusters/eks-aws-dr/) e os ARNs de IRSA com o
+# sufixo "-dr" (module.iam acima, role_name_suffix = "-dr"). Ver "FluxCD via
+# Terraform" em terra/README.md.
+locals {
+  flux_git_repository_yaml = file("${path.module}/../clusters/eks-aws-dr/flux-system/gotk-sync.yaml")
+  flux_kustomization_yaml  = file("${path.module}/../clusters/eks-aws-dr/solidarytech-kustomization.yaml")
+}
+
+module "flux" {
+  source = "../terra/modules/flux"
+
+  chart_version              = var.flux_chart_version
+  git_repository_yaml        = local.flux_git_repository_yaml
+  kustomization_yaml         = local.flux_kustomization_yaml
+  donation_service_role_arn  = module.iam.donation_service_role_arn
+  volunteer_service_role_arn = module.iam.volunteer_service_role_arn
+
+  depends_on = [module.eks, module.lb, module.iam, kubernetes_namespace_v1.solidarytech, module.secrets]
+}
+
 # Observabilidade e métricas de infraestrutura, idêntico a terra/main.tf.
 resource "kubernetes_namespace_v1" "observe" {
   metadata {
