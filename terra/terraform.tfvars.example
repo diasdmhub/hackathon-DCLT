@@ -50,9 +50,10 @@ observe_allowed_cidrs = ["CHANGE_ME"]
 # Disaster Recovery (ambiente ativo-passivo) - ver "Disaster Recovery" em
 # terra/README.md e o runbook em terra-dr/README.md. Tudo abaixo é opcional
 # e desligado por padrão: ligue quando terra-dr/ estiver pronto para uso.
+enable_dr                   = false  # "true" habilita o DR
+
 dr_aws_region               = "us-west-2"
-enable_dr                   = false
 rds_backup_retention_period = 7
 manage_dns                  = false
-dns_zone_name               = "CHANGE_ME" # ex.: "solidarytech.diasdm.com.br"
-dns_record_name             = "CHANGE_ME" # ex.: "api.solidarytech.diasdm.com.br"
+dns_zone_name               = "CHANGE_ME"  # ex.: "solidarytech.meu.dominio"
+dns_record_name             = "CHANGE_ME"  # ex.: "api.solidarytech.meu.dominio"
