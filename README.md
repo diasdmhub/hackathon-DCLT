@@ -1,4 +1,4 @@
-# FIAP - Projeto da Fase 5 - "Hackathon" SolidaryTech
+w# FIAP - Projeto da Fase 5 - "Hackathon" SolidaryTech
 
 > Análise geral e implementação comentada do "hackathon" da Fase 5 do curso DevOps e Arquitetura Cloud da FIAP.
 
@@ -10,6 +10,7 @@ Este é o ecossistema de microsserviços da SolidaryTech que simulam um ambiente
 
 ### [↗️ Estrutura de disciplinas do ambiente][estrutura]
 ### [↗️ Arquitetura dos microserviços][arquiteturamicro]
+### [↗️ Implementação inicial][implementacao]
 ### [↗️ Teste manual dos microserviços][testemanual]
 
 ---
@@ -408,6 +409,7 @@ Faça a diferença com a **SolidaryTech** 💙
 | --- |
 
 [estrutura]: /doc/estrutura.md
+[implementacao]: /doc/roteiro-cluster-aws.md
 [arquiteturamicro]: /doc/arquitetura.md
 [testemanual]: /doc/teste-manual.md
 [issue3]: https://github.com/dougls/hackathon-DCLT/issues/3

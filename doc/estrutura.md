@@ -112,18 +112,24 @@ A quebra do SLO, implicará no congelamento imediato de atualizações programad
 
 <BR>
 
-## ITSM e AIOps
+## APM
 
 Similar à fase 4 do curso DCLT, **não é viável a implementação das ferramentas de APM a seguir.**
 
-- Datadog:
+- **Datadog**:
     - [Exige conexão com serviços de terceiros (GitHub)][datadog_edu] para acesso educativo.
     - O GitHub exige, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e um rastreamento biométrico altamente invasivo para registro.
     - Ambas as empresas coletam dados pessoais, comportamentais, biométricos e de rastreamento de usuários, que podem ser compartilhados com terceiros, utilizados em perfilarizações comerciais, marketing, treinamento de IA, entre outras ações. Tudo isso ocorre sem um prazo de retenção definido ou garantias reais de privacidade.
     - Tentativas de registro no programa educacional do GitHub **foram rejeitadas**. Uma das justificativas alega que não há proximidade geográfica do aluno com a instituição, a qual não indicou a oferta de estudo virtual.
     ![Github Rejection](./reject.png)
-- New Relic: o [**portal continua indisponível**][newrelic], pois tem recusado conexões (_ERR_CONNECTION_REFUSED_) durante o desenvolvimento desta fase. Não foi possível acessar os recursos desse serviço.
+- **New Relic**: o [**portal continua indisponível**][newrelic], pois tem recusado conexões (_ERR_CONNECTION_REFUSED_) durante o desenvolvimento desta fase. Não foi possível acessar os recursos desse serviço.
 - Diante dessas políticas e restrições, entendo ser invasivo e inviável a filiação às instituições acima. _Fico à disposição para maiores esclarecimentos._
+
+O **Tempo** foi definido como a ferramenta de APM para este ambiente, pois oferece os recursos de rastreamento e observabilidade necessários para os serviços da SolidaryTech, e já é integrado à ferramenta de observabilidade Grafana. Além disso, sua implementação e uso não geram custos adicionais, aderindo às premissas de economia de custos esperadas para a organização.
+
+<BR>
+
+## ITSM e AIOps
 
 Quanto aos aspectos de ITSM, o Zabbix é utilizado como ferramenta central de eventos devido sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é open-source. Integrado a ele, estão recursos de tratamento e automatção de eventos. No ambiente implementado, ele inclui:
 
