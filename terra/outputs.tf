@@ -34,6 +34,11 @@ output "nlb_outputs" {
   value       = module.nlb
 }
 
+output "nlb_dns_name" {
+  description = "DNS name da NLB única compartilhada pelos 3 serviços - atalho de nlb_outputs.nlb_dns_name, para uso direto com `terraform output -raw` (ver doc/roteiro-cluster-aws.md)"
+  value       = module.nlb.nlb_dns_name
+}
+
 output "lb_iam_outputs" {
   description = "Outputs do módulo lb-iam (ARN da role IRSA do AWS Load Balancer Controller)"
   value       = module.lb_iam
