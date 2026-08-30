@@ -27,7 +27,7 @@ Esta é uma sequência de passos para a implementação do ambiente EKS, incluin
 
 **6.** O [FluxCD CLI][fluxcli] é utilizado para a inicialização dos microsserviços e para validar a instalação, caso necessário.
 
-**7.** Apesar de não ser necessário posteriormente, o **`kubectl`** é necessário para a implementação inicial de forma automatizada, e ainda é muito eficiente para gerenciar o cluster Kubernetes e seus recursos, caso necessário. Recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
+**7.** Apesar de não ser estritamente necessário, o **`kubectl`** é necessário para a implementação inicial de forma automatizada, e ainda é muito eficiente para gerenciar o cluster Kubernetes e seus recursos, caso necessário. Recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
 
 **8.** Um [Grafana][grafanacloud] já em operação.
 
@@ -39,7 +39,7 @@ Para a implementação inicial, é necessário configurar alguns dados para perm
 
 O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser definido com as principais variáveis do ambiente, incluindo a senhas. Embora seja disponibilizado um arquivo de exemplo (`terraform.tfvars.example`) com alguns valores pré-definidos, é **altamente recomendado que as variáveis a seguir sejam definidas de acordo com o ambiente final**.
 
-> ⚠️ **Note que este arquivo contém dados sensíveis e deve ter seu acesso restrito. Ele é ignorado pelo Git.**
+> ⚠️ **Note que este arquivo contém dados sensíveis e deve ter seu acesso restrito. Portanto, ele é ignorado pelo Git.**
 
 #### Lista de variáveis:
 
@@ -76,8 +76,8 @@ Neste passo serão provisionados a infraestrutura AWS, Load Balancer Controller,
 ```bash
 cd terra
 cp terraform.tfvars.example terraform.tfvars
-# edite terraform.tfvars: no mínimo `db_password` e `observe_allowed_cidrs`;
-# não use os valores de exemplo.
+# Edite terraform.tfvars: no mínimo `db_password` e `observe_allowed_cidrs`;
+# Evite usar os valores de exemplo.
 
 ./init.sh   # cria bucket S3 + tabela DynamoDB + inicializa Terraform (idempotente)
 
