@@ -73,33 +73,38 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 
 Neste passo serão provisionados a infraestrutura AWS, Load Balancer Controller, serviços de observabilidade e monitoramento com o Terraform. Os comandos abaixo devem ser executados a partir de um host de controle da infraestrutura.
 
+Crie e edite o arquivo `terraform.tfvars`. **Evite usar os valores de exemplo.**
+
+>  No mínimo `db_password` e `observe_allowed_cidrs` devem ser definidos.
+
 ```bash
 cd terra
 cp terraform.tfvars.example terraform.tfvars
-# Edite terraform.tfvars: no mínimo `db_password` e `observe_allowed_cidrs`;
-# Evite usar os valores de exemplo.
+```
 
-./init.sh   # cria bucket S3 + tabela DynamoDB + inicializa Terraform (idempotente)
+Execute o script de inicialização para criar o bucket S3, a tabela de estado do Terraform no DynamoDB e inicializar o Terraform.
 
-# Na primeira inicialização, com um cluster totalmente novo, os providers
-# kubernetes/helm/kubectl tentam usar outputs do cluster EKS, que não
-# existem num state vazio. Portantanto, o cluster deve ser criado primeiro.
-# Vide "Uso" em terra/README.md (limitação de Terraform+EKS).
+```bash
+./init.sh
+```
+
+> Na primeira inicialização, com um cluster totalmente novo, os providers
+`kubernetes/helm/kubectl` tentam usar outputs do cluster EKS, que não
+ existem num _state_ vazio. Portantanto, o cluster EKS deve ser criado primeiro. _Vide "Uso" em terra/README.md (limitação de Terraform+EKS)_.
+
+```bash
 terraform plan -target=module.eks
 terraform apply -target=module.eks
+```
 
-# Um segundo `apply` (já num state com o cluster criado) cria os demais recursos 
-# AWS, instala o Load Balancer Controller, e aplica o Loki/Tempo/Alloy/Prometheus
-# (este último com kube-state-metrics/node-exporter) direto no cluster, através
-# dos providers `helm`/`kubernetes`/`kubectl`. Nenhum desses passa pelo FluxCD, (`terra/README.md`).
-# A ordem entre eles passa por dependências do Terraform. Não precisa de mais um
-# `apply` além do `-target=module.eks` inicial. Em clusters já existentes
-# (`module.eks` criado), siga direto para o `terraform plan`/`apply`.
+Um segundo `apply` (já em um _state_ com o cluster criado) gera os demais recursos AWS: instala o "Load Balancer Controller", e aplica o `Loki/Tempo/Alloy/Prometheus` direto no cluster, através dos providers `helm/kubernetes/kubectl`. Nenhum desses passa pelo FluxCD, (_vide `terra/README.md`_). A ordem entre eles passa por dependências do Terraform. Não precisa de mais um `apply` além do `-target=module.eks` inicial. Em clusters já existentes (com o `module.eks` criado), siga direto para o `terraform plan`/`apply`.
+
+```bash
 terraform plan
 terraform apply
 ```
 
-Ao final, aponte o `kubectl` local para o cluster criado:
+Ao final, aponte o `kubectl` local para o cluster criado.
 
 ```bash
 $(terraform output -raw configure_kubectl 2>/dev/null) || \
@@ -116,7 +121,6 @@ Com o `flux` CLI instalado e o `kubectl` já apontando para o cluster criado no 
 
 ```bash
 flux check --pre
-
 flux install
 ```
 
