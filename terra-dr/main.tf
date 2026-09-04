@@ -258,12 +258,14 @@ module "alloy" {
 # aws_route53_record.primary, só quando manage_dns = true por lá).
 # Referenciamos a zone existente via var.route53_zone_id (copiado do output
 # route53_zone_id de terra/) em vez de terraform_remote_state, para não
-# acoplar os dois states.
+# acoplar os dois states. Aponta para o donation-service (porta 8082), o
+# hot path da plataforma, em vez do ngo-service - mesmo endpoint checado
+# pelo health check primary em terra/.
 resource "aws_route53_health_check" "secondary" {
   count = var.route53_zone_id == "" ? 0 : 1
 
   fqdn              = module.nlb.nlb_dns_name
-  port              = 8081
+  port              = 8082
   type              = "HTTP"
   resource_path     = "/health"
   request_interval  = 30

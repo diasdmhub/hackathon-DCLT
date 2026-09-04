@@ -30,7 +30,7 @@ A estratégia é ativo-passivo entre duas regiões AWS, com `enable_dr = true` e
 
 1. **Dados**: os backups automatizados do RDS (`rds_backup_retention_period`, 7 dias por padrão) são replicados continuamente para a região passiva via `aws_db_instance_automated_backups_replication`. A tabela DynamoDB de voluntários vira uma Global Table (v2), com réplica sempre ativa na região passiva. Nenhum dos dois exige ação manual em operação normal.
 2. **Compute**: o ambiente passivo (VPC, EKS, RDS restaurado, NLB, observabilidade) normalmente não existe (state vazio em `terra-dr/`). Ativá-lo significa restaurar o RDS a partir do backup replicado (`aws_db_instance.restored`) e provisionar o restante do zero.
-3. **Roteamento**: com `manage_dns = true`, um health check do Route53 (`aws_route53_health_check.primary`, porta 8081, `/health` do `ngo-service`, intervalo de 30s, 3 falhas consecutivas) decide o failover de DNS automaticamente entre o registro `PRIMARY` (ativo) e `SECONDARY` (passivo), com TTL de 30s.
+3. **Roteamento**: com `manage_dns = true`, um health check do Route53 (`aws_route53_health_check.primary`, porta 8082, `/health` do `donation-service`, intervalo de 30s, 3 falhas consecutivas) decide o failover de DNS automaticamente entre o registro `PRIMARY` (ativo) e `SECONDARY` (passivo), com TTL de 30s.
 
 O runbook completo de ativação está em [`terra-dr/README.md`][terradr]; este documento traduz esses passos em metas de tempo e ponto de recuperação.
 

@@ -295,12 +295,13 @@ resource "aws_route53_zone" "dr" {
 # Health check HTTP no /health do ngo-service (porta 8081) como
 # representante de "esta região está servindo tráfego" - mesmo endpoint já
 # usado pelo smoke-test (build/scripts/smoke-test.sh) e pelos
-# readiness/liveness probes dos Deployments.
+# readiness/liveness probes dos Deployments. Aponta para o donation-service
+# (porta 8082), o hot path da plataforma, em vez do ngo-service.
 resource "aws_route53_health_check" "primary" {
   count = var.manage_dns ? 1 : 0
 
   fqdn              = module.nlb.nlb_dns_name
-  port              = 8081
+  port              = 8082
   type              = "HTTP"
   resource_path     = "/health"
   request_interval  = 30
