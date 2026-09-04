@@ -12,6 +12,7 @@ Este é o ecossistema de microsserviços da SolidaryTech que simulam um ambiente
 ### [↗️ Arquitetura dos microserviços][arquiteturamicro]
 ### [↗️ Implementação inicial][implementacao]
 ### [↗️ Teste manual dos microserviços][testemanual]
+### [↗️ Plano de Continuidade de Negócios (PCN)][pcn]
 
 ---
 
@@ -412,5 +413,6 @@ Faça a diferença com a **SolidaryTech** 💙
 [implementacao]: /doc/roteiro-cluster-aws.md
 [arquiteturamicro]: /doc/arquitetura.md
 [testemanual]: /doc/teste-manual.md
+[pcn]: /doc/plano-continuidade-negocios.md
 [issue3]: https://github.com/dougls/hackathon-DCLT/issues/3
 [dockercompose]: /build/docker-compose.yaml
