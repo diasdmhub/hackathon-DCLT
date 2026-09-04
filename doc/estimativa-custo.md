@@ -3,7 +3,7 @@
 **Data:** 2026-09-02
 **Métrica:** Custos reais
 **Período:** 2026-08-01 to 2026-08-31
-**Context:** Os recursos foram temporários, ativos por algumas horas em alguns dias (~11 de 31 dias).
+**Contexto:** Os recursos foram temporários, ativos por algumas horas em alguns dias (~11 de 31 dias).
 
 <BR>
 
@@ -24,11 +24,12 @@
 | Secrets Manager | ~$0.0000 | 2 | 48 | ~$0.0000 | $0.00 |
 | **TOTAL** | **$23.83** | | | | **$63.69** |
 
+**Custo estimado mensal excluindo os impostos: `~$61.05/mês`** (_se os recursos estiverem ativos continuamente_).
+
 <BR>
 
-## Considerações
+### Considerações
 
-- Estimativa mensal = (Total de Ago / horas ativas) x 730 hrs/mês (_período padrão da AWS_).
-- Horas ativas = número de dias com uso x 24.
-- **Estimativa de $80.60/mês de imposto não é realista** - A taxa é cobrada uma única vez por cobrança de fatura, não um custo contínuo. Excluída do custo total.
-- **Custo estimado mensal excluindo os impostos: ~$61.05/mês** (_se os recursos estiverem ativos continuamente_).
+- **Horas ativas** = número de dias com uso x 24.
+- **Estimativa mensal** = (`Total de Ago` / `horas ativas`) x `730` hrs/mês (_período padrão da AWS_).
+- **Estimativa de imposto não é por hora** - A taxa é cobrada uma única vez por cobrança de fatura, não um custo contínuo. Esse valor depende do custo total no fechamento do mês.

@@ -9,13 +9,13 @@ Abaixo são descritas algumas das disciplinas utilizadas neste projeto.
 
 <BR>
 
-## 1. Fundamentos DevOps
+## Fundamentos DevOps
 
 O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a seguir.
 
 <BR>
 
-### 1.1 Docker/Podman - Containers
+### Docker/Podman - Containers
 
 - Dockerfiles otimizados para o _build_ dos 3 microserviços e implantação no Kubernetes.
     - Os microserviços utilizam imagens reduzidas, como `alpine`.
@@ -25,7 +25,7 @@ O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a 
 
 <BR>
 
-### 1.2 CI e DevSecOps
+### CI e DevSecOps
 
 Trata-se de um modelo onde o Git é a fonte de verdade e o próprio cluster K8s sincroniza as mudanças. Esse formato mantém o ambiente em um estado desejado de forma declarativa trazendo mais flexibilidade e portabilidade.
 
@@ -39,7 +39,7 @@ Os dois workflows equivalentes ([`.gitea/workflows/ci-cd.yaml`][cigitea] e [`.gi
 
 <BR>
 
-### 1.3 Gitops (CD)
+### Gitops (CD)
 
 O pipeline CI combinado ao FluxCD formam duas metades de um macro fluxo de GitOps.
 
@@ -53,7 +53,7 @@ São declarados 3 conciliações com manifestos do Kubernetes:
 
 <BR>
 
-### 1.4 Infraestrutura como Código (IaC)
+### Infraestrutura como Código (IaC)
 
 Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) via Terraform.
 
@@ -63,7 +63,7 @@ Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) 
 
 <BR>
 
-### 1.5 Kubernetes
+### Kubernetes
 
 > **O projeto foi estruturado em plataformas de desenvolvimento e produção.**
 
@@ -73,7 +73,7 @@ Deploy testado ponta a ponta no cluster remoto. Os serviços da SolidaryTech com
 
 <BR>
 
-### 1.6 Observabilidade e APM
+### Observabilidade e APM
 
 Stack completa executando Prometheus, Loki e Alloy. Códigos dos microserviços instrumentados para o APM Tempo com Distributed Tracing.
 
@@ -96,6 +96,8 @@ A quebra do SLO, implicará no congelamento imediato de atualizações programad
 
 ## FinOps
 
+Quanto à estratégia de etiquetamento, foram incluídas tags e prefixos nos recursos da SolidaryTech:
+
 - O ambiente foi inteiramente implementado com o **Terraform** aplicando as tags abaixo:
 
 | Tag | Valor |
@@ -106,9 +108,16 @@ A quebra do SLO, implicará no congelamento imediato de atualizações programad
 | ManagedBy | `Terraform` |
 
 - O padrão de "Tag Name" por recurso (`${name_prefix}-<recurso>`) está presente em praticamente todos recursos do Terraform, para identificação individual ou por filtros na AWS.
+
+Considerando aspectos de consumo de recursos pelos _pods_, foram definidas as características a seguir.
+
 - Os recursos de CPU e memória disponibilizados aos serviços da SolidaryTech foram otimizados com base no histórico de uso, tendo os _requests_ e _limits_ sido aplicados conforme esse histórico.
 - Foi utilizado somente o **recurso de HPA** para os serviços da SolidaryTech no cluster K8s, pois ele pode escalar a quantidade de pods automaticamente e absorver picos de carga. Caso, a carga seja reduzida, os pods são reduzidos e o consumo de recursos também.
-- O VPA foi descartado dessa implementação pois causaria divergência entre entre o repositório Git remoto com o cluster, e o FluxCD teria um _drift_ a cada reconciliação.
+- O **VPA foi desconsiderado** dessa implementação pois causaria divergência entre entre o repositório Git remoto com o cluster, e o FluxCD teria um _drift_ a cada reconciliação.
+
+De modo a otimizar os custos, foi elaborado um [relatório com projeções ⤴️][estimativa] de gastos mensais e recomendações práticas de otimização financeira do ambiente.
+
+A implementação dos diversos recursos da AWS também implementou diversas estratégias para minimizar os custos, o que inclui a utilização de recursos _Free Tier_ e opções de baixo custo.
 
 <BR>
 
@@ -118,7 +127,7 @@ Similar à fase 4 do curso DCLT, **não é viável a implementação das ferrame
 
 - **Datadog**:
     - [Exige conexão com serviços de terceiros (GitHub)][datadog_edu] para acesso educativo.
-    - O GitHub exige, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e um rastreamento biométrico altamente invasivo para registro.
+    - O GitHub exige, por meio de seu [pacote para estudantes][github_edu], informações de identificação governamentais e um rastreamento biométrico altamente invasivo para registro.
     - Ambas as empresas coletam dados pessoais, comportamentais, biométricos e de rastreamento de usuários, que podem ser compartilhados com terceiros, utilizados em perfilarizações comerciais, marketing, treinamento de IA, entre outras ações. Tudo isso ocorre sem um prazo de retenção definido ou garantias reais de privacidade.
     - Tentativas de registro no programa educacional do GitHub **foram rejeitadas**. Uma das justificativas alega que não há proximidade geográfica do aluno com a instituição, a qual não indicou a oferta de estudo virtual.
     ![Github Rejection](./reject.png)
@@ -131,7 +140,7 @@ O **Tempo** foi definido como a ferramenta de APM para este ambiente, pois ofere
 
 ## ITSM e AIOps
 
-Quanto aos aspectos de ITSM, o Zabbix é utilizado como ferramenta central de eventos devido sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é open-source. Integrado a ele, estão recursos de tratamento e automatção de eventos. No ambiente implementado, ele inclui:
+Quanto aos aspectos de ITSM, o Zabbix é utilizado como ferramenta central de eventos devido sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é open-source. Integrado a ele, estão recursos de tratamento e automação de eventos. No ambiente implementado, ele inclui:
 
 - alta performance em monitoramento e observabilidade;
 - integração diversificada com plataformas de notificação;
@@ -165,3 +174,4 @@ Quanto aos aspectos de ITSM, o Zabbix é utilizado como ferramenta central de ev
 [datadog_edu]: https://studentpack.datadoghq.com
 [github_edu]: https://education.github.com/pack
 [newrelic]: https://newrelic.com
+[estimativa]: ./estimativa-custo.md
