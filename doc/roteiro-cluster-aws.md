@@ -3,8 +3,6 @@
 
 # Roteiro de implementação inicial do cluster K8s na AWS
 
-> ⚠️ **_Em construção_**
-
 Esta é uma sequência de passos para a implementação do ambiente EKS, incluindo os recursos de infraestrutura AWS, o AWS Load Balancer Controller e recursos de observabilidade e monitoração do ambiente (Loki/Tempo/Alloy/Prometheus self-hosted, este último complementado por kube-state-metrics e node-exporter para as métricas de cluster/pod), tudo via Terraform. Os microsserviços da SolidaryTech ficam sob gestão do FluxCD. Detalhes e justificativas de cada etapa estão em `terra/README.md` e `kube-aws/README.md`; este roteiro só reúne os comandos na ordem correta.
 
 <BR>
@@ -35,9 +33,11 @@ Esta é uma sequência de passos para a implementação do ambiente EKS, incluin
 
 Para a implementação inicial, é necessário configurar alguns dados para permitir que o ambiente seja criado de forma consistente.
 
-O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser definido com as principais variáveis do ambiente, incluindo a senhas. Embora seja disponibilizado um arquivo de exemplo (`terraform.tfvars.example`) com alguns valores pré-definidos, é **altamente recomendado que as variáveis a seguir sejam definidas de acordo com o ambiente final**.
+O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser definido com as principais variáveis do ambiente, incluindo senhas. Embora seja disponibilizado um arquivo de exemplo (`terraform.tfvars.example`) com alguns valores pré-definidos, é **altamente recomendado que as variáveis a seguir sejam definidas de acordo com o ambiente final**.
 
 > ⚠️ **Note que este arquivo contém dados sensíveis e deve ter seu acesso restrito. Portanto, ele é ignorado pelo Git.**
+
+> **Preencha os dados no host de controle da infraestrutura e guarde o arquivo completo em um local seguro fora da AWS. Um gerenciador de senhas, por exemplo, não somente no disco local.**
 
 #### Lista de variáveis:
 
@@ -73,6 +73,8 @@ Neste passo serão provisionados a infraestrutura AWS, o Load Balancer Controlle
 
 > **Os comandos abaixo devem ser executados a partir de um host de controle da infraestrutura.**
 
+---
+
 Crie e edite o arquivo `terraform.tfvars`. **Evite usar os valores de exemplo.**
 
 > **No mínimo `db_password` e `observe_allowed_cidrs` devem ser definidos.**
@@ -88,16 +90,14 @@ Execute o script de inicialização para criar o bucket S3, a tabela de estado d
 ./init.sh
 ```
 
-Na primeira inicialização, com um cluster totalmente novo, os providers
-`kubernetes/helm/kubectl` tentam usar outputs do cluster EKS, que não
- existem num _state_ vazio. Portantanto, o cluster EKS deve ser criado primeiro. _Vide "Uso" em terra/README.md (limitação de Terraform+EKS)_.
+Na primeira inicialização, com um cluster totalmente novo, os providers `kubernetes/helm/kubectl` tentam usar outputs do cluster EKS, que não existem num _state_ vazio. Portantanto, o cluster EKS deve ser criado primeiro. _Vide "Uso" em terra/README.md (limitação de Terraform+EKS)_.
 
 ```bash
 terraform plan -target=module.eks
 terraform apply -target=module.eks
 ```
 
-Um segundo `apply` (já com o cluster criado) gera os demais recursos AWS: instala o "Load Balancer Controller", instala o FluxCD e aplica o `GitRepository`/`Kustomization` que fazem os 3 microsserviços (`./kube-aws`) subirem, e aplica o `Loki/Tempo/Alloy/Prometheus` direto no cluster, através dos providers `helm/kubernetes/kubectl`. Nenhum desses passa por um `flux bootstrap` autogerenciado (_vide `terra/README.md`_) - o próprio Terraform instala e configura o Flux. A ordem entre eles passa por dependências do Terraform. Não precisa de mais um `apply` além do `-target=module.eks` inicial. Em clusters já existentes (com o `module.eks` criado), siga direto para o `terraform plan`/`apply`.
+Um segundo `apply` (já com o cluster criado) gera os demais recursos AWS: instala o "_Load Balancer Controller_", instala o FluxCD e aplica o `GitRepository`/`Kustomization` que faz os 3 microsserviços (`./kube-aws`) subirem, e também aplica o `Loki/Tempo/Alloy/Prometheus` direto no cluster. A ordem entre eles passa por dependências do Terraform. Em clusters já existentes (com o `module.eks` criado), siga direto para o `terraform plan`/`apply`.
 
 ```bash
 terraform plan
@@ -115,7 +115,7 @@ $(terraform output -raw configure_kubectl 2>/dev/null) || \
 
 ## 3. FluxCD no cluster
 
-O `terraform apply` do passo 2 já instalou os controladores do FluxCD e aplicou o `GitRepository` (`clusters/eks-aws/flux-system/gotk-sync.yaml`), a `Kustomization` da SolidaryTech (`clusters/eks-aws/solidarytech-kustomization.yaml`) e o Secret `irsa-role-arns` (com os ARNs reais das roles IRSA, vindos direto de `module.iam`.
+O `terraform apply` do passo 2 já instalou os controladores do FluxCD e aplicou o `GitRepository` (`clusters/eks-aws/flux-system/gotk-sync.yaml`), a `Kustomization` da SolidaryTech (`clusters/eks-aws/solidarytech-kustomization.yaml`) e o Secret `irsa-role-arns` com os ARNs reais das roles IRSA, vindos direto de `module.iam`.
 
 Se um dia o `url`/`branch` do `GitRepository`, o `path`/`interval` da `Kustomization`, ou os ARNs de IRSA mudarem (_ex.: `terraform destroy`/`apply` recriando as roles_), basta executar o `terraform apply` novamente. Assim, o Terraform reconcilia a diferença, sem a necessidade de um `kubectl apply -f` manual.
 
@@ -128,7 +128,7 @@ kubectl get kustomization solidarytech -n flux-system  # Alternativa sem o Flux 
 
 ## 4. Preparar o ambiente passivo
 
-Aproveite que o ambiente principal está de ativo e saudável para deixar pronto o `terraform.tfvars` do ambiente passivo (`terra-dr/`).
+Aproveite que o ambiente principal está ativo e saudável para deixar pronto o `terraform.tfvars` do ambiente passivo (`terra-dr/`).
 
 > **Não espere um desastre real para preparar os dados.**
 
@@ -139,19 +139,12 @@ cd terra-dr
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-A maioria das variáveis é de configuração estática, sem nenhuma consulta ao ambiente ativo. Elas também são similares às variáveis do passo1: `name_prefix`, `aws_region`/`dr_aws_region`, `subnet_prefix`, tamanhos do EKS, `dynamodb_table_name`, `k8s_namespace`/service accounts, `lb_controller_*`, `flux_chart_version`, `observe_allowed_cidrs`, `dns_record_name`. Preencha elas com os mesmos valores (ou equivalentes) do `terra/terraform.tfvars` já usado no passo 2.
+A maioria das variáveis é de configuração estática, sem nenhuma consulta ao ambiente ativo. Elas também são similares às variáveis do passo 1. Preencha elas com os mesmos valores (ou equivalentes) do `terra/terraform.tfvars` já usado no passo 2.
 
 Duas variáveis merecem atenção:
 
 - **`db_password`**: precisa ser **IGUAL** à senha real do ambiente ativo, mas não de consulta ao parâmetro SSM criado por `module.secrets`.
-
-> **Preencha os dados no host de controle da infraestrutura e guarde o arquivo completo em um local seguro fora da AWS. Um gerenciador de senhas, por exemplo, não somente no disco local.**
-
-- **`route53_zone_id`**: copie neste momento, direto do `terra/` (_Route53 é um serviço global da AWS, mas o valor já está pronto no state ativo_):
-
-  ```bash
-  terraform output -raw route53_zone_id
-  ```
+- **`route53_zone_id`**: copie este valor direto do `terra/` (_Route53 é um serviço global da AWS, e o valor está pronto no ambiente ativo_): `terraform output -raw route53_zone_id`
 
 O único dado que **não** dá para preencher com antecedência é `rds_restore_source_arn`, pois ele identifica o backup mais recente no momento exato da ativação. No arquivo `.example` ele está comentado.
 

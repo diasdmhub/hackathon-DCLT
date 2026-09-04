@@ -109,11 +109,22 @@ Quanto à estratégia de etiquetamento, foram incluídas tags e prefixos nos rec
 
 - O padrão de "Tag Name" por recurso (`${name_prefix}-<recurso>`) está presente em praticamente todos recursos do Terraform, para identificação individual ou por filtros na AWS.
 
-Considerando aspectos de consumo de recursos pelos _pods_, foram definidas as características a seguir.
+---
 
-- Os recursos de CPU e memória disponibilizados aos serviços da SolidaryTech foram otimizados com base no histórico de uso, tendo os _requests_ e _limits_ sido aplicados conforme esse histórico.
+Considerando aspectos de consumo de recursos pelos _pods_, foram definidas as características a seguir para _**requests**_ e _**limits**_.
+
+| Serviço | CPU request | CPU limit | Memória request | Memória limit |
+| :---: | :---: | :---: | :---: | :---: |
+| **ngo-service**       | `25m` | `150m` | `96Mi`  | `256Mi` |
+| **donation-service**  | `40m` | `200m` | `64Mi`  | `256Mi` |
+| **volunteer-service** | `25m` | `150m` | `128Mi` | `256Mi` |
+
+- Os recursos de CPU e memória foram otimizados com base no histórico de uso real observado após a instrumentação de métricas dos serviços da SolidaryTech.
+    - Vale ressaltar que o `donation-service` manteve _requests_ e _limits_ de CPU mais altos (`40m`/`200m`) que os outros dois (`25m`/`150m`), coerente com seu papel "**hot path**" mais crítico da plataforma.
 - Foi utilizado somente o **recurso de HPA** para os serviços da SolidaryTech no cluster K8s, pois ele pode escalar a quantidade de pods automaticamente e absorver picos de carga. Caso, a carga seja reduzida, os pods são reduzidos e o consumo de recursos também.
 - O **VPA foi desconsiderado** dessa implementação pois causaria divergência entre entre o repositório Git remoto com o cluster, e o FluxCD teria um _drift_ a cada reconciliação.
+
+---
 
 De modo a otimizar os custos, foi elaborado um [relatório com projeções ⤴️][estimativa] de gastos mensais e recomendações práticas de otimização financeira do ambiente.
 
