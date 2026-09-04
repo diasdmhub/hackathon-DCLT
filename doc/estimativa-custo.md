@@ -1,4 +1,7 @@
-# August 2026 - Estimativas de Custo para a SolidaryTech
+| [↩️ Voltar](./) |
+| --- |
+
+# Agosto 2026 - Estimativas de Custo para a SolidaryTech
 
 **Data:** 2026-09-02
 **Métrica:** Custos reais
@@ -33,3 +36,6 @@
 - **Horas ativas** = número de dias com uso x 24.
 - **Estimativa mensal** = (`Total de Ago` / `horas ativas`) x `730` hrs/mês (_período padrão da AWS_).
 - **Estimativa de imposto não é por hora** - A taxa é cobrada uma única vez por cobrança de fatura, não um custo contínuo. Esse valor depende do custo total no fechamento do mês.
+
+| [⬆️ Top](#august-2026---estimativas-de-custo-para-a-solidarytech) |
+| --- |

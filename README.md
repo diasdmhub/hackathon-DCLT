@@ -1,4 +1,4 @@
-w# FIAP - Projeto da Fase 5 - "Hackathon" SolidaryTech
+# FIAP - Projeto da Fase 5 - "Hackathon" SolidaryTech
 
 > Análise geral e implementação comentada do "hackathon" da Fase 5 do curso DevOps e Arquitetura Cloud da FIAP.
 
