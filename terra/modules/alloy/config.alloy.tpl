@@ -115,24 +115,23 @@ otelcol.exporter.otlp "tempo" {
 // Segunda via de exportação dos mesmos traces, para o Grafana Cloud (SaaS
 // externo à AWS) - mesmo motivo do loki.write.grafanacloud acima: o Tempo
 // local não é replicado entre regiões. A senha vem de um Secret montado,
-// nunca deste ConfigMap - mas, diferente do loki.write acima,
-// otelcol.auth.basic.client_auth.password_file não é repassado pela
-// extensão basicauth do OTel Collector nesta versão do Alloy (falha com
-// "no credential source provided" mesmo com o arquivo presente e a flag
-// documentada - ver github.com/grafana/alloy issue #4056). Contorno: ler o
-// arquivo via local.file (is_secret = true, então o valor nunca aparece em
-// logs/debug-UI) e passar o conteúdo já como tipo secret em
-// client_auth.password, que não tem essa limitação.
+// nunca deste ConfigMap - mas, diferente do loki.write acima, o bloco
+// client_auth de otelcol.auth.basic (com password OU password_file) falha
+// com "no credential source provided" nesta versão do Alloy (v1.19.2),
+// mesmo com um valor secret válido em client_auth.password - não é só o
+// password_file. Contorno: usar os argumentos de nível superior
+// (username/password direto no componente, sem client_auth), a forma mais
+// antiga do componente, ainda suportada. A senha vem de local.file
+// (is_secret = true, então o valor nunca aparece em logs/debug-UI), não em
+// texto puro neste ConfigMap.
 local.file "tempo_api_key" {
   filename  = "/etc/alloy-secrets/grafana-cloud/tempo-api-key"
   is_secret = true
 }
 
 otelcol.auth.basic "grafanacloud" {
-  client_auth {
-    username = "${grafana_cloud_tempo_username}"
-    password = local.file.tempo_api_key.content
-  }
+  username = "${grafana_cloud_tempo_username}"
+  password = local.file.tempo_api_key.content
 }
 
 otelcol.exporter.otlp "grafanacloud" {
