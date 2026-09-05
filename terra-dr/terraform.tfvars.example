@@ -51,8 +51,9 @@ observe_allowed_cidrs = ["CHANGE_ME"]
 # Grafana Private Datasource Connect (PDC) - grafana_pdc_token precisa ser
 # IGUAL ao valor real usado em terra/terraform.tfvars (mesma network).
 # Opcional: vazio (default) mantém o módulo desativado.
-# grafana_pdc_token   = ""
-# grafana_pdc_cluster = ""
+# grafana_pdc_token             = ""
+# grafana_pdc_cluster           = ""
+# grafana_pdc_hosted_grafana_id = ""
 
 # Failover DNS (Route53) - copie route53_zone_id do output route53_zone_id
 # de terra/ (só existe quando manage_dns = true por lá); dns_record_name

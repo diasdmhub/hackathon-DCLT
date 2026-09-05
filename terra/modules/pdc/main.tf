@@ -60,6 +60,7 @@ resource "kubernetes_deployment_v1" "pdc_agent" {
           args = [
             "-token=$(PDC_TOKEN)",
             "-cluster=${var.grafana_pdc_cluster}",
+            "-gcloud-hosted-grafana-id=${var.grafana_pdc_hosted_grafana_id}",
           ]
           resources {
             requests = {

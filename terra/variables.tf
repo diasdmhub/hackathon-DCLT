@@ -202,6 +202,15 @@ variable "grafana_pdc_cluster" {
   default     = ""
 }
 
+# Terceira credencial exigida pelo pdc-agent (junto com token/cluster) para
+# a requisição de assinatura do certificado SSH - sem ela, o agente falha
+# com "invalid credentials" mesmo com token e cluster corretos.
+variable "grafana_pdc_hosted_grafana_id" {
+  description = "ID numérico da instância Hosted Grafana, mostrado na tela de criação da network PDC no Grafana Cloud"
+  type        = string
+  default     = ""
+}
+
 # Variáveis de Disaster Recovery (ambiente ativo-passivo)
 #############################
 # Ver "Disaster Recovery" em terra/README.md para a estratégia completa e

@@ -18,3 +18,13 @@ variable "grafana_pdc_cluster" {
   description = "Nome do cluster PDC do stack Grafana Cloud (ex.: prod-sa-east-1, mesma região do endpoint de remote_write do Prometheus)"
   type        = string
 }
+
+# Terceira credencial exigida pelo pdc-agent na requisição de assinatura do
+# certificado SSH - sem ela, o serviço de assinatura não sabe a qual stack
+# Hosted Grafana associar o token e rejeita com "invalid credentials", mesmo
+# com token e cluster corretos (ver manifesto oficial do pdc-agent, que
+# passa -gcloud-hosted-grafana-id junto com -token/-cluster).
+variable "grafana_pdc_hosted_grafana_id" {
+  description = "ID numérico da instância Hosted Grafana, mostrado na tela de criação da network PDC no Grafana Cloud"
+  type        = string
+}

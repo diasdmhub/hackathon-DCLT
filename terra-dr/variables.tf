@@ -187,6 +187,12 @@ variable "grafana_pdc_cluster" {
   default     = ""
 }
 
+variable "grafana_pdc_hosted_grafana_id" {
+  description = "ID numérico da instância Hosted Grafana - IGUAL ao usado em terra/terraform.tfvars"
+  type        = string
+  default     = ""
+}
+
 # Variáveis de failover DNS (Route53) - ver "Disaster Recovery" em
 # terra/README.md
 #############################

@@ -279,9 +279,10 @@ module "pdc" {
   source = "./modules/pdc"
   count  = var.grafana_pdc_token != "" ? 1 : 0
 
-  namespace           = kubernetes_namespace_v1.observe.metadata[0].name
-  grafana_pdc_token   = var.grafana_pdc_token
-  grafana_pdc_cluster = var.grafana_pdc_cluster
+  namespace                     = kubernetes_namespace_v1.observe.metadata[0].name
+  grafana_pdc_token             = var.grafana_pdc_token
+  grafana_pdc_cluster           = var.grafana_pdc_cluster
+  grafana_pdc_hosted_grafana_id = var.grafana_pdc_hosted_grafana_id
 
   depends_on = [kubernetes_namespace_v1.observe]
 }

@@ -245,10 +245,21 @@ pelo container via variável de ambiente e expandido na flag `-token` pelo
 próprio Kubernetes (sintaxe `$(PDC_TOKEN)`, não interpolação Terraform) -
 nunca aparece em ConfigMap nem em texto puro no manifesto do Deployment.
 
-**Mesmo token nos dois ambientes**: `grafana_pdc_token`/`grafana_pdc_cluster`
-precisam ter o **mesmo valor** em `terra/terraform.tfvars` e
-`terra-dr/terraform.tfvars` (mesmo cuidado já dado a `db_password`, ver
-"Disaster Recovery" abaixo). Como os dois ambientes reaplicam os mesmos
+**Três credenciais, não duas**: além de `-token` e `-cluster`, o pdc-agent
+exige `-gcloud-hosted-grafana-id` (`var.grafana_pdc_hosted_grafana_id`) na
+requisição de assinatura do certificado SSH. Sem ela, o agente falha no
+startup com `key signing request failed: invalid credentials` mesmo com
+token e cluster corretos - o serviço de assinatura do Grafana Cloud não
+consegue determinar a qual instância Hosted Grafana associar o token. Esse
+ID (numérico) fica na mesma tela de criação da network PDC de onde o token
+é copiado; diferente do token, não é sensível, então vai direto na flag via
+interpolação Terraform, sem passar por Secret (ver `grafana_pdc_cluster`,
+mesmo padrão).
+
+**Mesmo token nos dois ambientes**: `grafana_pdc_token`/`grafana_pdc_cluster`/
+`grafana_pdc_hosted_grafana_id` precisam ter o **mesmo valor** em
+`terra/terraform.tfvars` e `terra-dr/terraform.tfvars` (mesmo cuidado já
+dado a `db_password`, ver "Disaster Recovery" abaixo). Como os dois ambientes reaplicam os mesmos
 nomes de `Service`/namespace, o nome DNS interno do datasource não muda
 entre ativo e passivo; se o agente do ambiente novo se conectar à mesma
 network PDC, o Grafana Cloud não distingue qual cluster físico está do
