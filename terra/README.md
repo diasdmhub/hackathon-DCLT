@@ -202,13 +202,20 @@ variáveis opcionais (`grafana_cloud_remote_write_url`,
 `grafana_cloud_username`, `grafana_cloud_api_key`, esta última sensível) e,
 quando a URL está preenchida, `prometheus.yml.tpl` (agora um template,
 renderizado via `templatefile()` em `main.tf`) adiciona um bloco
-`remote_write` restrito, via `write_relabel_configs`, apenas às séries
-`traces_spanmetrics_*` usadas pelos painéis de golden metrics/SLI - não a
-base inteira do Prometheus, que já tem proteção equivalente por outros
-meios (kube-state-metrics/node-exporter refletem o estado do cluster atual,
-sem valor histórico após uma recriação; métricas de negócio já são
-recalculadas ao vivo do RDS/DynamoDB, ver seção anterior). A API key não
-entra no ConfigMap: fica só num `kubernetes_secret_v1` dedicado
+`remote_write` sem `write_relabel_configs`, ou seja, envia **todas** as
+séries deste Prometheus (golden metrics/SLI do Tempo, kube-state-metrics,
+node-exporter, kubelet-resource e métricas de negócio) para o Grafana
+Cloud, não só `traces_spanmetrics_*`. Isso era filtrado antes (só golden
+metrics/SLI), sob o argumento de que o resto já tinha proteção equivalente
+por outros meios - mas isso deixava os demais painéis
+(`dashboard-solidarytech-infra.json`, `dashboard-solidarytech.json`) sem
+dados no Grafana externo, já que essas séries nunca chegavam lá. Sem um
+filtro adicional a manter: o scrape em si já é enxuto por design
+(collectors do kube-state-metrics restritos, `kubelet-resource` só no
+endpoint de resumo, ver seção anterior), então não há série "supérflua" a
+excluir - único ponto de atenção é o limite de active series do plano do
+Grafana Cloud, caso o cluster cresça bastante. A API key não entra no
+ConfigMap: fica só num `kubernetes_secret_v1` dedicado
 (`prometheus-grafana-cloud`), montado no pod e referenciado via
 `password_file`, no mesmo espírito de `terra/modules/secrets` (segredo fora
 do Flux/git, mas nunca em texto puro num objeto sem esse propósito). As 3

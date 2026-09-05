@@ -100,25 +100,26 @@ scrape_configs:
         replacement: /api/v1/nodes/$${1}/proxy/metrics/resource
 %{ if grafana_cloud_remote_write_url != "" ~}
 
-# Envio contínuo das séries de golden metrics/SLI (traces_spanmetrics_*,
-# geradas pelo metrics-generator do Tempo) para o Grafana Cloud (SaaS
-# externo à AWS, fora do raio de um desastre regional) - o TSDB local (PVC
-# gp3, 35d de retenção) não é replicado entre regiões, então sem isso o
-# histórico de SLO (janelas fixas de 30d,
-# ver doc/grafana/dashboard-solidarytech-golden-metrics.json) reseta a cada
-# ativação de terra-dr/. A senha vem de um Secret montado (password_file),
-# nunca deste ConfigMap - ver kubernetes_secret_v1.prometheus_grafana_cloud
-# em main.tf. Credenciais em si ficam só em terraform.tfvars (gitignored).
+# Envio contínuo de TODAS as séries deste Prometheus (golden metrics/SLI do
+# Tempo, kube-state-metrics, node-exporter, kubelet-resource e métricas de
+# negócio) para o Grafana Cloud (SaaS externo à AWS, fora do raio de um
+# desastre regional) - o TSDB local (PVC gp3, 35d de retenção) não é
+# replicado entre regiões, então sem isso os demais painéis
+# (dashboard-solidarytech-infra.json, dashboard-solidarytech.json) ficam sem
+# dados no Grafana externo (só o de golden metrics/SLI tinha remote_write) e
+# o histórico de SLO (janela fixa de 30d, ver
+# doc/grafana/dashboard-solidarytech-golden-metrics.json) reseta a cada
+# ativação de terra-dr/. Sem write_relabel_configs restritivo: o scrape em
+# si já é enxuto por design (collectors do kube-state-metrics limitados,
+# ver helm.tf; kubelet-resource só o endpoint de resumo), então não sobra
+# filtro adicional a fazer aqui - único ponto de atenção é o limite de
+# active series do plano do Grafana Cloud, caso o cluster cresça bastante. A
+# senha vem de um Secret montado (password_file), nunca deste ConfigMap -
+# ver kubernetes_secret_v1.prometheus_grafana_cloud em main.tf. Credenciais
+# em si ficam só em terraform.tfvars (gitignored).
 remote_write:
   - url: ${grafana_cloud_remote_write_url}
     basic_auth:
       username: "${grafana_cloud_username}"
       password_file: /etc/prometheus-secrets/grafana-cloud/api-key
-    write_relabel_configs:
-      # Só as séries usadas pelos painéis de golden metrics/SLO - não a base
-      # inteira do Prometheus (kube-state-metrics, node-exporter, métricas de
-      # negócio já protegidas via RDS/DynamoDB, ver doc/plano-continuidade-negocios.md).
-      - source_labels: [__name__]
-        regex: "traces_spanmetrics_(calls_total|latency_bucket|latency_sum|latency_count)"
-        action: keep
 %{ endif ~}
