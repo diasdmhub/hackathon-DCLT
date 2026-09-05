@@ -48,6 +48,12 @@ flux_chart_version = "2.19.0"
 # formato aceito: CIDR, IP solto ou domínio)
 observe_allowed_cidrs = ["CHANGE_ME"]
 
+# Grafana Private Datasource Connect (PDC) - grafana_pdc_token precisa ser
+# IGUAL ao valor real usado em terra/terraform.tfvars (mesma network).
+# Opcional: vazio (default) mantém o módulo desativado.
+# grafana_pdc_token   = ""
+# grafana_pdc_cluster = ""
+
 # Failover DNS (Route53) - copie route53_zone_id do output route53_zone_id
 # de terra/ (só existe quando manage_dns = true por lá); dns_record_name
 # precisa ser IGUAL ao usado em terra/terraform.tfvars.

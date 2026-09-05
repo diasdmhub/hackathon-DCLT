@@ -169,6 +169,24 @@ variable "observe_allowed_cidrs" {
   type        = list(string)
 }
 
+# Grafana Private Datasource Connect (PDC) - grafana_pdc_token precisa ser
+# IGUAL ao valor real de terra/terraform.tfvars (mesma network), para o
+# agente deste ambiente assumir o túnel sem o datasource no Grafana Cloud
+# precisar ser reapontado na ativação do DR. Ver terra/modules/pdc e
+# "Disaster Recovery" em terra/README.md.
+variable "grafana_pdc_token" {
+  description = "Token da network de Private Datasource Connect (PDC) do Grafana Cloud - IGUAL ao usado em terra/terraform.tfvars. Vazio desativa o módulo."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "grafana_pdc_cluster" {
+  description = "Nome do cluster PDC do stack Grafana Cloud (ex.: prod-sa-east-1) - IGUAL ao usado em terra/terraform.tfvars"
+  type        = string
+  default     = ""
+}
+
 # Variáveis de failover DNS (Route53) - ver "Disaster Recovery" em
 # terra/README.md
 #############################

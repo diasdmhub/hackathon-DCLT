@@ -60,6 +60,13 @@ observe_allowed_cidrs = ["CHANGE_ME"]
 # grafana_cloud_username         = "" # Instance ID do stack Grafana Cloud
 # grafana_cloud_api_key          = "" # API key com permissão de escrita (MetricsPublisher)
 
+# Grafana Private Datasource Connect (PDC) - permite o Grafana Cloud
+# consultar Loki/Tempo/Prometheus sem expô-los via NLB. Opcional, mesmo
+# esquema acima (vazio = desativado). Se preencher, o MESMO valor de
+# grafana_pdc_token deve ir também em terra-dr/terraform.tfvars.
+# grafana_pdc_token   = "" # token da network PDC, gerado no Grafana Cloud
+# grafana_pdc_cluster = "" # ex.: prod-sa-east-1
+
 # Disaster Recovery (ambiente ativo-passivo) - ver "Disaster Recovery" em
 # terra/README.md e o runbook em terra-dr/README.md. enable_dr/manage_dns
 # ligados por padrão aqui: a camada de proteção contínua de dados

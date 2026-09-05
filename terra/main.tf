@@ -273,6 +273,19 @@ module "prometheus" {
   depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
 }
 
+# Só sobe com um token configurado (ver variables.tf) - sem isso, seria um
+# pod tentando autenticar com credencial vazia, sem nenhum uso real.
+module "pdc" {
+  source = "./modules/pdc"
+  count  = var.grafana_pdc_token != "" ? 1 : 0
+
+  namespace           = kubernetes_namespace_v1.observe.metadata[0].name
+  grafana_pdc_token   = var.grafana_pdc_token
+  grafana_pdc_cluster = var.grafana_pdc_cluster
+
+  depends_on = [kubernetes_namespace_v1.observe]
+}
+
 # Alloy só depende do namespace (sem TargetGroupBinding - ver
 # terra/modules/alloy).
 module "alloy" {

@@ -67,8 +67,12 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `grafana_cloud_remote_write_url` | Endpoint remote_write do Grafana Cloud Prometheus (opcional - vazio desativa o envio) | _(vazio)_ |
 | `grafana_cloud_username` | Instance ID do stack Grafana Cloud (opcional) | _(vazio)_ |
 | `grafana_cloud_api_key` | API key do Grafana Cloud com permissão de escrita em métricas (opcional, sensível) | _(vazio)_ |
+| `grafana_pdc_token` | Token da network de Private Datasource Connect do Grafana Cloud (opcional, sensível - vazio desativa o módulo) | _(vazio)_ |
+| `grafana_pdc_cluster` | Nome do cluster PDC do stack Grafana Cloud, ex.: `prod-sa-east-1` (opcional) | _(vazio)_ |
 
 > As 3 variáveis de Grafana Cloud são opcionais: servem só para o Prometheus enviar (via `remote_write`) as séries de golden metrics/SLI para fora do cluster, já que o histórico local (PVC) não é replicado para o ambiente passivo (`terra-dr/`). Ver "Remote_write para o Grafana Cloud" em `terra/README.md`.
+
+> As 2 variáveis de PDC também são opcionais: permitem o Grafana Cloud consultar Loki/Tempo/Prometheus deste cluster sem expô-los publicamente pela NLB (conexão de saída, não CIDR de entrada). Ver "Grafana Private Datasource Connect (PDC)" em `terra/README.md`.
 
 <BR>
 
@@ -146,10 +150,11 @@ cp terraform.tfvars.example terraform.tfvars
 
 A maioria das variáveis é de configuração estática, sem nenhuma consulta ao ambiente ativo. Elas também são similares às variáveis do passo 1. Preencha elas com os mesmos valores (ou equivalentes) do `terra/terraform.tfvars` já usado no passo 2.
 
-Duas variáveis merecem atenção:
+Três variáveis merecem atenção:
 
 - **`db_password`**: precisa ser **IGUAL** à senha real do ambiente ativo, mas não de consulta ao parâmetro SSM criado por `module.secrets`.
 - **`route53_zone_id`**: copie este valor direto do `terra/` (_Route53 é um serviço global da AWS, e o valor está pronto no ambiente ativo_): `terraform output -raw route53_zone_id`
+- **`grafana_pdc_token`** (se estiver usando PDC, ver seção 1): precisa ser **IGUAL** ao valor real de `terra/terraform.tfvars` (mesma network), para o agente do ambiente passivo assumir o túnel sem reconfigurar o datasource no Grafana Cloud na ativação do DR.
 
 O único dado que **não** dá para preencher com antecedência é `rds_restore_source_arn`, pois ele identifica o backup mais recente no momento exato da ativação. No arquivo `.example` ele está comentado.
 

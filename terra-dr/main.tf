@@ -245,6 +245,17 @@ module "prometheus" {
   depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
 }
 
+module "pdc" {
+  source = "../terra/modules/pdc"
+  count  = var.grafana_pdc_token != "" ? 1 : 0
+
+  namespace           = kubernetes_namespace_v1.observe.metadata[0].name
+  grafana_pdc_token   = var.grafana_pdc_token
+  grafana_pdc_cluster = var.grafana_pdc_cluster
+
+  depends_on = [kubernetes_namespace_v1.observe]
+}
+
 module "alloy" {
   source = "../terra/modules/alloy"
 

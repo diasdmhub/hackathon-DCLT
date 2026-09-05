@@ -217,6 +217,58 @@ variáveis ficam só em `terraform.tfvars` (gitignored); URL/username vazios
 funcionando sem alteração, já que hoje não passa essas variáveis ao
 `module.prometheus`.
 
+### Grafana Private Datasource Connect (PDC)
+
+`remote_write` acima é uma via de saída (o cluster empurra métricas para o
+Grafana Cloud). O caminho inverso, o Grafana Cloud consultando Loki/Tempo/
+Prometheus deste cluster como datasources, hoje depende de expor a NLB
+publicamente e restringir por IP (`observe_allowed_cidrs`), o que não
+funciona bem para o Grafana Cloud: seu tráfego de consulta sai de
+infraestrutura compartilhada, sem um bloco de IP pequeno e estável para
+allowlist.
+
+`terra/modules/pdc` resolve isso com o agente oficial do Grafana Private
+Datasource Connect (`grafana/pdc-agent`, `kubernetes_deployment_v1` único,
+sem PVC): ele abre uma conexão de **saída** (HTTPS) para o Grafana Cloud,
+viabilizada pela NAT Gateway já existente (`terra/modules/vpc`), sem
+precisar de nenhuma porta de entrada. Do lado do Grafana Cloud, o
+datasource passa a apontar para o nome DNS interno do `Service`
+(`http://loki.observe.svc.cluster.local:3100` etc.), não mais para o DNS
+público da NLB, e a rota efetiva (qual cluster responde) é escolhida pela
+"network" PDC selecionada no datasource, não pela URL.
+
+O módulo é opcional (`count` em `terra/main.tf`, controlado por
+`var.grafana_pdc_token != ""`): sem token configurado, nenhum pod sobe, em
+vez de rodar em loop de erro tentando autenticar com credencial vazia. O
+token fica só num `kubernetes_secret_v1` dedicado (`pdc-agent-token`), lido
+pelo container via variável de ambiente e expandido na flag `-token` pelo
+próprio Kubernetes (sintaxe `$(PDC_TOKEN)`, não interpolação Terraform) -
+nunca aparece em ConfigMap nem em texto puro no manifesto do Deployment.
+
+**Mesmo token nos dois ambientes**: `grafana_pdc_token`/`grafana_pdc_cluster`
+precisam ter o **mesmo valor** em `terra/terraform.tfvars` e
+`terra-dr/terraform.tfvars` (mesmo cuidado já dado a `db_password`, ver
+"Disaster Recovery" abaixo). Como os dois ambientes reaplicam os mesmos
+nomes de `Service`/namespace, o nome DNS interno do datasource não muda
+entre ativo e passivo; se o agente do ambiente novo se conectar à mesma
+network PDC, o Grafana Cloud não distingue qual cluster físico está do
+outro lado do túnel, e o datasource continua funcionando sem qualquer
+reconfiguração manual na ativação do DR. Isso não foi validado por um
+simulado real (mesma ressalva já feita a RTO/RPO em
+`doc/plano-continuidade-negocios.md`).
+
+Uma vez validado que o PDC funciona como único caminho de consulta, a
+exposição via NLB de Loki/Tempo/Prometheus (`TargetGroupBinding`s, os
+listeners 3100/3200/9090 em `terra/modules/nlb` e a regra de Security Group
+`observe_ingress`) deixa de ser necessária e pode ser removida, desde que
+nenhum outro Grafana externo continue consultando esses backends
+diretamente pela NLB - isso não foi feito ainda, é um passo separado.
+
+> **Verifique as flags exatas do `pdc-agent`** (`-token`/`-cluster`) na tela
+> de criação da network PDC no seu Grafana Cloud antes do primeiro `apply`:
+> o comando gerado ali é específico da sua conta/versão do agente, e pode
+> divergir do que está codificado em `terra/modules/pdc/main.tf`.
+
 ## FluxCD via Terraform
 
 Diferente da observabilidade acima (movida para o Terraform porque o Flux
