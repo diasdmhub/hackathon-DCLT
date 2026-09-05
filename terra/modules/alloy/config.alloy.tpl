@@ -114,12 +114,24 @@ otelcol.exporter.otlp "tempo" {
 
 // Segunda via de exportação dos mesmos traces, para o Grafana Cloud (SaaS
 // externo à AWS) - mesmo motivo do loki.write.grafanacloud acima: o Tempo
-// local não é replicado entre regiões. A senha vem de um Secret montado
-// (password_file), nunca deste ConfigMap.
+// local não é replicado entre regiões. A senha vem de um Secret montado,
+// nunca deste ConfigMap - mas, diferente do loki.write acima,
+// otelcol.auth.basic.client_auth.password_file não é repassado pela
+// extensão basicauth do OTel Collector nesta versão do Alloy (falha com
+// "no credential source provided" mesmo com o arquivo presente e a flag
+// documentada - ver github.com/grafana/alloy issue #4056). Contorno: ler o
+// arquivo via local.file (is_secret = true, então o valor nunca aparece em
+// logs/debug-UI) e passar o conteúdo já como tipo secret em
+// client_auth.password, que não tem essa limitação.
+local.file "tempo_api_key" {
+  filename  = "/etc/alloy-secrets/grafana-cloud/tempo-api-key"
+  is_secret = true
+}
+
 otelcol.auth.basic "grafanacloud" {
   client_auth {
-    username      = "${grafana_cloud_tempo_username}"
-    password_file = "/etc/alloy-secrets/grafana-cloud/tempo-api-key"
+    username = "${grafana_cloud_tempo_username}"
+    password = local.file.tempo_api_key.content
   }
 }
 
