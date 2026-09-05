@@ -180,6 +180,50 @@ variable "grafana_cloud_api_key" {
   default     = ""
 }
 
+# Segunda via de escrita dos logs (loki.write, no Alloy) para o Grafana
+# Cloud, além do Loki local - mesmo motivo de grafana_cloud_remote_write_url
+# acima: sobreviver a uma migração para terra-dr/. Opcional: url vazia
+# desativa por completo (ver terra/modules/alloy/config.alloy.tpl).
+variable "grafana_cloud_loki_url" {
+  description = "Endpoint loki.write do Grafana Cloud (ex.: https://logs-prod-024.grafana.net/loki/api/v1/push) - DEFINA NO terraform.tfvars. Vazio desativa o envio."
+  type        = string
+  default     = ""
+}
+
+variable "grafana_cloud_loki_username" {
+  description = "Instance ID do stack de Logs do Grafana Cloud, usado como usuário no basic_auth do loki.write"
+  type        = string
+  default     = ""
+}
+
+variable "grafana_cloud_loki_api_key" {
+  description = "API key do Grafana Cloud com permissão de escrita em Logs - DEFINA NO terraform.tfvars, nunca versionado"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+# Segunda via de exportação dos traces (otelcol.exporter.otlp, no Alloy)
+# para o Grafana Cloud, além do Tempo local - mesmo motivo acima.
+variable "grafana_cloud_tempo_endpoint" {
+  description = "Endpoint gRPC OTLP do Grafana Cloud Tempo (ex.: tempo-prod-17-prod-sa-east-1.grafana.net:443) - DEFINA NO terraform.tfvars. Vazio desativa o envio."
+  type        = string
+  default     = ""
+}
+
+variable "grafana_cloud_tempo_username" {
+  description = "Instance ID do stack de Traces (Tempo) do Grafana Cloud, usado como usuário no otelcol.auth.basic"
+  type        = string
+  default     = ""
+}
+
+variable "grafana_cloud_tempo_api_key" {
+  description = "API key do Grafana Cloud com permissão de escrita em Traces - DEFINA NO terraform.tfvars, nunca versionado"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 # Grafana Private Datasource Connect (PDC) - permite o Grafana Cloud
 # consultar Loki/Tempo/Prometheus deste cluster sem expô-los publicamente
 # via NLB (túnel de saída, não CIDR de entrada). Opcional: token vazio

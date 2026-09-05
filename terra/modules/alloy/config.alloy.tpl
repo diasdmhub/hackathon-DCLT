@@ -43,7 +43,7 @@ loki.source.file "pods" {
 }
 
 loki.process "pods" {
-  forward_to = [loki.write.default.receiver]
+  forward_to = [loki.write.default.receiver%{ if grafana_cloud_loki_url != "" }, loki.write.grafanacloud.receiver%{ endif }]
 
   stage.cri {}
 
@@ -61,6 +61,25 @@ loki.write "default" {
     url = "http://loki.observe.svc.cluster.local:3100/loki/api/v1/push"
   }
 }
+%{ if grafana_cloud_loki_url != "" ~}
+
+// Segunda via de escrita dos mesmos logs, para o Grafana Cloud (SaaS
+// externo à AWS, fora do raio de um desastre regional) - o Loki local (PVC
+// local-path/gp3) não é replicado entre regiões, então sem isso o
+// histórico de logs some numa ativação de terra-dr/. A senha vem de um
+// Secret montado (password_file), nunca deste ConfigMap - ver
+// kubernetes_secret_v1.alloy_grafana_cloud em main.tf.
+loki.write "grafanacloud" {
+  endpoint {
+    url = "${grafana_cloud_loki_url}"
+
+    basic_auth {
+      username      = "${grafana_cloud_loki_username}"
+      password_file = "/etc/alloy-secrets/grafana-cloud/loki-api-key"
+    }
+  }
+}
+%{ endif ~}
 
 // Recebe traces OTLP dos microserviços e os roteia ao Tempo.
 // O Alloy é o único ponto de entrada de telemetria do cluster:
@@ -79,7 +98,7 @@ otelcol.receiver.otlp "default" {
 
 otelcol.processor.batch "default" {
   output {
-    traces = [otelcol.exporter.otlp.tempo.input]
+    traces = [otelcol.exporter.otlp.tempo.input%{ if grafana_cloud_tempo_endpoint != "" }, otelcol.exporter.otlp.grafanacloud.input%{ endif }]
   }
 }
 
@@ -91,3 +110,23 @@ otelcol.exporter.otlp "tempo" {
     }
   }
 }
+%{ if grafana_cloud_tempo_endpoint != "" ~}
+
+// Segunda via de exportação dos mesmos traces, para o Grafana Cloud (SaaS
+// externo à AWS) - mesmo motivo do loki.write.grafanacloud acima: o Tempo
+// local não é replicado entre regiões. A senha vem de um Secret montado
+// (password_file), nunca deste ConfigMap.
+otelcol.auth.basic "grafanacloud" {
+  client_auth {
+    username      = "${grafana_cloud_tempo_username}"
+    password_file = "/etc/alloy-secrets/grafana-cloud/tempo-api-key"
+  }
+}
+
+otelcol.exporter.otlp "grafanacloud" {
+  client {
+    endpoint = "${grafana_cloud_tempo_endpoint}"
+    auth     = otelcol.auth.basic.grafanacloud.handler
+  }
+}
+%{ endif ~}

@@ -292,7 +292,13 @@ module "pdc" {
 module "alloy" {
   source = "./modules/alloy"
 
-  namespace = kubernetes_namespace_v1.observe.metadata[0].name
+  namespace                    = kubernetes_namespace_v1.observe.metadata[0].name
+  grafana_cloud_loki_url       = var.grafana_cloud_loki_url
+  grafana_cloud_loki_username  = var.grafana_cloud_loki_username
+  grafana_cloud_loki_api_key   = var.grafana_cloud_loki_api_key
+  grafana_cloud_tempo_endpoint = var.grafana_cloud_tempo_endpoint
+  grafana_cloud_tempo_username = var.grafana_cloud_tempo_username
+  grafana_cloud_tempo_api_key  = var.grafana_cloud_tempo_api_key
 
   depends_on = [kubernetes_namespace_v1.observe]
 }

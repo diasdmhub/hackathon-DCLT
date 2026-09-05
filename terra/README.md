@@ -224,6 +224,48 @@ variáveis ficam só em `terraform.tfvars` (gitignored); URL/username vazios
 funcionando sem alteração, já que hoje não passa essas variáveis ao
 `module.prometheus`.
 
+### Logs e traces para o Grafana Cloud (via Alloy)
+
+Mesmo raciocínio da seção anterior, aplicado às outras duas pernas da
+telemetria: o Loki e o Tempo locais (PVCs `local-path`/`gp3`) também não são
+replicados entre regiões, e o Alloy (`terra/modules/alloy`, o ponto único de
+entrada de logs+traces do cluster - ver CLAUDE.md) já é o lugar natural para
+adicionar uma segunda via de saída, em vez de reconfigurar Loki/Tempo em si.
+
+`terra/modules/alloy/config.alloy.tpl` (também um template, mesmo mecanismo
+`templatefile()`/`checksum-config` de `terra/modules/prometheus`) ganha,
+condicionado a 6 variáveis opcionais (3 para Logs, 3 para Traces, mesmo
+padrão de nomes de `grafana_cloud_remote_write_url`/`_username`/`_api_key`):
+
+- um segundo `loki.write "grafanacloud"`, adicionado ao `forward_to` de
+  `loki.process "pods"` junto do `loki.write "default"` já existente - os
+  mesmos logs (já processados pelo `stage.cri`/`stage.drop`) seguem para as
+  duas vias, não há duplicação de configuração de parsing;
+- um segundo `otelcol.exporter.otlp "grafanacloud"` (mais o componente
+  `otelcol.auth.basic "grafanacloud"` que ele referencia via
+  `auth = otelcol.auth.basic.grafanacloud.handler`), adicionado ao
+  `output.traces` de `otelcol.processor.batch "default"` junto do
+  `otelcol.exporter.otlp "tempo"` já existente.
+
+Nos dois casos a senha (API key) usa `password_file`, nunca o argumento
+`password` direto no River - o valor vem de um `kubernetes_secret_v1`
+dedicado (`alloy-grafana-cloud`, com as chaves `loki-api-key`/
+`tempo-api-key`), montado no pod em `/etc/alloy-secrets/grafana-cloud/`,
+mesmo padrão de `kubernetes_secret_v1.prometheus_grafana_cloud`. Diferente
+do Prometheus, aqui **não** há `write_relabel_configs`/filtro equivalente
+para restringir o que é enviado: um DaemonSet de logs não tem como filtrar
+"logs supérfluos" da mesma forma que uma série de métrica, e os traces já
+são a fonte usada tanto pelos painéis locais quanto pelos golden
+metrics/SLI (a amostragem, se algum dia for necessária por custo, entraria
+como `otelcol.processor.probabilistic_sampler` antes do
+`otelcol.processor.batch`, não implementado hoje).
+
+URL/endpoint vazios (default) desativam cada via independentemente - dá
+para habilitar só Logs, só Traces, ou os dois. Como em Prometheus, as 6
+variáveis ficam só em `terraform.tfvars` (gitignored) e `terra-dr/` não as
+recebe hoje (mesmo raciocínio: `module.alloy` em `terra-dr/main.tf` não
+passa essas variáveis).
+
 ### Grafana Private Datasource Connect (PDC)
 
 `remote_write` acima é uma via de saída (o cluster empurra métricas para o

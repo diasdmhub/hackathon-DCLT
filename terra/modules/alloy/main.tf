@@ -43,6 +43,17 @@ resource "kubernetes_cluster_role_binding_v1" "alloy" {
   }
 }
 
+locals {
+  # Renderizado uma vez e reaproveitado no checksum/config abaixo - mesmo
+  # padrão de terra/modules/prometheus/main.tf.
+  alloy_config_rendered = templatefile("${path.module}/config.alloy.tpl", {
+    grafana_cloud_loki_url       = var.grafana_cloud_loki_url
+    grafana_cloud_loki_username  = var.grafana_cloud_loki_username
+    grafana_cloud_tempo_endpoint = var.grafana_cloud_tempo_endpoint
+    grafana_cloud_tempo_username = var.grafana_cloud_tempo_username
+  })
+}
+
 resource "kubernetes_config_map_v1" "alloy_config" {
   metadata {
     name      = "alloy-config"
@@ -50,7 +61,25 @@ resource "kubernetes_config_map_v1" "alloy_config" {
     labels    = local.labels
   }
   data = {
-    "config.alloy" = file("${path.module}/config.alloy")
+    "config.alloy" = local.alloy_config_rendered
+  }
+}
+
+# API keys do Grafana Cloud (Logs/Traces) num Secret dedicado, nunca no
+# ConfigMap acima - mesmo padrão de
+# kubernetes_secret_v1.prometheus_grafana_cloud em
+# terra/modules/prometheus/main.tf. Sempre criado (mesmo com as chaves
+# vazias, quando o envio ao Grafana Cloud está desativado) para manter o
+# volume/volume_mount abaixo incondicional.
+resource "kubernetes_secret_v1" "alloy_grafana_cloud" {
+  metadata {
+    name      = "alloy-grafana-cloud"
+    namespace = var.namespace
+    labels    = local.labels
+  }
+  data = {
+    "loki-api-key"  = var.grafana_cloud_loki_api_key
+    "tempo-api-key" = var.grafana_cloud_tempo_api_key
   }
 }
 
@@ -68,7 +97,7 @@ resource "kubernetes_daemon_set_v1" "alloy" {
       metadata {
         labels = merge(local.labels, { app = "alloy" })
         annotations = {
-          "checksum/config" = filesha256("${path.module}/config.alloy")
+          "checksum/config" = sha256(local.alloy_config_rendered)
         }
       }
       spec {
@@ -104,6 +133,11 @@ resource "kubernetes_daemon_set_v1" "alloy" {
           volume_mount {
             name       = "data"
             mount_path = "/var/lib/alloy/data"
+          }
+          volume_mount {
+            name       = "grafana-cloud-secret"
+            mount_path = "/etc/alloy-secrets/grafana-cloud"
+            read_only  = true
           }
           resources {
             requests = {
@@ -155,6 +189,12 @@ resource "kubernetes_daemon_set_v1" "alloy" {
           host_path {
             path = "/var/lib/alloy/data"
             type = "DirectoryOrCreate"
+          }
+        }
+        volume {
+          name = "grafana-cloud-secret"
+          secret {
+            secret_name = kubernetes_secret_v1.alloy_grafana_cloud.metadata[0].name
           }
         }
       }
