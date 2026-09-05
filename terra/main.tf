@@ -266,6 +266,10 @@ module "prometheus" {
   namespace        = kubernetes_namespace_v1.observe.metadata[0].name
   target_group_arn = module.nlb.observe_target_group_arns["prometheus"]
 
+  grafana_cloud_remote_write_url = var.grafana_cloud_remote_write_url
+  grafana_cloud_username         = var.grafana_cloud_username
+  grafana_cloud_api_key          = var.grafana_cloud_api_key
+
   depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
 }
 

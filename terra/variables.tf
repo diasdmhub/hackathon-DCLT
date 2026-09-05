@@ -155,6 +155,31 @@ variable "observe_allowed_cidrs" {
   type        = list(string)
 }
 
+# Grafana Cloud (remote_write de saída do Prometheus) - ver
+# "Métricas de negócio via Prometheus" e "Disaster Recovery" em
+# terra/README.md. Opcional: vazio desativa o remote_write. Sem default de
+# propósito para url/username (evita um envio silencioso mal configurado);
+# api_key tem default vazio só para não quebrar terra-dr/, que hoje não
+# passa essas variáveis ao module.prometheus.
+variable "grafana_cloud_remote_write_url" {
+  description = "Endpoint remote_write do Grafana Cloud Prometheus (ex.: https://prometheus-prod-NN-prod-REGIAO.grafana.net/api/prom/push) - vazio desativa o envio"
+  type        = string
+  default     = ""
+}
+
+variable "grafana_cloud_username" {
+  description = "Instance ID do stack Grafana Cloud (usuário no basic_auth do remote_write)"
+  type        = string
+  default     = ""
+}
+
+variable "grafana_cloud_api_key" {
+  description = "API key do Grafana Cloud com permissão de escrita em métricas (senha no basic_auth do remote_write) - DEFINA NO terraform.tfvars, nunca versionado"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 # Variáveis de Disaster Recovery (ambiente ativo-passivo)
 #############################
 # Ver "Disaster Recovery" em terra/README.md para a estratégia completa e

@@ -30,6 +30,16 @@ resource "kubernetes_persistent_volume_claim_v1" "prometheus_data" {
   wait_until_bound = false
 }
 
+locals {
+  # Renderizado uma vez e reaproveitado no checksum/config abaixo, para que
+  # o hash reflita o conteúdo final (incluindo o bloco remote_write
+  # condicional), não só os bytes estáticos do arquivo.
+  prometheus_config_rendered = templatefile("${path.module}/prometheus.yml.tpl", {
+    grafana_cloud_remote_write_url = var.grafana_cloud_remote_write_url
+    grafana_cloud_username         = var.grafana_cloud_username
+  })
+}
+
 resource "kubernetes_config_map_v1" "prometheus_config" {
   metadata {
     name      = "prometheus-config"
@@ -37,7 +47,23 @@ resource "kubernetes_config_map_v1" "prometheus_config" {
     labels    = local.labels
   }
   data = {
-    "prometheus.yml" = file("${path.module}/prometheus.yml")
+    "prometheus.yml" = local.prometheus_config_rendered
+  }
+}
+
+# API key do Grafana Cloud num Secret dedicado, nunca no ConfigMap acima -
+# mesmo padrão de terra/modules/secrets (ngo-env/donation-env/volunteer-env)
+# para não deixar segredo em texto puro num objeto sem esse propósito.
+# Sempre criado (mesmo com api_key vazia quando o remote_write está
+# desativado) para manter o volume/volume_mount abaixo incondicional.
+resource "kubernetes_secret_v1" "prometheus_grafana_cloud" {
+  metadata {
+    name      = "prometheus-grafana-cloud"
+    namespace = var.namespace
+    labels    = local.labels
+  }
+  data = {
+    "api-key" = var.grafana_cloud_api_key
   }
 }
 
@@ -59,7 +85,7 @@ resource "kubernetes_deployment_v1" "prometheus" {
       metadata {
         labels = merge(local.labels, { app = "prometheus" })
         annotations = {
-          "checksum/config" = filesha256("${path.module}/prometheus.yml")
+          "checksum/config" = sha256(local.prometheus_config_rendered)
         }
       }
       spec {
@@ -93,6 +119,11 @@ resource "kubernetes_deployment_v1" "prometheus" {
           volume_mount {
             name       = "data"
             mount_path = "/prometheus"
+          }
+          volume_mount {
+            name       = "grafana-cloud-secret"
+            mount_path = "/etc/prometheus-secrets/grafana-cloud"
+            read_only  = true
           }
           resources {
             requests = {
@@ -135,6 +166,12 @@ resource "kubernetes_deployment_v1" "prometheus" {
           name = "data"
           persistent_volume_claim {
             claim_name = kubernetes_persistent_volume_claim_v1.prometheus_data.metadata[0].name
+          }
+        }
+        volume {
+          name = "grafana-cloud-secret"
+          secret {
+            secret_name = kubernetes_secret_v1.prometheus_grafana_cloud.metadata[0].name
           }
         }
       }

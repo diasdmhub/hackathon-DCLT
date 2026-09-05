@@ -184,6 +184,39 @@ descobrem, via `kubernetes_sd_configs` no namespace `solidarytech`, o
 baseados em `count_over_time()` sobre o Loki, presos à retenção de 168h
 configurada em `terra/modules/loki/config.yaml`.
 
+### Remote_write para o Grafana Cloud (histórico de SLO sobrevivendo ao DR)
+
+O TSDB local do Prometheus (PVC `gp3`, retenção de 35d) não é replicado para
+`terra-dr/` - nenhum dos módulos de observabilidade está na lista de itens
+continuamente protegidos entre regiões (só RDS e DynamoDB estão, ver
+"Disaster Recovery" abaixo). Isso é especialmente grave para os painéis de
+SLO em `doc/grafana/dashboard-solidarytech-golden-metrics.json`, que usam
+uma janela fixa de 30d (`rate(...[30d])`) embutida na própria query: ao
+ativar `terra-dr/`, o Prometheus novo recalcula essa métrica com o pouco
+histórico que existir no momento (às vezes minutos), o que não é um gráfico
+vazio, e sim um número de SLO tecnicamente válido, mas sem lastro, o que
+apaga qualquer orçamento de erro consumido antes do desastre.
+
+Para preservar esse histórico, `terra/modules/prometheus` aceita 3
+variáveis opcionais (`grafana_cloud_remote_write_url`,
+`grafana_cloud_username`, `grafana_cloud_api_key`, esta última sensível) e,
+quando a URL está preenchida, `prometheus.yml.tpl` (agora um template,
+renderizado via `templatefile()` em `main.tf`) adiciona um bloco
+`remote_write` restrito, via `write_relabel_configs`, apenas às séries
+`traces_spanmetrics_*` usadas pelos painéis de golden metrics/SLI - não a
+base inteira do Prometheus, que já tem proteção equivalente por outros
+meios (kube-state-metrics/node-exporter refletem o estado do cluster atual,
+sem valor histórico após uma recriação; métricas de negócio já são
+recalculadas ao vivo do RDS/DynamoDB, ver seção anterior). A API key não
+entra no ConfigMap: fica só num `kubernetes_secret_v1` dedicado
+(`prometheus-grafana-cloud`), montado no pod e referenciado via
+`password_file`, no mesmo espírito de `terra/modules/secrets` (segredo fora
+do Flux/git, mas nunca em texto puro num objeto sem esse propósito). As 3
+variáveis ficam só em `terraform.tfvars` (gitignored); URL/username vazios
+(default) desativam o remote_write por completo, o que mantém `terra-dr/`
+funcionando sem alteração, já que hoje não passa essas variáveis ao
+`module.prometheus`.
+
 ## FluxCD via Terraform
 
 Diferente da observabilidade acima (movida para o Terraform porque o Flux
