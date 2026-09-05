@@ -335,14 +335,17 @@ O que fica sempre protegido, independente de ativação, custando pouco:
   `terra-dr/` não cria sua própria tabela, só referencia essa réplica pelo
   nome (idêntico em toda região de uma Global Table). Global Tables (v2)
   com billing `PROVISIONED` exige capacidade de escrita com auto scaling
-  configurado - sem isso, a própria API da AWS rejeita a criação da réplica
-  (`Table write capacity should either be Pay-Per-Request or AutoScaled`).
-  `terra/modules/dynamo/dynamo.tf` cobre isso com um
-  `aws_appautoscaling_target`/`policy` de `WriteCapacityUnits`, criado só
-  quando há réplica (`var.replica_regions`), com `ignore_changes` no
-  `write_capacity` do recurso principal para o Terraform não reverter o
-  valor ajustado pela policy a cada `apply` (mesmo problema já resolvido
-  para o HPA em `kube-aws/`, ver "Autoscaling (HPA)" acima).
+  já configurado no momento em que a réplica é criada - como a réplica é
+  declarada no mesmo recurso que cria a tabela (bloco `replica`), não há
+  como um `aws_appautoscaling_target` (que só pode existir depois da tabela
+  já criada) satisfazer essa exigência a tempo, num `terraform apply` só;
+  a AWS rejeita a criação com `Table write capacity should either be
+  Pay-Per-Request or AutoScaled`. `terra/modules/dynamo/dynamo.tf` evita o
+  problema trocando para `billing_mode = "PAY_PER_REQUEST"` quando há
+  réplica (`var.replica_regions`), que não exige capacidade pré-configurada;
+  sem DR, a tabela continua `PROVISIONED` 5/5 (dentro do *always-free
+  tier*) como antes. O custo de `PAY_PER_REQUEST` não entra nesse
+  *always-free tier*, mas é pequeno dado o volume deste ambiente.
 - **DNS/failover**: quando `manage_dns = true`, uma hosted zone Route53 +
   health check + registro `PRIMARY` (`aws_route53_record.primary`) são
   criados aqui, apontando para a NLB deste state; `terra-dr/` completa o par

@@ -20,27 +20,18 @@ variable "hash_key" {
 
 # PROVISIONED com 5/5 fica dentro do always-free tier do DynamoDB (25 RCU +
 # 25 WCU + 25GB de storage, sem limite de tempo, diferente do free tier de 12
-# meses de outros serviços). PAY_PER_REQUEST não entra nesse always-free.
+# meses de outros serviços). Ignorado quando há réplica (replica_regions):
+# nesse caso a tabela usa PAY_PER_REQUEST, ver comentário em dynamo.tf.
 variable "read_capacity" {
-  description = "Capacidade de leitura provisionada"
+  description = "Capacidade de leitura provisionada (ignorado quando há réplica)"
   type        = number
   default     = 5
 }
 
 variable "write_capacity" {
-  description = "Capacidade de escrita provisionada (também o mínimo do auto scaling, quando há réplica - ver write_capacity_max)"
+  description = "Capacidade de escrita provisionada (ignorado quando há réplica)"
   type        = number
   default     = 5
-}
-
-# Teto do auto scaling de WriteCapacityUnits, exigido pela AWS para Global
-# Tables (v2) com billing PROVISIONED - ver comentário em dynamo.tf. 10
-# mantém folga sobre os 5 WCU normais sem chegar perto do teto do always-free
-# tier (25 WCU/conta/região).
-variable "write_capacity_max" {
-  description = "Teto do auto scaling de capacidade de escrita (só usado quando há réplica, ver replica_regions)"
-  type        = number
-  default     = 10
 }
 
 # Variável de Disaster Recovery (ver "Disaster Recovery" em terra/README.md)
