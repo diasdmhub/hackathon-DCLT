@@ -18,11 +18,11 @@ nenhum módulo de registry (ECR) foi criado aqui.
 | `dynamo` | Tabela `SolidaryTechVolunteers`, PROVISIONED 5/5 | Dentro do always-free tier (25 RCU/25 WCU/25GB, sem prazo) |
 | `sqs` | Fila standard de eventos de doação | Always-free até 1M requisições/mês, sem prazo |
 | `iam` | Roles IRSA (donation-service → SQS, volunteer-service → DynamoDB) | Sem custo |
-| `nlb` | Network Load Balancer única (3 listeners/target groups por serviço + 3 para observabilidade) | Sem free tier - cobra por hora + LCU |
+| `nlb` | Network Load Balancer única (3 listeners/target groups, um por microsserviço) | Sem free tier - cobra por hora + LCU |
 | `lb-iam` | Role IRSA do AWS Load Balancer Controller (kube-system) | Sem custo |
 | `lb` | O AWS Load Balancer Controller em si (ServiceAccount + `helm_release`) | Sem custo AWS - só o compute já contado no node group |
 | `secrets` | Parâmetros SSM Parameter Store (`SecureString`/`String`) + Secrets Kubernetes `ngo-env`/`donation-env`/`volunteer-env` | Camada Standard do SSM é gratuita; Secrets Kubernetes sem custo |
-| `loki` / `tempo` / `prometheus` | Deployment + PVC (`gp3`) + Service + `TargetGroupBinding` cada, via recursos `kubernetes_*`/`kubectl_manifest`; `prometheus` também aplica kube-state-metrics + node-exporter via `helm_release` (ver "Métricas de cluster via Prometheus" abaixo) | Sem custo AWS além do já contado (node group, NLB, EBS) |
+| `loki` / `tempo` / `prometheus` | Deployment + PVC (`gp3`, retenção curta - só buffer operacional) + Service (`ClusterIP`, sem exposição externa) cada, via recursos `kubernetes_*`; `prometheus` também aplica kube-state-metrics + node-exporter via `helm_release` (ver "Métricas de cluster via Prometheus" abaixo) | Sem custo AWS além do já contado (node group, EBS) |
 | `alloy` | DaemonSet (coleta de logs + roteamento OTLP) via recursos `kubernetes_*` | Sem custo AWS além do já contado (node group) |
 | `flux` | Controladores do FluxCD (`helm_release`) + `GitRepository`/`Kustomization` `solidarytech` + Secret `irsa-role-arns`, via recursos `kubernetes_*`/`kubectl_manifest` (ver "FluxCD via Terraform" abaixo) | Sem custo AWS além do já contado (node group) |
 
@@ -34,35 +34,6 @@ grupo: continua puramente IAM (`aws_iam_role`/`aws_iam_role_policy`), como
 antes (só o nome mudou, de `lb-controller` para `lb-iam`, para não ser
 confundido com o módulo `lb`) - só o lado Kubernetes do AWS Load Balancer
 Controller (`lb`) é novo.
-
-### Resolução de domínio em `observe_allowed_cidrs`
-
-A regra de Security Group que libera Loki/Tempo/Prometheus (`terra/modules/{loki,tempo,prometheus}`)
-para o Grafana externo aceita, em `observe_allowed_cidrs`
-(`terra/terraform.tfvars`), um CIDR, um IP solto ou um nome de domínio -
-útil para quem consulta a partir de um IP dinâmico associado a um domínio
-DDNS. Domínios são resolvidos via DNS (provider `hashicorp/dns`,
-`terra/dns.tf`) a cada `terraform plan`/`apply` e viram um `/32` com o
-primeiro endereço retornado; como a resolução só acontece nesse momento, um
-IP que mude entre um apply e outro só é refletido na regra no próximo
-`terraform apply`.
-
-### Health check da NLB nas portas de observabilidade precisa do CIDR da VPC, não só de `observe_allowed_cidrs`
-
-`observe_allowed_cidrs` restringe quem de **fora** alcança Loki/Tempo/Prometheus,
-mas o **health check da própria NLB** não vem de fora - para targets
-`type = "ip"`, ele parte das ENIs da NLB nas subnets públicas
-(`var.public_subnet_ids`), com IP de origem dentro da VPC. Por isso
-`terra/modules/nlb/nlb.tf` tem duas regras de Security Group separadas
-nessas 3 portas: `observe_ingress` (`observe_allowed_cidrs`, o Grafana
-externo) e `observe_health_check_ingress` (`var.vpc_cidr`, só para o health
-check). Sem a segunda, o `TargetGroupBinding` reconcilia normalmente (o pod
-está registrado), mas `aws elbv2 describe-target-health` mostra
-`unhealthy`/`Target.FailedHealthChecks` porque a Security Group derruba o
-próprio probe da NLB - sintoma indistinguível de fora de "porta bloqueada",
-mas a causa é a falta dessa regra, não `observe_allowed_cidrs` estar errado.
-As 3 portas de aplicação (`nlb_ingress`) nunca tiveram esse problema porque
-já são `0.0.0.0/0`.
 
 ### Custos que não têm free tier
 
@@ -102,34 +73,35 @@ novos, ambos reaproveitando a mesma autenticação (endpoint/CA do EKS +
   `prometheus-community/kube-state-metrics` e
   `prometheus-community/prometheus-node-exporter`) e por `lb` (chart
   `aws-load-balancer-controller` do repositório `eks-charts`).
-- `kubectl` (`alekc/kubectl`): usado pelos módulos `loki`/`tempo`/`prometheus`
-  só para o recurso `TargetGroupBinding` (ver seção abaixo sobre por que não
-  `kubernetes_manifest`). Todo o resto
-  (Deployment, Service, PVC, ConfigMap, DaemonSet, RBAC, a ServiceAccount do
-  módulo `lb`) usa recursos `kubernetes_*` comuns do provider `kubernetes`
-  já existente.
+- `kubectl` (`alekc/kubectl`): usado pelo módulo `flux` para os recursos
+  `GitRepository`/`Kustomization` (ver seção abaixo sobre por que não
+  `kubernetes_manifest`). Todo o resto (Deployment, Service, PVC, ConfigMap,
+  DaemonSet, RBAC, a ServiceAccount do módulo `lb`) usa recursos
+  `kubernetes_*` comuns do provider `kubernetes` já existente.
 
 Nenhum CLI adicional (`helm`/`kubectl`/`flux`) é pré-requisito para rodar
 `terraform apply` em si - esses providers falam com a API do Kubernetes
 diretamente. `kubectl`/`helm` continuam úteis para inspecionar o cluster
 depois (ver `doc/roteiro-cluster-aws.md`).
 
-### Por que `TargetGroupBinding` usa `kubectl_manifest`, não `kubernetes_manifest`
+### Por que `kubectl_manifest` em vez de `kubernetes_manifest`
 
-O CRD `TargetGroupBinding`, usado pelos módulos `loki`/`tempo`/`prometheus`
-(e por `kube-aws/`, ainda no Flux), é instalado pelo módulo `lb` acima -
-mas dentro do mesmo `terraform apply`, `module.lb` só termina de aplicar
-*durante* esse mesmo `apply`, não antes dele começar. O provider
-`kubernetes` e seu recurso `kubernetes_manifest` validam o schema do CRD
-contra o cluster já no `terraform plan` (antes de qualquer recurso ser
-criado), o que quebraria numa primeira execução contra um cluster novo,
-onde o CRD ainda não existe nesse momento. `kubectl_manifest` (provider
-`kubectl`) não tem essa validação prévia - só valida no `apply`, quando o
-grafo de dependências do Terraform (`depends_on = [..., module.lb]` nos 3
-módulos, em `main.tf`) já garante que `module.lb` foi aplicado primeiro e o
-CRD já existe. Um único `terraform apply` já é suficiente - não é mais
-necessário rodar o Flux bootstrap antes ou reaplicar depois, diferente de
-quando o AWS Load Balancer Controller ainda vivia no Flux.
+`terra/modules/flux` usa `kubectl_manifest` (provider `kubectl`) para os CRDs
+`GitRepository`/`Kustomization`, instalados pelo `helm_release` do chart
+`flux2` dentro do mesmo módulo - mas dentro do mesmo `terraform apply`, esse
+`helm_release` só termina de aplicar *durante* esse mesmo apply, não antes
+dele começar. O provider `kubernetes` e seu recurso `kubernetes_manifest`
+validam o schema do CRD contra o cluster já no `terraform plan` (antes de
+qualquer recurso ser criado), o que quebraria numa primeira execução contra
+um cluster novo, onde o CRD ainda não existe nesse momento. `kubectl_manifest`
+não tem essa validação prévia - só valida no `apply`, quando o grafo de
+dependências do Terraform já garante que o `helm_release` foi aplicado
+primeiro e o CRD já existe. Um único `terraform apply` já é suficiente. (Os
+módulos `loki`/`tempo`/`prometheus` usavam esse mesmo mecanismo para o CRD
+`TargetGroupBinding`, antes de suas exposições via NLB serem removidas - ver
+"Logs e traces para o Grafana Cloud" abaixo; `kube-aws/` continua usando
+`TargetGroupBinding` para os 3 microsserviços, mas via YAML aplicado pelo
+Flux, não por este Terraform.)
 
 ### Métricas de cluster via Prometheus (substituindo o Zabbix)
 
@@ -181,12 +153,15 @@ descobrem, via `kubernetes_sd_configs` no namespace `solidarytech`, o
 `solidarytech_ngos_total`, `solidarytech_donations_total`/`_amount_sum`,
 `solidarytech_volunteers_total` -, calculado direto na fonte de dados
 (RDS/DynamoDB) a cada coleta. Substitui os antigos painéis Grafana "(total)"
-baseados em `count_over_time()` sobre o Loki, presos à retenção de 168h
-configurada em `terra/modules/loki/config.yaml`.
+baseados em `count_over_time()` sobre o Loki, presos à retenção local (curta,
+ver `terra/modules/loki/config.yaml`) e, agora, à retenção do próprio Loki
+hospedado no Grafana Cloud (ver "Logs e traces para o Grafana Cloud"
+abaixo).
 
 ### Remote_write para o Grafana Cloud (histórico de SLO sobrevivendo ao DR)
 
-O TSDB local do Prometheus (PVC `gp3`, retenção de 35d) não é replicado para
+O TSDB local do Prometheus (PVC `gp3`, retenção curta - só um buffer
+operacional, ver "Sem exposição externa..." abaixo) não é replicado para
 `terra-dr/` - nenhum dos módulos de observabilidade está na lista de itens
 continuamente protegidos entre regiões (só RDS e DynamoDB estão, ver
 "Disaster Recovery" abaixo). Isso é especialmente grave para os painéis de
@@ -195,7 +170,8 @@ uma janela fixa de 30d (`rate(...[30d])`) embutida na própria query: ao
 ativar `terra-dr/`, o Prometheus novo recalcula essa métrica com o pouco
 histórico que existir no momento (às vezes minutos), o que não é um gráfico
 vazio, e sim um número de SLO tecnicamente válido, mas sem lastro, o que
-apaga qualquer orçamento de erro consumido antes do desastre.
+apaga qualquer orçamento de erro consumido antes do desastre - por isso o
+dashboard consulta o Prometheus hospedado no Grafana Cloud, não o local.
 
 Para preservar esse histórico, `terra/modules/prometheus` aceita 3
 variáveis opcionais (`grafana_cloud_remote_write_url`,
@@ -247,11 +223,20 @@ padrão de nomes de `grafana_cloud_remote_write_url`/`_username`/`_api_key`):
   `output.traces` de `otelcol.processor.batch "default"` junto do
   `otelcol.exporter.otlp "tempo"` já existente.
 
-Nos dois casos a senha (API key) usa `password_file`, nunca o argumento
-`password` direto no River - o valor vem de um `kubernetes_secret_v1`
-dedicado (`alloy-grafana-cloud`, com as chaves `loki-api-key`/
-`tempo-api-key`), montado no pod em `/etc/alloy-secrets/grafana-cloud/`,
-mesmo padrão de `kubernetes_secret_v1.prometheus_grafana_cloud`. Diferente
+Em ambos os casos a senha (API key) vem de um `kubernetes_secret_v1` dedicado
+(`alloy-grafana-cloud`, com as chaves `loki-api-key`/`tempo-api-key`),
+montado no pod em `/etc/alloy-secrets/grafana-cloud/` - nunca em texto puro
+no ConfigMap. O `loki.write "grafanacloud"` lê a chave direto via
+`basic_auth.password_file` (suportado nativamente). Já o
+`otelcol.auth.basic "grafanacloud"` **não** aceita `password_file` dentro do
+bloco `client_auth` nesta versão do Alloy (v1.19.2) - falha no startup com
+`no credential source provided` mesmo com o arquivo presente, um bug/lacuna
+real do componente (não documentado). O contorno: um componente
+`local.file "tempo_api_key"` (com `is_secret = true`) lê o arquivo do
+Secret, e seu `.content` (já tipado como `secret`) é passado para os
+argumentos de nível superior `username`/`password` do próprio
+`otelcol.auth.basic` (a forma mais antiga do componente, sem o bloco
+`client_auth`) - essa combinação funciona. Diferente
 do Prometheus, aqui **não** há `write_relabel_configs`/filtro equivalente
 para restringir o que é enviado: um DaemonSet de logs não tem como filtrar
 "logs supérfluos" da mesma forma que uma série de métrica, e os traces já
@@ -266,68 +251,22 @@ variáveis ficam só em `terraform.tfvars` (gitignored) e `terra-dr/` não as
 recebe hoje (mesmo raciocínio: `module.alloy` em `terra-dr/main.tf` não
 passa essas variáveis).
 
-### Grafana Private Datasource Connect (PDC)
+### Sem exposição externa de Loki/Tempo/Prometheus (e sem PDC)
 
-`remote_write` acima é uma via de saída (o cluster empurra métricas para o
-Grafana Cloud). O caminho inverso, o Grafana Cloud consultando Loki/Tempo/
-Prometheus deste cluster como datasources, hoje depende de expor a NLB
-publicamente e restringir por IP (`observe_allowed_cidrs`), o que não
-funciona bem para o Grafana Cloud: seu tráfego de consulta sai de
-infraestrutura compartilhada, sem um bloco de IP pequeno e estável para
-allowlist.
-
-`terra/modules/pdc` resolve isso com o agente oficial do Grafana Private
-Datasource Connect (`grafana/pdc-agent`, `kubernetes_deployment_v1` único,
-sem PVC): ele abre uma conexão de **saída** (HTTPS) para o Grafana Cloud,
-viabilizada pela NAT Gateway já existente (`terra/modules/vpc`), sem
-precisar de nenhuma porta de entrada. Do lado do Grafana Cloud, o
-datasource passa a apontar para o nome DNS interno do `Service`
-(`http://loki.observe.svc.cluster.local:3100` etc.), não mais para o DNS
-público da NLB, e a rota efetiva (qual cluster responde) é escolhida pela
-"network" PDC selecionada no datasource, não pela URL.
-
-O módulo é opcional (`count` em `terra/main.tf`, controlado por
-`var.grafana_pdc_token != ""`): sem token configurado, nenhum pod sobe, em
-vez de rodar em loop de erro tentando autenticar com credencial vazia. O
-token fica só num `kubernetes_secret_v1` dedicado (`pdc-agent-token`), lido
-pelo container via variável de ambiente e expandido na flag `-token` pelo
-próprio Kubernetes (sintaxe `$(PDC_TOKEN)`, não interpolação Terraform) -
-nunca aparece em ConfigMap nem em texto puro no manifesto do Deployment.
-
-**Três credenciais, não duas**: além de `-token` e `-cluster`, o pdc-agent
-exige `-gcloud-hosted-grafana-id` (`var.grafana_pdc_hosted_grafana_id`) na
-requisição de assinatura do certificado SSH. Sem ela, o agente falha no
-startup com `key signing request failed: invalid credentials` mesmo com
-token e cluster corretos - o serviço de assinatura do Grafana Cloud não
-consegue determinar a qual instância Hosted Grafana associar o token. Esse
-ID (numérico) fica na mesma tela de criação da network PDC de onde o token
-é copiado; diferente do token, não é sensível, então vai direto na flag via
-interpolação Terraform, sem passar por Secret (ver `grafana_pdc_cluster`,
-mesmo padrão).
-
-**Mesmo token nos dois ambientes**: `grafana_pdc_token`/`grafana_pdc_cluster`/
-`grafana_pdc_hosted_grafana_id` precisam ter o **mesmo valor** em
-`terra/terraform.tfvars` e `terra-dr/terraform.tfvars` (mesmo cuidado já
-dado a `db_password`, ver "Disaster Recovery" abaixo). Como os dois ambientes reaplicam os mesmos
-nomes de `Service`/namespace, o nome DNS interno do datasource não muda
-entre ativo e passivo; se o agente do ambiente novo se conectar à mesma
-network PDC, o Grafana Cloud não distingue qual cluster físico está do
-outro lado do túnel, e o datasource continua funcionando sem qualquer
-reconfiguração manual na ativação do DR. Isso não foi validado por um
-simulado real (mesma ressalva já feita a RTO/RPO em
-`doc/plano-continuidade-negocios.md`).
-
-Uma vez validado que o PDC funciona como único caminho de consulta, a
-exposição via NLB de Loki/Tempo/Prometheus (`TargetGroupBinding`s, os
-listeners 3100/3200/9090 em `terra/modules/nlb` e a regra de Security Group
-`observe_ingress`) deixa de ser necessária e pode ser removida, desde que
-nenhum outro Grafana externo continue consultando esses backends
-diretamente pela NLB - isso não foi feito ainda, é um passo separado.
-
-> **Verifique as flags exatas do `pdc-agent`** (`-token`/`-cluster`) na tela
-> de criação da network PDC no seu Grafana Cloud antes do primeiro `apply`:
-> o comando gerado ali é específico da sua conta/versão do agente, e pode
-> divergir do que está codificado em `terra/modules/pdc/main.tf`.
+Uma iteração anterior expunha Loki/Tempo/Prometheus publicamente pela NLB
+(`observe_allowed_cidrs`) para o Grafana externo consultar, e depois
+substituiu isso pelo Grafana Private Datasource Connect (PDC, um agente que
+abre um túnel de saída para o Grafana Cloud consultar esses backends sem
+NLB pública). Ambos os mecanismos foram removidos: como Prometheus, Loki e
+Tempo agora empurram tudo para o Grafana Cloud por push (`remote_write`/
+`loki.write`/`otelcol.exporter.otlp`, ver seções acima), não sobra nada para
+o Grafana Cloud *consultar* de volta no cluster - os 3 datasources nativos e
+hospedados do próprio Grafana Cloud já têm os dados. `terra/modules/nlb` não
+tem mais listeners/target groups de observabilidade (só os 3 dos
+microsserviços), e `terra/modules/pdc` foi removido por completo. As
+`Service` (`ClusterIP`) de Loki/Tempo/Prometheus continuam existindo -
+Alloy e o Tempo dependem delas via DNS interno do cluster -, só a exposição
+externa é que não existe mais.
 
 ## FluxCD via Terraform
 

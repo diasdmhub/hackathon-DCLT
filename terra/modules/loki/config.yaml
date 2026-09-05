@@ -25,10 +25,14 @@ schema_config:
         prefix: index_
         period: 24h
 
+# Buffer curto: o loki.write "grafanacloud" do Alloy (ver
+# terra/modules/alloy/config.alloy.tpl) já duplica todos os logs para o
+# Grafana Cloud, então o disco local não precisa mais reter histórico
+# longo - só o suficiente para consulta/depuração local.
 limits_config:
   reject_old_samples: true
-  reject_old_samples_max_age: 168h
-  retention_period: 168h
+  reject_old_samples_max_age: 24h
+  retention_period: 24h
   max_query_series: 5000
 
 compactor:

@@ -63,16 +63,11 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `volunteer_service_account` | Nome da service account do Volunteer Service | _`volunteer-service`_ |
 | `lb_controller_namespace` | Namespace para o Load Balancer Controller | _`kube-system`_ |
 | `lb_controller_service_account` | ServiceAccount do Load Balancer Controller | _`aws-load-balancer-controller`_ |
-| `observe_allowed_cidrs` | CIDR, IP ou domínio autorizados a alcançar o cluster | _`CHANGE_ME`_ |
 | `grafana_cloud_remote_write_url` | Endpoint remote_write do Grafana Cloud Prometheus (opcional - vazio desativa o envio) | _(vazio)_ |
 | `grafana_cloud_username` | Instance ID do stack Grafana Cloud (opcional) | _(vazio)_ |
 | `grafana_cloud_api_key` | API key do Grafana Cloud com permissão de escrita em métricas (opcional, sensível) | _(vazio)_ |
-| `grafana_pdc_token` | Token da network de Private Datasource Connect do Grafana Cloud (opcional, sensível - vazio desativa o módulo) | _(vazio)_ |
-| `grafana_pdc_cluster` | Nome do cluster PDC do stack Grafana Cloud, ex.: `prod-sa-east-1` (opcional) | _(vazio)_ |
 
-> As 3 variáveis de Grafana Cloud são opcionais: servem só para o Prometheus enviar (via `remote_write`) as séries de golden metrics/SLI para fora do cluster, já que o histórico local (PVC) não é replicado para o ambiente passivo (`terra-dr/`). Ver "Remote_write para o Grafana Cloud" em `terra/README.md`.
-
-> As 2 variáveis de PDC também são opcionais: permitem o Grafana Cloud consultar Loki/Tempo/Prometheus deste cluster sem expô-los publicamente pela NLB (conexão de saída, não CIDR de entrada). Ver "Grafana Private Datasource Connect (PDC)" em `terra/README.md`.
+> As 3 variáveis de Grafana Cloud são opcionais: servem para Prometheus/Loki/Tempo enviarem (via `remote_write`/`loki.write`/`otelcol.exporter.otlp`) os dados para fora do cluster, já que o armazenamento local (PVC, retenção curta) não é replicado para o ambiente passivo (`terra-dr/`). Ver "Remote_write para o Grafana Cloud" e "Logs e traces para o Grafana Cloud" em `terra/README.md`.
 
 <BR>
 
@@ -86,7 +81,7 @@ Neste passo serão provisionados a infraestrutura AWS, o Load Balancer Controlle
 
 Crie e edite o arquivo `terraform.tfvars`. **Evite usar os valores de exemplo.**
 
-> **No mínimo `db_password` e `observe_allowed_cidrs` devem ser definidos.**
+> **No mínimo `db_password` deve ser definido.**
 
 ```bash
 cd terra
@@ -150,11 +145,10 @@ cp terraform.tfvars.example terraform.tfvars
 
 A maioria das variáveis é de configuração estática, sem nenhuma consulta ao ambiente ativo. Elas também são similares às variáveis do passo 1. Preencha elas com os mesmos valores (ou equivalentes) do `terra/terraform.tfvars` já usado no passo 2.
 
-Três variáveis merecem atenção:
+Duas variáveis merecem atenção:
 
 - **`db_password`**: precisa ser **IGUAL** à senha real do ambiente ativo, mas não de consulta ao parâmetro SSM criado por `module.secrets`.
 - **`route53_zone_id`**: copie este valor direto do `terra/` (_Route53 é um serviço global da AWS, e o valor está pronto no ambiente ativo_): `terraform output -raw route53_zone_id`
-- **`grafana_pdc_token`** (se estiver usando PDC, ver seção 1): precisa ser **IGUAL** ao valor real de `terra/terraform.tfvars` (mesma network), para o agente do ambiente passivo assumir o túnel sem reconfigurar o datasource no Grafana Cloud na ativação do DR.
 
 O único dado que **não** dá para preencher com antecedência é `rds_restore_source_arn`, pois ele identifica o backup mais recente no momento exato da ativação. No arquivo `.example` ele está comentado.
 
@@ -162,19 +156,9 @@ O único dado que **não** dá para preencher com antecedência é `rds_restore_
 
 <BR>
 
-## 5. Configurar o Grafana externo
+## 5. Grafana externo
 
-Loki, Tempo e Prometheus são implementados com o `terraform apply` do passo 2. Após isso, é necessário cadastrar os 3 datasources no Grafana externo, apontando para o DNS name do NLB.
-
-```bash
-terraform output -raw nlb_dns_name   # no diretório `terra/`
-```
-
-- Loki: `http://<nlb_dns_name>:3100`
-- Tempo: `http://<nlb_dns_name>:3200`
-- Prometheus: `http://<nlb_dns_name>:9090`
-
-> Isso é o Grafana consultando o cluster (datasources apontando para a NLB). Se `grafana_cloud_remote_write_url` estiver preenchida no passo 1, o Prometheus do cluster também empurra as séries de golden metrics/SLI para dentro do próprio stack Grafana Cloud usado como Grafana externo, o que é uma via independente e não substitui o cadastro dos 3 datasources acima.
+Loki, Tempo e Prometheus são implementados com o `terraform apply` do passo 2, e (se as variáveis de Grafana Cloud do passo 1 estiverem preenchidas) já empurram logs/traces/métricas para os datasources nativos e hospedados do próprio Grafana Cloud (`remote_write`/`loki.write`/`otelcol.exporter.otlp` - ver "Remote_write..."/"Logs e traces..." em `terra/README.md`). Não há NLB pública nem passo de cadastro de datasource: nada a configurar manualmente aqui.
 
 <BR>
 

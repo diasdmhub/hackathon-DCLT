@@ -3,11 +3,6 @@ variable "namespace" {
   type        = string
 }
 
-variable "target_group_arn" {
-  description = "ARN do target group da NLB para o Prometheus (output observe_target_group_arns[\"prometheus\"] do módulo nlb)"
-  type        = string
-}
-
 # Grafana Cloud (remote_write de saída) - séries de SLI/SLO sobreviverem a
 # uma migração para o ambiente de DR, já que o TSDB local (PVC gp3) não é
 # replicado entre regiões. Opcional: url vazia desativa o remote_write por

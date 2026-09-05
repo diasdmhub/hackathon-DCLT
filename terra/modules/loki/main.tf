@@ -139,8 +139,10 @@ resource "kubernetes_service_v1" "loki" {
     labels    = local.labels
   }
   spec {
-    # ClusterIP, não LoadBalancer: a exposição externa é a NLB única
-    # provisionada por terra/modules/nlb, via TargetGroupBinding abaixo.
+    # ClusterIP: sem exposição externa - o Loki não é mais consultado de
+    # fora do cluster (ver "Logs e traces para o Grafana Cloud" em
+    # terra/README.md), só alcançado internamente pelo Alloy
+    # (loki.write "default").
     type     = "ClusterIP"
     selector = { app = "loki" }
     port {
@@ -149,33 +151,4 @@ resource "kubernetes_service_v1" "loki" {
       target_port = 3100
     }
   }
-}
-
-# TargetGroupBinding é um CRD instalado pelo AWS Load Balancer Controller
-# (terra/modules/lb, também Terraform) - via kubectl_manifest, não
-# kubernetes_manifest, porque este último valida o schema do CRD contra o
-# cluster já no `terraform plan`, o que quebraria numa primeira execução
-# contra um cluster novo, antes de module.lb ter sido aplicado (ver
-# terra/README.md). O depends_on em terra/main.tf garante que module.lb
-# aplica primeiro.
-resource "kubectl_manifest" "loki_target_group_binding" {
-  yaml_body = <<-YAML
-    apiVersion: elbv2.k8s.aws/v1beta1
-    kind: TargetGroupBinding
-    metadata:
-      name: loki
-      namespace: ${var.namespace}
-      labels:
-        app.kubernetes.io/part-of: solidarytech
-        Project: SolidaryTech
-        Environment: primary
-    spec:
-      serviceRef:
-        name: loki
-        port: 3100
-      targetGroupARN: ${var.target_group_arn}
-      targetType: ip
-  YAML
-
-  depends_on = [kubernetes_service_v1.loki]
 }

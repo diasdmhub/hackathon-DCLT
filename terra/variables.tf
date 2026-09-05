@@ -147,14 +147,6 @@ variable "flux_chart_version" {
 
 # Variáveis da NLB (observabilidade)
 #############################
-# DEFINA O VALOR REAL NO terraform.tfvars (não versionado) - sem default de
-# propósito, para não abrir Loki/Tempo/Prometheus (sem autenticação própria)
-# para 0.0.0.0/0 por engano.
-variable "observe_allowed_cidrs" {
-  description = "CIDRs, IPs ou nomes de domínio autorizados a alcançar Loki/Tempo/Prometheus (terra/modules/{loki,tempo,prometheus}) pela NLB - normalmente o IP público (fixo ou via um domínio DDNS) de onde o Grafana externo consulta. Domínios são resolvidos via DNS a cada terraform apply (ver terra/dns.tf)."
-  type        = list(string)
-}
-
 # Grafana Cloud (remote_write de saída do Prometheus) - ver
 # "Métricas de negócio via Prometheus" e "Disaster Recovery" em
 # terra/README.md. Opcional: vazio desativa o remote_write. Sem default de
@@ -221,37 +213,6 @@ variable "grafana_cloud_tempo_api_key" {
   description = "API key do Grafana Cloud com permissão de escrita em Traces - DEFINA NO terraform.tfvars, nunca versionado"
   type        = string
   sensitive   = true
-  default     = ""
-}
-
-# Grafana Private Datasource Connect (PDC) - permite o Grafana Cloud
-# consultar Loki/Tempo/Prometheus deste cluster sem expô-los publicamente
-# via NLB (túnel de saída, não CIDR de entrada). Opcional: token vazio
-# desativa o módulo por completo (nenhum pod sobe). Mesmo cuidado do
-# db_password: o valor de grafana_pdc_token precisa ser IGUAL em
-# terra-dr/terraform.tfvars, para o agente do ambiente passivo se conectar
-# à mesma network e o datasource no Grafana Cloud não precisar ser
-# reapontado numa ativação de DR (ver "Disaster Recovery" em
-# terra/README.md).
-variable "grafana_pdc_token" {
-  description = "Token da network de Private Datasource Connect (PDC) do Grafana Cloud - DEFINA NO terraform.tfvars, nunca versionado. Vazio desativa o módulo (terra/modules/pdc)."
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "grafana_pdc_cluster" {
-  description = "Nome do cluster PDC do stack Grafana Cloud (ex.: prod-sa-east-1)"
-  type        = string
-  default     = ""
-}
-
-# Terceira credencial exigida pelo pdc-agent (junto com token/cluster) para
-# a requisição de assinatura do certificado SSH - sem ela, o agente falha
-# com "invalid credentials" mesmo com token e cluster corretos.
-variable "grafana_pdc_hosted_grafana_id" {
-  description = "ID numérico da instância Hosted Grafana, mostrado na tela de criação da network PDC no Grafana Cloud"
-  type        = string
   default     = ""
 }
 

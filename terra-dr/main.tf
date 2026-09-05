@@ -115,10 +115,8 @@ module "nlb" {
 
   name_prefix               = var.name_prefix
   vpc_id                    = module.vpc.vpc_id
-  vpc_cidr                  = module.vpc.vpc_cidr
   public_subnet_ids         = module.vpc.public_subnet_ids
   cluster_security_group_id = module.eks.eks_cluster_security_group_id
-  observe_allowed_cidrs     = local.observe_allowed_cidrs_resolved
 
   depends_on = [module.vpc, module.eks]
 }
@@ -221,38 +219,23 @@ resource "kubernetes_namespace_v1" "observe" {
 module "loki" {
   source = "../terra/modules/loki"
 
-  namespace        = kubernetes_namespace_v1.observe.metadata[0].name
-  target_group_arn = module.nlb.observe_target_group_arns["loki"]
+  namespace = kubernetes_namespace_v1.observe.metadata[0].name
 
-  depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
+  depends_on = [kubernetes_namespace_v1.observe]
 }
 
 module "tempo" {
   source = "../terra/modules/tempo"
 
-  namespace        = kubernetes_namespace_v1.observe.metadata[0].name
-  target_group_arn = module.nlb.observe_target_group_arns["tempo"]
+  namespace = kubernetes_namespace_v1.observe.metadata[0].name
 
-  depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
+  depends_on = [kubernetes_namespace_v1.observe]
 }
 
 module "prometheus" {
   source = "../terra/modules/prometheus"
 
-  namespace        = kubernetes_namespace_v1.observe.metadata[0].name
-  target_group_arn = module.nlb.observe_target_group_arns["prometheus"]
-
-  depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
-}
-
-module "pdc" {
-  source = "../terra/modules/pdc"
-  count  = var.grafana_pdc_token != "" ? 1 : 0
-
-  namespace                     = kubernetes_namespace_v1.observe.metadata[0].name
-  grafana_pdc_token             = var.grafana_pdc_token
-  grafana_pdc_cluster           = var.grafana_pdc_cluster
-  grafana_pdc_hosted_grafana_id = var.grafana_pdc_hosted_grafana_id
+  namespace = kubernetes_namespace_v1.observe.metadata[0].name
 
   depends_on = [kubernetes_namespace_v1.observe]
 }

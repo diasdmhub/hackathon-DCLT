@@ -18,14 +18,17 @@ storage:
     local:
       path: /var/tempo/blocks
 
-# Mesma retenção adotada no Loki (168h = 7 dias). No Tempo 3.x o bloco
-# "compactor" deixou de existir; a compactação/retenção é feita pelo
-# backend-scheduler/backend-worker.
+# Buffer curto (mesma retenção do Loki): o otelcol.exporter.otlp
+# "grafanacloud" do Alloy (ver terra/modules/alloy/config.alloy.tpl) já
+# duplica todos os traces para o Grafana Cloud, então o disco local não
+# precisa mais reter histórico longo - só o suficiente para consulta/
+# depuração local. No Tempo 3.x o bloco "compactor" deixou de existir; a
+# compactação/retenção é feita pelo backend-scheduler/backend-worker.
 backend_scheduler:
   provider:
     compaction:
       compaction:
-        block_retention: 168h
+        block_retention: 24h
 
 # Deriva métricas de RED (service-graphs, span-metrics) de cada trace
 # recebido e as envia (remote_write) ao Prometheus do observe/, que

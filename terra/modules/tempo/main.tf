@@ -135,9 +135,10 @@ resource "kubernetes_service_v1" "tempo" {
     labels    = local.labels
   }
   spec {
-    # ClusterIP, não LoadBalancer: a exposição externa (porta 3200) é a NLB
-    # única, via TargetGroupBinding abaixo. A porta 4317 (OTLP gRPC) fica só
-    # interna, recebendo do Alloy via DNS do cluster.
+    # ClusterIP: sem exposição externa - o Tempo não é mais consultado de
+    # fora do cluster (ver "Logs e traces para o Grafana Cloud" em
+    # terra/README.md), só alcançado internamente (porta 4317 recebe OTLP
+    # do Alloy).
     type     = "ClusterIP"
     selector = { app = "tempo" }
     port {
@@ -151,28 +152,4 @@ resource "kubernetes_service_v1" "tempo" {
       target_port = 4317
     }
   }
-}
-
-# Ver comentário equivalente em terra/modules/loki/main.tf sobre
-# kubectl_manifest vs kubernetes_manifest para este CRD.
-resource "kubectl_manifest" "tempo_target_group_binding" {
-  yaml_body = <<-YAML
-    apiVersion: elbv2.k8s.aws/v1beta1
-    kind: TargetGroupBinding
-    metadata:
-      name: tempo
-      namespace: ${var.namespace}
-      labels:
-        app.kubernetes.io/part-of: solidarytech
-        Project: SolidaryTech
-        Environment: primary
-    spec:
-      serviceRef:
-        name: tempo
-        port: 3200
-      targetGroupARN: ${var.target_group_arn}
-      targetType: ip
-  YAML
-
-  depends_on = [kubernetes_service_v1.tempo]
 }

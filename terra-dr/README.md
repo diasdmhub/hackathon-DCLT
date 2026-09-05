@@ -45,9 +45,8 @@ simulado).
 cd terra-dr
 cp terraform.tfvars.example terraform.tfvars
 # edite: db_password (IGUAL à senha real do ambiente ativo),
-# observe_allowed_cidrs, route53_zone_id/dns_record_name (se usar failover
-# automático de DNS - copie route53_zone_id do output route53_zone_id de
-# terra/).
+# route53_zone_id/dns_record_name (se usar failover automático de DNS -
+# copie route53_zone_id do output route53_zone_id de terra/).
 ```
 
 **2. Descubra o ARN do backup replicado mais recente**, na região do
@@ -110,8 +109,8 @@ kubectl get pods -n solidarytech
 `aws_route53_health_check.primary` do ambiente ativo (`terra/`) começar a
 falhar, o Route53 já resolve `dns_record_name` para a NLB deste cluster
 automaticamente (dentro do TTL de 30s configurado). Sem `manage_dns`, repita
-manualmente o mesmo repoint que já é feito hoje para `observe_allowed_cidrs`
-(atualizar o DNS/DDNS externo para o `nlb_dns_name` deste state).
+manualmente o repoint de DNS (atualizar o DNS/DDNS externo para o
+`nlb_dns_name` deste state).
 
 ## O que **não** é levado para o ambiente passivo
 

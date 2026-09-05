@@ -162,37 +162,6 @@ variable "flux_chart_version" {
   default     = "2.19.0"
 }
 
-# Variáveis da NLB (observabilidade) - mesmo mecanismo de terra/dns.tf
-#############################
-variable "observe_allowed_cidrs" {
-  description = "CIDRs, IPs ou nomes de domínio autorizados a alcançar Loki/Tempo/Prometheus pela NLB do ambiente passivo"
-  type        = list(string)
-}
-
-# Grafana Private Datasource Connect (PDC) - grafana_pdc_token precisa ser
-# IGUAL ao valor real de terra/terraform.tfvars (mesma network), para o
-# agente deste ambiente assumir o túnel sem o datasource no Grafana Cloud
-# precisar ser reapontado na ativação do DR. Ver terra/modules/pdc e
-# "Disaster Recovery" em terra/README.md.
-variable "grafana_pdc_token" {
-  description = "Token da network de Private Datasource Connect (PDC) do Grafana Cloud - IGUAL ao usado em terra/terraform.tfvars. Vazio desativa o módulo."
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "grafana_pdc_cluster" {
-  description = "Nome do cluster PDC do stack Grafana Cloud (ex.: prod-sa-east-1) - IGUAL ao usado em terra/terraform.tfvars"
-  type        = string
-  default     = ""
-}
-
-variable "grafana_pdc_hosted_grafana_id" {
-  description = "ID numérico da instância Hosted Grafana - IGUAL ao usado em terra/terraform.tfvars"
-  type        = string
-  default     = ""
-}
-
 # Variáveis de failover DNS (Route53) - ver "Disaster Recovery" em
 # terra/README.md
 #############################

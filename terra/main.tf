@@ -99,10 +99,8 @@ module "nlb" {
 
   name_prefix               = var.name_prefix
   vpc_id                    = module.vpc.vpc_id
-  vpc_cidr                  = module.vpc.vpc_cidr
   public_subnet_ids         = module.vpc.public_subnet_ids
   cluster_security_group_id = module.eks.eks_cluster_security_group_id
-  observe_allowed_cidrs     = local.observe_allowed_cidrs_resolved
 
   depends_on = [module.vpc, module.eks]
 }
@@ -236,53 +234,30 @@ resource "kubernetes_namespace_v1" "observe" {
   depends_on = [module.eks]
 }
 
-# loki/tempo/prometheus dependem de module.lb (não só do namespace/nlb):
-# seus recursos TargetGroupBinding (kubectl_manifest) exigem o CRD que o
-# AWS Load Balancer Controller instala - com essa dependência explícita no
-# grafo do Terraform, um único `terraform apply` já basta (o controller é
-# criado antes desses TargetGroupBinding, sem depender do Flux ou de um
-# segundo apply) - ver terra/README.md.
 module "loki" {
   source = "./modules/loki"
 
-  namespace        = kubernetes_namespace_v1.observe.metadata[0].name
-  target_group_arn = module.nlb.observe_target_group_arns["loki"]
+  namespace = kubernetes_namespace_v1.observe.metadata[0].name
 
-  depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
+  depends_on = [kubernetes_namespace_v1.observe]
 }
 
 module "tempo" {
   source = "./modules/tempo"
 
-  namespace        = kubernetes_namespace_v1.observe.metadata[0].name
-  target_group_arn = module.nlb.observe_target_group_arns["tempo"]
+  namespace = kubernetes_namespace_v1.observe.metadata[0].name
 
-  depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
+  depends_on = [kubernetes_namespace_v1.observe]
 }
 
 module "prometheus" {
   source = "./modules/prometheus"
 
-  namespace        = kubernetes_namespace_v1.observe.metadata[0].name
-  target_group_arn = module.nlb.observe_target_group_arns["prometheus"]
+  namespace = kubernetes_namespace_v1.observe.metadata[0].name
 
   grafana_cloud_remote_write_url = var.grafana_cloud_remote_write_url
   grafana_cloud_username         = var.grafana_cloud_username
   grafana_cloud_api_key          = var.grafana_cloud_api_key
-
-  depends_on = [kubernetes_namespace_v1.observe, module.nlb, module.lb]
-}
-
-# Só sobe com um token configurado (ver variables.tf) - sem isso, seria um
-# pod tentando autenticar com credencial vazia, sem nenhum uso real.
-module "pdc" {
-  source = "./modules/pdc"
-  count  = var.grafana_pdc_token != "" ? 1 : 0
-
-  namespace                     = kubernetes_namespace_v1.observe.metadata[0].name
-  grafana_pdc_token             = var.grafana_pdc_token
-  grafana_pdc_cluster           = var.grafana_pdc_cluster
-  grafana_pdc_hosted_grafana_id = var.grafana_pdc_hosted_grafana_id
 
   depends_on = [kubernetes_namespace_v1.observe]
 }

@@ -39,17 +39,6 @@ lb_controller_service_account = "aws-load-balancer-controller"
 # FluxCD - versão do chart Helm flux2 (terra/modules/flux)
 flux_chart_version = "2.19.0"
 
-# NLB - CIDR(s), IP(s) ou domínio(s) autorizados a alcançar
-# Loki/Tempo/Prometheus (observe-aws/). Esses backends não têm autenticação
-# própria, então NÃO use 0.0.0.0/0. Restrinja ao IP público de onde o
-# Grafana externo consulta.
-# Exemplos:
-#    CIDR "203.0.113.10/32"
-#    IP "203.0.113.10" (vira /32)
-#    Nome de domínio "meudominio.com.br" (resolvido via DNS a cada
-#                                        terraform apply, ver terra/dns.tf)
-observe_allowed_cidrs = ["CHANGE_ME"]
-
 # Grafana Cloud - remote_write de saída do Prometheus (só as séries de
 # golden metrics/SLI, ver terra/modules/prometheus/prometheus.yml.tpl),
 # para o histórico de SLO sobreviver a uma migração para terra-dr/. Opcional:
@@ -59,14 +48,6 @@ observe_allowed_cidrs = ["CHANGE_ME"]
 # grafana_cloud_remote_write_url = "" # ex.: https://prometheus-prod-NN-prod-REGIAO.grafana.net/api/prom/push
 # grafana_cloud_username         = "" # Instance ID do stack Grafana Cloud
 # grafana_cloud_api_key          = "" # API key com permissão de escrita (MetricsPublisher)
-
-# Grafana Private Datasource Connect (PDC) - permite o Grafana Cloud
-# consultar Loki/Tempo/Prometheus sem expô-los via NLB. Opcional, mesmo
-# esquema acima (vazio = desativado). Se preencher, o MESMO valor de
-# grafana_pdc_token deve ir também em terra-dr/terraform.tfvars.
-# grafana_pdc_token             = "" # token da network PDC, gerado no Grafana Cloud
-# grafana_pdc_cluster           = "" # ex.: prod-sa-east-1
-# grafana_pdc_hosted_grafana_id = "" # ID numérico da instância Hosted Grafana (mesma tela do token)
 
 # Logs (Alloy loki.write) e traces (Alloy otelcol.exporter.otlp) para o
 # Grafana Cloud, além do Loki/Tempo locais. Opcional, mesmo esquema acima

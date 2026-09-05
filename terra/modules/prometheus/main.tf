@@ -19,10 +19,12 @@ resource "kubernetes_persistent_volume_claim_v1" "prometheus_data" {
     storage_class_name = "gp3"
     resources {
       requests = {
-        # Retenção subiu de 168h para 35d (ver retention.time abaixo) para
-        # os SLOs mensais, mas 2Gi segue de sobra: uso medido no cluster
-        # kubeadm-local foi ~7MB/dia (49.8M acumulados nos 168h de retenção
-        # anteriores), o que projeta ~250MB para 35d mesmo sem folga extra.
+        # Retenção curta (ver retention.time abaixo): desde que o
+        # remote_write para o Grafana Cloud passou a cobrir todas as séries
+        # (não só golden metrics/SLI), o disco local só precisa de um buffer
+        # operacional, não mais do histórico de SLO - isso já vive no
+        # Prometheus do Grafana Cloud. 2Gi segue de sobra mesmo assim (uso
+        # medido no cluster kubeadm-local foi ~7MB/dia).
         storage = "2Gi"
       }
     }
@@ -102,9 +104,11 @@ resource "kubernetes_deployment_v1" "prometheus" {
           args = [
             "--config.file=/etc/prometheus/prometheus.yml",
             "--storage.tsdb.path=/prometheus",
-            # 35d (não 168h): folga sobre a janela de 30d usada pelos SLOs
-            # mensais (doc/grafana).
-            "--storage.tsdb.retention.time=35d",
+            # Buffer curto: o remote_write para o Grafana Cloud (ver
+            # prometheus.yml.tpl) já cobre todas as séries, então o disco
+            # local não precisa mais reter o histórico de SLO (30d) - só o
+            # suficiente para consulta/depuração local.
+            "--storage.tsdb.retention.time=24h",
             # Habilita o endpoint remote_write (desativado por padrão) para
             # receber as métricas de service-graph/span-metrics do Tempo
             "--web.enable-remote-write-receiver",
@@ -186,8 +190,10 @@ resource "kubernetes_service_v1" "prometheus" {
     labels    = local.labels
   }
   spec {
-    # ClusterIP, não LoadBalancer: a exposição externa é a NLB única, via
-    # TargetGroupBinding abaixo.
+    # ClusterIP: sem exposição externa - o Prometheus não é mais consultado
+    # de fora do cluster (ver "Logs e traces para o Grafana Cloud"/
+    # "Remote_write para o Grafana Cloud" em terra/README.md), só alcançado
+    # internamente (Tempo empurra spanmetrics via remote_write).
     type     = "ClusterIP"
     selector = { app = "prometheus" }
     port {
@@ -196,28 +202,4 @@ resource "kubernetes_service_v1" "prometheus" {
       target_port = 9090
     }
   }
-}
-
-# Ver comentário equivalente em terra/modules/loki/main.tf sobre
-# kubectl_manifest vs kubernetes_manifest para este CRD.
-resource "kubectl_manifest" "prometheus_target_group_binding" {
-  yaml_body = <<-YAML
-    apiVersion: elbv2.k8s.aws/v1beta1
-    kind: TargetGroupBinding
-    metadata:
-      name: prometheus
-      namespace: ${var.namespace}
-      labels:
-        app.kubernetes.io/part-of: solidarytech
-        Project: SolidaryTech
-        Environment: primary
-    spec:
-      serviceRef:
-        name: prometheus
-        port: 9090
-      targetGroupARN: ${var.target_group_arn}
-      targetType: ip
-  YAML
-
-  depends_on = [kubernetes_service_v1.prometheus]
 }
