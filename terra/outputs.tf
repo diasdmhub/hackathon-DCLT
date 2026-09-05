@@ -54,6 +54,11 @@ output "route53_zone_id" {
   value       = var.manage_dns ? aws_route53_zone.dr[0].zone_id : null
 }
 
+output "route53_name_servers" {
+  description = "Nameservers da hosted zone Route53 (existe só quando var.manage_dns = true) - cadastrar como registros NS do subdomínio var.dns_zone_name no provedor DNS do domínio raiz, para delegar a resolução a esta zone."
+  value       = var.manage_dns ? aws_route53_zone.dr[0].name_servers : null
+}
+
 output "configure_kubectl" {
   description = "Comando para configurar o kubectl/aws-cli local contra o cluster criado"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.eks_cluster_name}"
