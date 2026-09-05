@@ -333,7 +333,16 @@ O que fica sempre protegido, independente de ativação, custando pouco:
   quando `enable_dr = true`, transformando a tabela numa Global Table (v2)
   com uma réplica sempre viva na região do ambiente passivo -
   `terra-dr/` não cria sua própria tabela, só referencia essa réplica pelo
-  nome (idêntico em toda região de uma Global Table).
+  nome (idêntico em toda região de uma Global Table). Global Tables (v2)
+  com billing `PROVISIONED` exige capacidade de escrita com auto scaling
+  configurado - sem isso, a própria API da AWS rejeita a criação da réplica
+  (`Table write capacity should either be Pay-Per-Request or AutoScaled`).
+  `terra/modules/dynamo/dynamo.tf` cobre isso com um
+  `aws_appautoscaling_target`/`policy` de `WriteCapacityUnits`, criado só
+  quando há réplica (`var.replica_regions`), com `ignore_changes` no
+  `write_capacity` do recurso principal para o Terraform não reverter o
+  valor ajustado pela policy a cada `apply` (mesmo problema já resolvido
+  para o HPA em `kube-aws/`, ver "Autoscaling (HPA)" acima).
 - **DNS/failover**: quando `manage_dns = true`, uma hosted zone Route53 +
   health check + registro `PRIMARY` (`aws_route53_record.primary`) são
   criados aqui, apontando para a NLB deste state; `terra-dr/` completa o par

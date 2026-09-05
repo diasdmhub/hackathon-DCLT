@@ -28,9 +28,19 @@ variable "read_capacity" {
 }
 
 variable "write_capacity" {
-  description = "Capacidade de escrita provisionada"
+  description = "Capacidade de escrita provisionada (também o mínimo do auto scaling, quando há réplica - ver write_capacity_max)"
   type        = number
   default     = 5
+}
+
+# Teto do auto scaling de WriteCapacityUnits, exigido pela AWS para Global
+# Tables (v2) com billing PROVISIONED - ver comentário em dynamo.tf. 10
+# mantém folga sobre os 5 WCU normais sem chegar perto do teto do always-free
+# tier (25 WCU/conta/região).
+variable "write_capacity_max" {
+  description = "Teto do auto scaling de capacidade de escrita (só usado quando há réplica, ver replica_regions)"
+  type        = number
+  default     = 10
 }
 
 # Variável de Disaster Recovery (ver "Disaster Recovery" em terra/README.md)
