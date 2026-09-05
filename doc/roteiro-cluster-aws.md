@@ -64,6 +64,11 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `lb_controller_namespace` | Namespace para o Load Balancer Controller | _`kube-system`_ |
 | `lb_controller_service_account` | ServiceAccount do Load Balancer Controller | _`aws-load-balancer-controller`_ |
 | `observe_allowed_cidrs` | CIDR, IP ou domínio autorizados a alcançar o cluster | _`CHANGE_ME`_ |
+| `grafana_cloud_remote_write_url` | Endpoint remote_write do Grafana Cloud Prometheus (opcional - vazio desativa o envio) | _(vazio)_ |
+| `grafana_cloud_username` | Instance ID do stack Grafana Cloud (opcional) | _(vazio)_ |
+| `grafana_cloud_api_key` | API key do Grafana Cloud com permissão de escrita em métricas (opcional, sensível) | _(vazio)_ |
+
+> As 3 variáveis de Grafana Cloud são opcionais: servem só para o Prometheus enviar (via `remote_write`) as séries de golden metrics/SLI para fora do cluster, já que o histórico local (PVC) não é replicado para o ambiente passivo (`terra-dr/`). Ver "Remote_write para o Grafana Cloud" em `terra/README.md`.
 
 <BR>
 
@@ -163,6 +168,8 @@ terraform output -raw nlb_dns_name   # no diretório `terra/`
 - Loki: `http://<nlb_dns_name>:3100`
 - Tempo: `http://<nlb_dns_name>:3200`
 - Prometheus: `http://<nlb_dns_name>:9090`
+
+> Isso é o Grafana consultando o cluster (datasources apontando para a NLB). Se `grafana_cloud_remote_write_url` estiver preenchida no passo 1, o Prometheus do cluster também empurra as séries de golden metrics/SLI para dentro do próprio stack Grafana Cloud usado como Grafana externo, o que é uma via independente e não substitui o cadastro dos 3 datasources acima.
 
 <BR>
 
