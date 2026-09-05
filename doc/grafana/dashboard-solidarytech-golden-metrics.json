@@ -107,7 +107,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -236,7 +236,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -323,7 +323,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -454,7 +454,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -538,7 +538,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -664,7 +664,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -749,7 +749,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -877,7 +877,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -961,7 +961,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -1087,7 +1087,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -1172,7 +1172,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -1300,7 +1300,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -1388,7 +1388,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -1519,7 +1519,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -1541,8 +1541,10 @@
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
+                        "editorMode": "code",
                         "expr": "100 * sum(rate(traces_spanmetrics_latency_bucket{service=\"donation-service\", le=\"0.512\"}[30d]))\n/ sum(rate(traces_spanmetrics_latency_bucket{service=\"donation-service\", le=\"+Inf\"}[30d]))",
-                        "legendFormat": "SLI de latência"
+                        "legendFormat": "SLI de latência",
+                        "range": true
                       },
                       "version": "v0"
                     },
@@ -1605,7 +1607,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -1733,7 +1735,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       }
@@ -2068,8 +2070,8 @@
         "spec": {
           "allowCustomValue": false,
           "current": {
-            "text": "prometheus",
-            "value": "bfts7wbtgac5cf"
+            "text": "grafanacloud-markfree-prom",
+            "value": "grafanacloud-prom"
           },
           "hide": "dontHide",
           "includeAll": false,
@@ -2079,7 +2081,7 @@
           "options": [],
           "pluginId": "prometheus",
           "refresh": "onDashboardLoad",
-          "regex": "/prometheus/",
+          "regex": "/prom/",
           "skipUrlSync": false
         }
       }

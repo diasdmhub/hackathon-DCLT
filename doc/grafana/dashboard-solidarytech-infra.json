@@ -150,7 +150,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -277,7 +277,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -402,7 +402,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -499,7 +499,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -628,7 +628,7 @@
                 }
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -705,7 +705,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -787,7 +787,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -874,7 +874,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       },
@@ -961,7 +961,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.3.0-32700873380"
           }
         }
       }
@@ -1151,8 +1151,8 @@
         "spec": {
           "allowCustomValue": false,
           "current": {
-            "text": "prometheus",
-            "value": "bfts7wbtgac5cf"
+            "text": "grafanacloud-markfree-prom",
+            "value": "grafanacloud-prom"
           },
           "hide": "dontHide",
           "includeAll": false,
@@ -1162,7 +1162,7 @@
           "options": [],
           "pluginId": "prometheus",
           "refresh": "onDashboardLoad",
-          "regex": "/prometheus/",
+          "regex": "/prom/",
           "skipUrlSync": false
         }
       }
