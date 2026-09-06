@@ -48,4 +48,4 @@ flux_chart_version = "2.19.0"
 # de terra/ (só existe quando manage_dns = true por lá); dns_record_name
 # precisa ser IGUAL ao usado em terra/terraform.tfvars.
 route53_zone_id = "CHANGE_ME"
-dns_record_name = "CHANGE_ME" # ex.: "api.solidarytech.diasdm.com.br"
+dns_record_name = "CHANGE_ME" # ex.: "api.solidarytech.meu.dominio"
