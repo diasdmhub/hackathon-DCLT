@@ -63,11 +63,26 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `volunteer_service_account` | Nome da service account do Volunteer Service | _`volunteer-service`_ |
 | `lb_controller_namespace` | Namespace para o Load Balancer Controller | _`kube-system`_ |
 | `lb_controller_service_account` | ServiceAccount do Load Balancer Controller | _`aws-load-balancer-controller`_ |
+| `flux_chart_version` | Versão do chart Helm `flux2` usado por `terra/modules/flux` | _`2.19.0`_ |
 | `grafana_cloud_remote_write_url` | Endpoint remote_write do Grafana Cloud Prometheus (opcional - vazio desativa o envio) | _(vazio)_ |
-| `grafana_cloud_username` | Instance ID do stack Grafana Cloud (opcional) | _(vazio)_ |
+| `grafana_cloud_username` | Instance ID do stack Grafana Cloud de métricas (opcional) | _(vazio)_ |
 | `grafana_cloud_api_key` | API key do Grafana Cloud com permissão de escrita em métricas (opcional, sensível) | _(vazio)_ |
+| `grafana_cloud_loki_url` | Endpoint `loki.write` do Grafana Cloud Logs (opcional - vazio desativa o envio) | _(vazio)_ |
+| `grafana_cloud_loki_username` | Instance ID do stack Grafana Cloud de Logs (opcional) | _(vazio)_ |
+| `grafana_cloud_loki_api_key` | API key do Grafana Cloud com permissão de escrita em Logs (opcional, sensível) | _(vazio)_ |
+| `grafana_cloud_tempo_endpoint` | Endpoint OTLP do Grafana Cloud Traces (opcional - vazio desativa o envio) | _(vazio)_ |
+| `grafana_cloud_tempo_username` | Instance ID do stack Grafana Cloud de Traces (opcional) | _(vazio)_ |
+| `grafana_cloud_tempo_api_key` | API key do Grafana Cloud com permissão de escrita em Traces (opcional, sensível) | _(vazio)_ |
+| `enable_dr` | Habilita a proteção contínua de dados para DR (replicação de backup do RDS + Global Table do DynamoDB) | _`true`_ |
+| `dr_aws_region` | Região AWS do ambiente passivo (`terra-dr/`) | _`us-west-2`_ |
+| `rds_backup_retention_period` | Dias de retenção dos backups automatizados do RDS (necessário para a replicação cross-region) | _`7`_ |
+| `manage_dns` | Habilita a hosted zone Route53 + failover DNS entre os ambientes ativo/passivo | _`true`_ |
+| `dns_zone_name` | Subdomínio delegado à hosted zone Route53 (_ex.: `solidarytech.meu.dominio`_) | _`CHANGE_ME`_ |
+| `dns_record_name` | Nome do registro DNS com failover que os clientes usam (_ex.: `api.solidarytech.meu.dominio`_) | _`CHANGE_ME`_ |
 
-> As 3 variáveis de Grafana Cloud são opcionais: servem para Prometheus/Loki/Tempo enviarem (via `remote_write`/`loki.write`/`otelcol.exporter.otlp`) os dados para fora do cluster, já que o armazenamento local (PVC, retenção curta) não é replicado para o ambiente passivo (`terra-dr/`). Ver "Remote_write para o Grafana Cloud" e "Logs e traces para o Grafana Cloud" em `terra/README.md`.
+> As 9 variáveis de Grafana Cloud (3 para métricas, 3 para logs, 3 para traces) são opcionais: servem para Prometheus/Loki/Tempo enviarem (via `remote_write`/`loki.write`/`otelcol.exporter.otlp`) os dados para fora do cluster, já que o armazenamento local (PVC, retenção curta) não é replicado para o ambiente passivo (`terra-dr/`). Ver "Remote_write para o Grafana Cloud" e "Logs e traces para o Grafana Cloud" em `terra/README.md`, e o passo 5 abaixo para onde obter esses valores.
+
+> As variáveis de DR (`enable_dr`, `dr_aws_region`, `rds_backup_retention_period`, `manage_dns`, `dns_zone_name`, `dns_record_name`) vêm com valores padrão já habilitados no `.example`, pois cobrem apenas a proteção contínua de dados (barata, sem compute extra) - o ambiente passivo em si (`terra-dr/`) continua uma ativação separada e sob demanda, ver passo 4. `dns_zone_name`/`dns_record_name` exigem um domínio próprio já registrado (fora da AWS ou não) para funcionar - ver passo 4.
 
 <BR>
 
@@ -154,11 +169,30 @@ O único dado que **não** dá para preencher com antecedência é `rds_restore_
 
 > **Vide ["Ativação (runbook)" em `terra-dr/README.md`][ativadr] para o passo a passo completo quando o DR precisar ser ativado.**
 
+### DNS do failover (`manage_dns = true`)
+
+`dns_zone_name`/`dns_record_name` (passo 1) pressupõem um **domínio próprio já registrado** (em qualquer registrador, não precisa ser a Route53) - `dns_zone_name` é um subdomínio desse domínio (_ex.: `solidarytech.meu.dominio`_), não o domínio raiz inteiro. O `terraform apply` do passo 2 cria a hosted zone Route53 desse subdomínio, mas ela só resolve de fato depois que o domínio raiz **delegar** a resolução para ela. Depois do `apply`, consulte os nameservers gerados:
+
+```bash
+terraform output route53_name_servers
+```
+
+Cadastre esses 4 nameservers como registros **NS** do subdomínio (`dns_zone_name`) no provedor DNS do domínio raiz (o mesmo lugar onde o domínio foi registrado ou onde seu DNS é gerenciado hoje). Sem esse cadastro, `dns_record_name` não resolve, mesmo com a hosted zone e os registros `PRIMARY`/`SECONDARY` já criados no Route53.
+
 <BR>
 
 ## 5. Grafana externo
 
 Loki, Tempo e Prometheus são implementados com o `terraform apply` do passo 2, e (se as variáveis de Grafana Cloud do passo 1 estiverem preenchidas) já empurram logs/traces/métricas para os datasources nativos e hospedados do próprio Grafana Cloud (`remote_write`/`loki.write`/`otelcol.exporter.otlp` - ver "Remote_write..."/"Logs e traces..." em `terra/README.md`). Não há NLB pública nem passo de cadastro de datasource: nada a configurar manualmente aqui.
+
+As 9 variáveis (`grafana_cloud_remote_write_url`/`_username`/`_api_key` para métricas, `grafana_cloud_loki_url`/`_username`/`_api_key` para logs, `grafana_cloud_tempo_endpoint`/`_username`/`_api_key` para traces) são obtidas direto na conta do Grafana Cloud, sem precisar de nenhum contato ou solicitação:
+
+1. Acesse [grafana.com][grafanacloud] e entre na sua conta (ou crie uma, o tier gratuito já é suficiente).
+2. No portal, abra o stack desejado e, em **"Connections" > "Add new connection"** (ou na página de detalhes do stack), localize os cartões **Prometheus**, **Loki** e **Tempo** (cada um pertence a um Instance ID/stack próprio, mesmo dentro da mesma conta).
+3. Cada cartão traz a **URL de push** (`remote_write`/`loki.write`/OTLP endpoint) e o **Instance ID** (usado como username/basic-auth) prontos para copiar.
+4. Gere uma **API key** (ou "Cloud Access Policy Token") com permissão de escrita (`MetricsPublisher`/`LogsPublisher`/`TracesPublisher`, conforme o cartão) em **"Access Policies"**.
+
+Preencha esses valores em `terra/terraform.tfvars` (passo 1) e rode `terraform apply` novamente. **Preencher qualquer um dos 3 grupos de variáveis já ativa o envio remoto correspondente** (métricas, logs ou traces, de forma independente) - deixar um grupo vazio mantém aquele envio desativado, sem afetar os demais.
 
 <BR>
 
