@@ -251,6 +251,27 @@ variáveis ficam só em `terraform.tfvars` (gitignored) e `terra-dr/` não as
 recebe hoje (mesmo raciocínio: `module.alloy` em `terra-dr/main.tf` não
 passa essas variáveis).
 
+**Aviso de configuração: desativar a geração de métricas de spans no
+próprio Grafana Cloud.** Como o Tempo local já roda seu `metrics_generator`
+(seção "Deriva métricas de RED" em `terra/modules/tempo/config.yaml`) e o
+Prometheus local já reenvia essas séries via `remote_write` (seção
+anterior), o Grafana Cloud não deve gerar `traces_spanmetrics_*` de novo a
+partir da segunda via de traces recebida por `otelcol.exporter.otlp
+"grafanacloud"` acima. Com as duas gerações ativas ao mesmo tempo, as
+séries resultantes compartilham exatamente os mesmos labels (`job`,
+`service`, `span_kind`, `span_name`, `status_code`), mas cada uma usa um
+esquema de buckets de histograma diferente (o do Tempo local vs. o padrão
+do Grafana Cloud); Prometheus/Mimir mescla as duas sob o mesmo nome de
+série, o que quebra a monotonicidade exigida por `histogram_quantile` e
+produz leituras de p95/p99 absurdas (dezenas de segundos onde a latência
+real é de dezenas de milissegundos), incluindo nos painéis de SLO em
+`doc/grafana/dashboard-solidarytech-golden-metrics.json`. Esse recurso fica
+no portal do Grafana Cloud, fora deste repositório, em **Observability >
+Configuration > Traces metrics generation**: desative-o ali antes de
+habilitar `grafana_cloud_tempo_endpoint`, ou revise-o de novo caso os p95
+voltem a parecer inconsistentes após qualquer mudança na conta do Grafana
+Cloud.
+
 ### Sem exposição externa de Loki/Tempo/Prometheus (e sem PDC)
 
 Uma iteração anterior expunha Loki/Tempo/Prometheus publicamente pela NLB
