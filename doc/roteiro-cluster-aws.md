@@ -73,9 +73,11 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `grafana_cloud_tempo_endpoint` | Endpoint OTLP do Grafana Cloud Traces (opcional - vazio desativa o envio) | _(vazio)_ |
 | `grafana_cloud_tempo_username` | Instance ID do stack Grafana Cloud de Traces (opcional) | _(vazio)_ |
 | `grafana_cloud_tempo_api_key` | API key do Grafana Cloud com permissão de escrita em Traces (opcional, sensível) | _(vazio)_ |
-| `enable_dr` | Habilita a proteção contínua de dados para DR (replicação de backup do RDS + Global Table do DynamoDB) | _`true`_ |
+| `enable_dr` | Habilita a proteção contínua de dados para DR (read replica cross-region sempre-vivo do RDS + Global Table do DynamoDB) | _`true`_ |
 | `dr_aws_region` | Região AWS do ambiente passivo (`terra-dr/`) | _`us-west-2`_ |
-| `rds_backup_retention_period` | Dias de retenção dos backups automatizados do RDS (necessário para a replicação cross-region) | _`7`_ |
+| `rds_backup_retention_period` | Dias de retenção de backup automatizado do RDS (pré-requisito para criar o read replica cross-region) | _`7`_ |
+| `dr_standby_subnet_prefix` | CIDR (2 primeiros octetos) da VPC mínima que hospeda o read replica sempre-vivo do RDS | _`10.95`_ |
+| `dr_app_vpc_cidr` | CIDR da VPC de app do ambiente passivo (`terra-dr/`) - precisa bater com o `subnet_prefix` de lá | _`10.90.0.0/16`_ |
 | `manage_dns` | Habilita a hosted zone Route53 + failover DNS entre os ambientes ativo/passivo | _`true`_ |
 | `dns_zone_name` | Subdomínio delegado à hosted zone Route53 (_ex.: `solidarytech.meu.dominio`_) | _`CHANGE_ME`_ |
 | `dns_record_name` | Nome do registro DNS com failover que os clientes usam (_ex.: `api.solidarytech.meu.dominio`_) | _`CHANGE_ME`_ |
@@ -160,14 +162,14 @@ cp terraform.tfvars.example terraform.tfvars
 
 A maioria das variáveis é de configuração estática, sem nenhuma consulta ao ambiente ativo. Elas também são similares às variáveis do passo 1. Preencha elas com os mesmos valores (ou equivalentes) do `terra/terraform.tfvars` já usado no passo 2.
 
-Duas variáveis merecem atenção:
+Quatro variáveis vêm de outputs do `terra/`:
 
 - **`db_password`**: precisa ser **IGUAL** à senha real do ambiente ativo, mas não de consulta ao parâmetro SSM criado por `module.secrets`.
 - **`route53_zone_id`**: copie este valor direto do `terra/` (_Route53 é um serviço global da AWS, e o valor está pronto no ambiente ativo_): `terraform output -raw route53_zone_id`
+- **`rds_dr_vpc_id`/`rds_dr_vpc_cidr`**: o read replica cross-region sempre-vivo do RDS (`module.rds_dr_replica`) e sua VPC mínima (`module.dr_standby_vpc`) já existem desde que `terra/` foi aplicado com `enable_dr = true` - dá para preencher com antecedência: `terraform output dr_standby_vpc_id` / `terraform output dr_standby_vpc_cidr`.
+- **`rds_dr_connection_url`**: idem, já dá para copiar o valor (`terraform output -raw dr_replica_connection_url`) - mas o replica continua **somente leitura** até a promoção (`var.promote_dr_db = true` em `terra/`), que é a única ação deste fluxo realmente restrita ao momento exato da ativação, não algo para preparar com antecedência.
 
-O único dado que **não** dá para preencher com antecedência é `rds_restore_source_arn`, pois ele identifica o backup mais recente no momento exato da ativação. No arquivo `.example` ele está comentado.
-
-> **Vide ["Ativação (runbook)" em `terra-dr/README.md`][ativadr] para o passo a passo completo quando o DR precisar ser ativado.**
+> **Vide ["Ativação (runbook)" em `terra-dr/README.md`][ativadr] para o passo a passo completo quando o DR precisar ser ativado**, incluindo o congelamento de escritas, a promoção do replica e o VPC peering entre as duas VPCs.
 
 ### DNS do failover (`manage_dns = true`)
 
@@ -199,6 +201,8 @@ Preencha esses valores em `terra/terraform.tfvars` (passo 1) e rode `terraform a
 ## Destruição do ambiente
 
 > **É necessário estar conectado ao cluster AWS.**
+
+> Se o ambiente passivo (`terra-dr/`) chegou a ser ativado, destrua-o **antes** do ambiente principal.
 
 ```bash
 cd terra

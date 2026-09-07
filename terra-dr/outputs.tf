@@ -8,10 +8,9 @@ output "eks_outputs" {
   value       = module.eks
 }
 
-output "rds_outputs" {
-  description = "Outputs do módulo rds"
-  value       = module.rds
-  sensitive   = true
+output "dr_standby_peering_connection_id" {
+  description = "ID do VPC peering connection até a VPC mínima do replica do RDS (aws_vpc_peering_connection.to_rds_standby) - copiar para var.dr_app_vpc_peering_connection_id em terra/terraform.tfvars, num segundo apply de terra/ que cria a rota de volta (ver o runbook de ativação em terra-dr/README.md)."
+  value       = aws_vpc_peering_connection.to_rds_standby.id
 }
 
 output "dynamodb_table_arn" {

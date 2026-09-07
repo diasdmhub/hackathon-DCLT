@@ -1,6 +1,6 @@
 # IAM Role do control plane
 resource "aws_iam_role" "cluster" {
-  name = "${var.name_prefix}-eks-cluster-role"
+  name = "${var.name_prefix}-eks-cluster-role${var.role_name_suffix}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -11,7 +11,7 @@ resource "aws_iam_role" "cluster" {
     }]
   })
 
-  tags = { Name = "${var.name_prefix}-eks-cluster-role" }
+  tags = { Name = "${var.name_prefix}-eks-cluster-role${var.role_name_suffix}" }
 }
 
 resource "aws_iam_role_policy_attachment" "cluster_policy" {
@@ -21,7 +21,7 @@ resource "aws_iam_role_policy_attachment" "cluster_policy" {
 
 # IAM Role dos nodes
 resource "aws_iam_role" "nodes" {
-  name = "${var.name_prefix}-eks-node-role"
+  name = "${var.name_prefix}-eks-node-role${var.role_name_suffix}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -32,7 +32,7 @@ resource "aws_iam_role" "nodes" {
     }]
   })
 
-  tags = { Name = "${var.name_prefix}-eks-node-role" }
+  tags = { Name = "${var.name_prefix}-eks-node-role${var.role_name_suffix}" }
 }
 
 resource "aws_iam_role_policy_attachment" "nodes_worker_policy" {
@@ -218,10 +218,10 @@ data "aws_iam_policy_document" "ebs_csi_assume_role" {
 }
 
 resource "aws_iam_role" "ebs_csi" {
-  name               = "${var.name_prefix}-eks-ebs-csi-role"
+  name               = "${var.name_prefix}-eks-ebs-csi-role${var.role_name_suffix}"
   assume_role_policy = data.aws_iam_policy_document.ebs_csi_assume_role.json
 
-  tags = { Name = "${var.name_prefix}-eks-ebs-csi-role" }
+  tags = { Name = "${var.name_prefix}-eks-ebs-csi-role${var.role_name_suffix}" }
 }
 
 resource "aws_iam_role_policy_attachment" "ebs_csi_policy" {

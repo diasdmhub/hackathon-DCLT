@@ -339,16 +339,31 @@ completo de ativação/failback.
 
 O que fica sempre protegido, independente de ativação, custando pouco:
 
-- **RDS**: `backup_retention_period` (variável `rds_backup_retention_period`,
-  passo obrigatório - antes era `0`, sem backup algum) habilita backups
-  automatizados; quando `enable_dr = true`, o recurso
-  `aws_db_instance_automated_backups_replication` (`terra/main.tf`) replica
-  esses backups continuamente para a região do ambiente passivo (via o
-  provider `aws.dr`, o único uso de uma segunda região neste state). A
-  restauração em si só acontece quando `terra-dr/` é aplicado
-  (`aws_db_instance.restored`, `restore_to_point_in_time`, em
-  `terra/modules/rds`) - o RPO é limitado pela frequência/latência dessa
-  replicação contínua, não por um snapshot manual agendado.
+- **RDS**: quando `enable_dr = true`, `terra/main.tf` mantém um **read
+  replica cross-region sempre-vivo** do Postgres (`module.rds_dr_replica`,
+  usando `terra/modules/rds` uma segunda vez com `replicate_source_db_arn`,
+  numa VPC mínima própria - `module.dr_standby_vpc`, sem Internet Gateway/
+  NAT, já que a replicação cross-region do RDS trafega pelo canal interno
+  gerenciado da AWS, não pela internet da VPC). O lag é tipicamente de
+  segundos, não minutos - necessário porque o `donation-service` grava
+  valores de doação, e uma estratégia de RPO em minutos (a antiga
+  replicação de *backups*, `aws_db_instance_automated_backups_replication`,
+  substituída por este desenho) arriscava divergência de dados num
+  failover. `backup_retention_period` (variável
+  `rds_backup_retention_period`) continua > 0 tanto na instância primária
+  (pré-requisito para criar um replica a partir dela) quanto no próprio
+  replica (permite, por sua vez, servir de origem a um replica reverso no
+  failback - ver abaixo). A **ativação** promove esse replica a instância
+  standalone in-place (`var.promote_dr_db = true` - o provider Terraform
+  interpreta a remoção de `replicate_source_db` como uma chamada
+  `ModifyDBInstance` de promoção, não um destroy/recreate); o **failback**
+  espelha o mesmo mecanismo ao contrário: a instância original é destruída
+  e recriada como replica do novo primário (limitação da própria AWS - não
+  existe conversão in-place de standalone para replica), resincroniza, e é
+  promovida de volta do mesmo jeito. Ver "Runbook de ativação" e "Failback"
+  em `terra-dr/README.md` para o passo a passo completo, incluindo o VPC
+  peering necessário para o EKS de `terra-dr/` alcançar este replica depois
+  de promovido.
 - **DynamoDB**: `module.dynamo` recebe `replica_regions = [var.dr_aws_region]`
   quando `enable_dr = true`, transformando a tabela numa Global Table (v2)
   com uma réplica sempre viva na região do ambiente passivo -
@@ -377,6 +392,14 @@ O que fica sempre protegido, independente de ativação, custando pouco:
   IPs fixos: a NLB de cada região tem seu próprio DNS name, o nome que o
   cliente usa (`dns_record_name`) é o único que fica constante.
 
+  > O health check (`aws_route53_health_check.primary`) só verifica se
+  > `donation-service:8082/health` responde 200 pela rede - cobre bem uma
+  > indisponibilidade de rede/região inteira, mas não detecta desastres em
+  > que o endpoint continua respondendo apesar do sistema estar quebrado
+  > por trás (corrupção de dados, uma bad deploy, um bug de aplicação). Para
+  > esses casos, a ativação do ambiente passivo continua sendo uma decisão
+  > manual, não algo que o failover de DNS resolve sozinho.
+
 O que **não** replica continuamente, por escolha: a fila **SQS** (eventos em
 trânsito no momento do desastre não são reprocessados - a fila é recriada
 vazia em `terra-dr/`) e o **EKS/VPC/NLB/observabilidade** do ambiente
@@ -388,8 +411,9 @@ explícito via `terraform.tfvars` (ver `terraform.tfvars.example`).
 
 **IAM entre as duas regiões**: como IAM é um namespace global por conta AWS
 (diferente de quase todo o resto deste repositório, escopado por região),
-`terra/modules/iam` e `terra/modules/lb-iam` aceitam `role_name_suffix`
-(vazio aqui, `"-dr"` em `terra-dr/`) para as roles IRSA de cada ambiente não
+`terra/modules/eks` (roles do cluster/nodes/EBS CSI), `terra/modules/iam` e
+`terra/modules/lb-iam` aceitam `role_name_suffix`
+(vazio aqui, `"-dr"` em `terra-dr/`) para as roles de cada ambiente não
 colidirem, mesmo usando o mesmo `name_prefix`. O `name_prefix` em si
 **precisa** ficar igual entre os dois roots: os target groups da NLB usam
 nomes determinísticos (`${name_prefix}-<service>-tg`) que `kube-aws/*.yaml`

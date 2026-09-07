@@ -59,6 +59,22 @@ output "route53_name_servers" {
   value       = var.manage_dns ? aws_route53_zone.dr[0].name_servers : null
 }
 
+output "dr_standby_vpc_id" {
+  description = "ID da VPC mínima do read replica sempre-vivo do RDS (module.dr_standby_vpc, só existe quando var.enable_dr = true) - copiar para rds_dr_vpc_id em terra-dr/terraform.tfvars na ativação, para o VPC peering. Ver \"Disaster Recovery\" em terra/README.md."
+  value       = var.enable_dr ? module.dr_standby_vpc[0].vpc_id : null
+}
+
+output "dr_standby_vpc_cidr" {
+  description = "CIDR da VPC mínima do read replica sempre-vivo - copiar para rds_dr_vpc_cidr em terra-dr/terraform.tfvars na ativação."
+  value       = var.enable_dr ? module.dr_standby_vpc[0].vpc_cidr : null
+}
+
+output "dr_replica_connection_url" {
+  description = "URL de conexão Postgres do read replica sempre-vivo (module.rds_dr_replica, só existe quando var.enable_dr = true) - só fica utilizável de fato depois de promovido (var.promote_dr_db = true, ver o runbook de ativação em terra-dr/README.md). Copiar para rds_dr_connection_url em terra-dr/terraform.tfvars."
+  value       = var.enable_dr ? module.rds_dr_replica[0].rds_connection_url : null
+  sensitive   = true
+}
+
 output "configure_kubectl" {
   description = "Comando para configurar o kubectl/aws-cli local contra o cluster criado"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.eks_cluster_name}"

@@ -57,9 +57,47 @@ aws dynamodb create-table \
 # 4 Inicialização do Terraform
 terraform init -reconfigure -upgrade
 
-# 5 Plan do Terraform
-#terraform plan
+# 5 Validação das variáveis do read replica do RDS (ver "Ativação (runbook)"
+# em terra-dr/README.md) - o Postgres em si não é criado/restaurado por
+# este root, só conectado (via VPC peering) ao read replica sempre-vivo que
+# terra/main.tf mantém (module.rds_dr_replica). rds_dr_vpc_id/
+# rds_dr_vpc_cidr/rds_dr_connection_url precisam ser copiados dos outputs
+# de terra/ (dr_standby_vpc_id/dr_standby_vpc_cidr/dr_replica_connection_url)
+# antes deste apply - sem uma consulta automática possível aqui, porque o
+# segundo (a URL de conexão promovida) só existe depois de terra/ ser
+# aplicado com promote_dr_db = true, uma decisão manual do runbook de
+# ativação, não algo este script deveria inferir sozinho.
+tfvar() {
+    local key="$1" val
+    val=$(grep -E "^[[:space:]]*${key}[[:space:]]*=" terraform.tfvars | tail -n1 \
+        | sed -E "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*\"?([^\"#]*)\"?[[:space:]]*(#.*)?\$/\1/" \
+        | sed -E 's/[[:space:]]+$//')
+    printf '%s' "$val"
+}
 
-# 6 Apply do Terraform (ativação do ambiente passivo - ver terra-dr/README.md
-# para as variáveis que precisam ser passadas, como rds_restore_source_arn)
-#terraform apply
+missing_vars=()
+for key in rds_dr_vpc_id rds_dr_vpc_cidr rds_dr_connection_url; do
+    val=$(tfvar "$key")
+    if [ -z "$val" ] || [ "$val" = "CHANGE_ME" ]; then
+        missing_vars+=("$key")
+    fi
+done
+
+if (( ${#missing_vars[@]} )); then
+    printf 'ERRO: as variáveis abaixo precisam ser preenchidas em terraform.tfvars antes da ativação (copiadas dos outputs de terra/ - ver terra-dr/README.md):\n' >&2
+    for v in "${missing_vars[@]}"; do
+        printf ' - %s\n' "$v" >&2
+    done
+    exit 1
+fi
+
+# 6 Apply do module.eks isolado - mesma limitação de Terraform+EKS de
+# terra/ (os providers kubernetes/helm/kubectl não conseguem se conectar
+# antes do cluster existir no state) - ver "Uso" em terra/README.md.
+terraform plan -target=module.eks
+terraform apply -target=module.eks
+
+# 7 Plan/apply do restante (ativação do ambiente passivo: VPC peering até o
+# replica já promovido, EKS/NLB/Flux/observabilidade).
+terraform plan
+terraform apply

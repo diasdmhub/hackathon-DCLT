@@ -228,15 +228,51 @@ variable "dr_aws_region" {
 }
 
 variable "enable_dr" {
-  description = "Habilita a proteção contínua de dados da estratégia de DR: replicação cross-region de backups automatizados do RDS (aws_db_instance_automated_backups_replication) + réplica da tabela DynamoDB via Global Tables (module.dynamo, replica_regions). Desligado por padrão para não alterar custo/comportamento do ambiente já em produção sem opt-in explícito."
+  description = "Habilita a proteção contínua de dados da estratégia de DR: read replica cross-region sempre vivo do RDS (module.rds_dr_replica, numa VPC mínima própria - module.dr_standby_vpc) + réplica da tabela DynamoDB via Global Tables (module.dynamo, replica_regions). Desligado por padrão para não alterar custo/comportamento do ambiente já em produção sem opt-in explícito."
   type        = bool
   default     = false
 }
 
 variable "rds_backup_retention_period" {
-  description = "Dias de retenção de backup automatizado do RDS - precisa ser > 0 para var.enable_dr funcionar (pré-requisito de aws_db_instance_automated_backups_replication). Mantido configurável mesmo com enable_dr = false porque também é um bom padrão de resiliência por si só (permite restore point-in-time dentro da mesma região)."
+  description = "Dias de retenção de backup automatizado do RDS - precisa ser > 0 para var.enable_dr funcionar (pré-requisito para criar um read replica a partir desta instância). Mantido configurável mesmo com enable_dr = false porque também é um bom padrão de resiliência por si só (permite restore point-in-time dentro da mesma região)."
   type        = number
   default     = 7
+}
+
+variable "dr_standby_subnet_prefix" {
+  description = "Os 2 primeiros octetos do CIDR da VPC mínima que hospeda o read replica sempre-vivo do RDS (module.dr_standby_vpc) - distinto tanto deste ambiente (var.subnet_prefix, 10.80) quanto da VPC de app do ambiente passivo (10.90, terra-dr/terraform.tfvars), para não colidir quando as duas forem conectadas via VPC peering na ativação."
+  type        = string
+  default     = "10.95"
+}
+
+variable "dr_app_vpc_cidr" {
+  description = "CIDR da VPC de app do ambiente passivo (terra-dr/, var.subnet_prefix por lá) - liberado no Security Group do read replica sempre-vivo para que o EKS de terra-dr/, alcançado via peering na ativação, consiga se conectar depois da promoção. Precisa bater com o CIDR real de terra-dr/terraform.tfvars (10.90.0.0/16 no default de ambos)."
+  type        = string
+  default     = "10.90.0.0/16"
+}
+
+variable "promote_dr_db" {
+  description = "Promove o read replica sempre-vivo (module.rds_dr_replica) a instância standalone in-place, removendo replicate_source_db - o switch de ativação/failback da estratégia de DR (ver terra/modules/rds e o runbook em terra-dr/README.md). false (padrão) mantém a réplica sempre em sincronia com o ambiente ativo."
+  type        = bool
+  default     = false
+}
+
+variable "dr_failback_source_arn" {
+  description = "ARN da instância RDS atualmente ativa no ambiente passivo (o replica promovido lá durante uma ativação) - usado só no failback, para recriar a instância PRIMÁRIA deste ambiente (module.rds) como replica dela em vez de uma instância nova/vazia. null (padrão) = comportamento normal, instância primária criada do zero. Ver \"Failback\" em terra-dr/README.md."
+  type        = string
+  default     = null
+}
+
+variable "dr_failback_promote" {
+  description = "Promove a instância primária deste ambiente (module.rds) de volta a standalone, depois de recriada como replica via var.dr_failback_source_arn - o passo final do failback. Ignorado quando dr_failback_source_arn é null."
+  type        = bool
+  default     = false
+}
+
+variable "dr_app_vpc_peering_connection_id" {
+  description = "ID do VPC peering connection criado por terra-dr/ (aws_vpc_peering_connection, output dr_standby_peering_connection_id) na ativação, ligando a VPC de app do ambiente passivo à VPC mínima do replica (module.dr_standby_vpc). \"\" (padrão) = a rota de volta ainda não existe (terra-dr/ nunca foi aplicado) - preencher e reaplicar terra/ depois do primeiro apply de terra-dr/, ver o runbook de ativação em terra-dr/README.md."
+  type        = string
+  default     = ""
 }
 
 variable "manage_dns" {

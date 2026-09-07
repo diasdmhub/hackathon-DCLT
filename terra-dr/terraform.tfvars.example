@@ -15,19 +15,19 @@ eks_node_min_size        = 1
 eks_node_max_size        = 4
 enable_prefix_delegation = true
 
-# RDS - Credenciais do DB. db_password precisa ser IGUAL à senha real do
-# ambiente ativo (só compõe a URL de conexão; a senha efetiva vem do
-# restore - ver variables.tf).
-db_name     = "sol_db"
-db_username = "sol"
+# RDS - o Postgres em si não é criado por este root, só conectado ao read
+# replica sempre-vivo mantido por terra/ (module.rds_dr_replica). db_password
+# precisa ser IGUAL à senha real do ambiente ativo (só popula o parâmetro
+# SSM local; a senha efetiva já vem embutida em rds_dr_connection_url).
 db_password = "CHANGE_ME"
 
-rds_instance_class          = "db.t3.micro"
-rds_backup_retention_period = 7
-
-# Deixe null (comentado) até a ativação real - ver terra-dr/README.md para
-# como descobrir o ARN do backup replicado mais recente.
-# rds_restore_source_arn = "arn:aws:rds:us-west-2:123456789012:auto-backup:ab-..."
+# Preencha estes 3 na ativação, copiando os outputs de terra/ (dr_standby_vpc_id,
+# dr_standby_vpc_cidr, dr_replica_connection_url - o último só correto depois
+# de terra/ ser aplicado com promote_dr_db = true) - ver o runbook completo
+# em terra-dr/README.md.
+rds_dr_vpc_id          = "CHANGE_ME" # ex.: "vpc-0123456789abcdef0"
+rds_dr_vpc_cidr        = "10.95.0.0/16" # IGUAL a dr_standby_subnet_prefix em terra/terraform.tfvars
+rds_dr_connection_url  = "CHANGE_ME"
 
 # DynamoDB / SQS
 dynamodb_table_name = "SolidaryTechVolunteers" # IGUAL ao ambiente ativo - é a mesma tabela (réplica), não uma nova

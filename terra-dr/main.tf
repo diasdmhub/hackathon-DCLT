@@ -12,15 +12,22 @@
 #   Global Table criada por terra/ (module.dynamo, replica_regions, só
 #   quando enable_dr = true por lá). O ARN é montado em local.dynamodb_table_arn
 #   abaixo via data.aws_caller_identity, sem gerenciar o recurso aqui.
-# - module "rds" recebe var.rds_restore_source_arn: em vez de criar um banco
-#   vazio, restaura a partir do backup automatizado replicado cross-region
-#   por terra/ (aws_db_instance_automated_backups_replication) - ver
-#   terra-dr/README.md para como descobrir esse ARN na ativação.
-# - module "iam"/"lb_iam" recebem role_name_suffix = "-dr": IAM é um
+# - Sem module "rds": o Postgres não é mais criado/restaurado por este root.
+#   terra/main.tf mantém um read replica cross-region sempre-vivo do RDS
+#   (module.rds_dr_replica, numa VPC mínima própria - module.dr_standby_vpc),
+#   promovido a standalone via var.promote_dr_db em terra/ (não aqui). Este
+#   root só se conecta a ele: um VPC peering (aws_vpc_peering_connection.to_rds_standby
+#   abaixo) até a VPC mínima do replica, e var.rds_dr_connection_url (copiado
+#   do output dr_replica_connection_url de terra/, depois de promovido) para
+#   os Secrets ngo-env/donation-env - ver terra-dr/README.md para o runbook
+#   completo de ativação.
+# - module "eks"/"iam"/"lb_iam" recebem role_name_suffix = "-dr": IAM é um
 #   namespace global por conta AWS, então mesmo usando o mesmo name_prefix
 #   do ambiente ativo (necessário para os target groups da NLB baterem com
-#   kube-aws/*.yaml - ver terra-dr/variables.tf), as roles IRSA precisam de
-#   um nome distinto.
+#   kube-aws/*.yaml - ver terra-dr/variables.tf), as IAM roles (cluster/nodes/
+#   EBS CSI do EKS, e as IRSA de donation/volunteer/lb-controller) precisam
+#   de um nome distinto - sem isso, o apply falha com "EntityAlreadyExists"
+#   contra as roles já criadas pelo ambiente ativo.
 # - Route53: só o registro SECONDARY + health check da própria NLB,
 #   referenciando a zone já criada por terra/ (var.route53_zone_id).
 
@@ -47,28 +54,51 @@ module "eks" {
   node_min_size            = var.eks_node_min_size
   node_max_size            = var.eks_node_max_size
   enable_prefix_delegation = var.enable_prefix_delegation
+  role_name_suffix         = "-dr"
 
   depends_on = [module.vpc]
 }
 
-# RDS - depende da VPC. restore_source_arn (var.rds_restore_source_arn)
-# controla se a instância é criada vazia ou restaurada do backup replicado -
-# ver terra/modules/rds/rds.tf.
-module "rds" {
-  source = "../terra/modules/rds"
+# VPC peering até a VPC mínima do replica do RDS (module.dr_standby_vpc em
+# terra/main.tf, mesma região - ver terra/variables.tf, dr_aws_region).
+# auto_accept = true: as duas VPCs pertencem à mesma conta AWS, então não é
+# necessário um aws_vpc_peering_connection_accepter separado do lado de
+# terra/. var.rds_dr_vpc_id/var.rds_dr_vpc_cidr são copiados dos outputs
+# dr_standby_vpc_id/dr_standby_vpc_cidr de terra/ (mesma convenção manual de
+# var.route53_zone_id, sem terraform_remote_state) - ver o runbook de
+# ativação em terra-dr/README.md.
+resource "aws_vpc_peering_connection" "to_rds_standby" {
+  vpc_id      = module.vpc.vpc_id
+  peer_vpc_id = var.rds_dr_vpc_id
+  auto_accept = true
 
-  name_prefix             = var.name_prefix
-  db_name                 = var.db_name
-  db_username             = var.db_username
-  db_password             = var.db_password
-  instance_class          = var.rds_instance_class
-  vpc_id                  = module.vpc.vpc_id
-  vpc_cidr                = module.vpc.vpc_cidr
-  private_subnet_ids      = module.vpc.private_subnet_ids
-  backup_retention_period = var.rds_backup_retention_period
-  restore_source_arn      = var.rds_restore_source_arn
+  tags = { Name = "${var.name_prefix}-dr-app-to-rds-standby-pcx" }
+}
 
-  depends_on = [module.vpc]
+# Habilita resolução de DNS through peering nos dois sentidos - sem isso, o
+# endpoint do RDS (um hostname, não um IP fixo) não resolveria para o IP
+# privado alcançável via peering a partir dos pods do EKS.
+resource "aws_vpc_peering_connection_options" "to_rds_standby" {
+  vpc_peering_connection_id = aws_vpc_peering_connection.to_rds_standby.id
+
+  accepter {
+    allow_remote_vpc_dns_resolution = true
+  }
+  requester {
+    allow_remote_vpc_dns_resolution = true
+  }
+}
+
+# Rota da VPC de app até a VPC mínima do replica, via o peering acima. A
+# rota no sentido contrário (aws_route.dr_standby_to_app_vpc em terra/main.tf)
+# só é criada depois, num segundo apply de terra/ com
+# var.dr_app_vpc_peering_connection_id = aws_vpc_peering_connection.to_rds_standby.id
+# (output dr_standby_peering_connection_id abaixo) - ver o runbook de
+# ativação em terra-dr/README.md.
+resource "aws_route" "app_vpc_to_rds_standby" {
+  route_table_id            = module.vpc.private_route_table_id
+  destination_cidr_block    = var.rds_dr_vpc_cidr
+  vpc_peering_connection_id = aws_vpc_peering_connection.to_rds_standby.id
 }
 
 # SQS - fila nova e independente, não replicada do ambiente ativo (eventos
@@ -165,20 +195,20 @@ resource "kubernetes_namespace_v1" "solidarytech" {
 }
 
 # Secrets (SSM Parameter Store + Secrets Kubernetes ngo-env/donation-env/
-# volunteer-env), com os valores reais desta região (RDS restaurado, fila
+# volunteer-env), com os valores reais desta região (RDS promovido, fila
 # SQS nova, mesma tabela DynamoDB).
 module "secrets" {
   source = "../terra/modules/secrets"
 
   name_prefix         = var.name_prefix
-  rds_connection_url  = module.rds.rds_connection_url
+  rds_connection_url  = var.rds_dr_connection_url
   rds_password        = var.db_password
   sqs_queue_url       = module.sqs.sqs_queue_url
   dynamodb_table_name = var.dynamodb_table_name
   k8s_namespace       = kubernetes_namespace_v1.solidarytech.metadata[0].name
   aws_region          = var.aws_region
 
-  depends_on = [module.rds, module.sqs, kubernetes_namespace_v1.solidarytech]
+  depends_on = [module.sqs, kubernetes_namespace_v1.solidarytech]
 }
 
 # FluxCD - mesmo módulo compartilhado de terra/main.tf, aplicado com o YAML

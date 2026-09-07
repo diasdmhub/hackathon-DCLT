@@ -23,7 +23,10 @@ module "eks" {
   depends_on = [module.vpc]
 }
 
-# RDS - depende da VPC
+# RDS - depende da VPC. var.dr_failback_source_arn/var.dr_failback_promote
+# só têm efeito durante um failback (voltar a ser o ambiente ativo depois
+# de uma ativação do DR): null/false (padrão) mantém o comportamento normal,
+# instância primária criada do zero. Ver "Failback" em terra-dr/README.md.
 module "rds" {
   source = "./modules/rds"
 
@@ -36,23 +39,73 @@ module "rds" {
   vpc_cidr                = module.vpc.vpc_cidr
   private_subnet_ids      = module.vpc.private_subnet_ids
   backup_retention_period = var.rds_backup_retention_period
+  replicate_source_db_arn = var.dr_failback_source_arn
+  promote                 = var.dr_failback_promote
 
   depends_on = [module.vpc]
 }
 
-# Replicação cross-region dos backups automatizados do RDS para a região do
-# ambiente passivo (terra-dr/) - a peça "sempre viva" (e barata: só storage
-# S3 dos backups) da estratégia de DR ativo-passivo. Não cria a instância
-# RDS do ambiente passivo em si - isso só acontece quando terra-dr/ é
-# aplicado, restaurando a partir do backup mais recente replicado aqui (ver
-# aws_db_instance.restored em terra/modules/rds e terra-dr/README.md).
-resource "aws_db_instance_automated_backups_replication" "dr" {
-  count = var.enable_dr ? 1 : 0
+# VPC mínima + read replica cross-region do RDS, sempre vivos na região do
+# ambiente passivo (terra-dr/) - a peça "sempre-on" (RPO de segundos, não
+# minutos) da estratégia de DR ativo-passivo. Substitui a antiga replicação
+# de backups (aws_db_instance_automated_backups_replication): aquele
+# mecanismo replicava só backups, com um RPO limitado pela frequência da
+# replicação; um replica vivo mantém o Postgres em sincronia contínua,
+# necessário para o donation-service não divergir valores de doação num
+# failover. Não sobe EKS/NLB/observabilidade - isso continua 100% sob
+# demanda, só na ativação de terra-dr/. Ver "Disaster Recovery" em
+# terra/README.md.
+module "dr_standby_vpc" {
+  count  = var.enable_dr ? 1 : 0
+  source = "./modules/dr-standby-vpc"
 
-  provider               = aws.dr
-  source_db_instance_arn = module.rds.rds_arn
+  providers = { aws = aws.dr }
 
-  depends_on = [module.rds]
+  name_prefix   = var.name_prefix
+  subnet_prefix = var.dr_standby_subnet_prefix
+}
+
+# var.promote_dr_db controla o papel deste recurso: replica sempre-vivo
+# (false, padrão) ou promovido a instância standalone in-place (true) - ver
+# terra/modules/rds/rds.tf e o runbook de ativação em terra-dr/README.md.
+# var.dr_app_vpc_cidr libera 5432 no Security Group deste replica para a
+# VPC de app de terra-dr/, alcançada via peering na ativação.
+module "rds_dr_replica" {
+  count  = var.enable_dr ? 1 : 0
+  source = "./modules/rds"
+
+  providers = { aws = aws.dr }
+
+  name_prefix             = var.name_prefix
+  db_name                 = var.db_name
+  db_username             = var.db_username
+  db_password             = var.db_password
+  instance_class          = var.rds_instance_class
+  vpc_id                  = module.dr_standby_vpc[0].vpc_id
+  vpc_cidr                = module.dr_standby_vpc[0].vpc_cidr
+  private_subnet_ids      = module.dr_standby_vpc[0].private_subnet_ids
+  backup_retention_period = var.rds_backup_retention_period
+  replicate_source_db_arn = module.rds.rds_arn
+  promote                 = var.promote_dr_db
+  extra_ingress_cidrs     = [var.dr_app_vpc_cidr]
+
+  depends_on = [module.rds, module.dr_standby_vpc]
+}
+
+# Rota de volta da VPC mínima do replica para a VPC de app de terra-dr/, via
+# o peering que terra-dr/ cria na ativação (aws_vpc_peering_connection em
+# terra-dr/main.tf). Só passa a existir depois que terra-dr/ é aplicado pela
+# primeira vez e o ID do peering é copiado para
+# var.dr_app_vpc_peering_connection_id aqui (segundo apply neste diretório)
+# - ver o runbook de ativação em terra-dr/README.md.
+resource "aws_route" "dr_standby_to_app_vpc" {
+  count = var.enable_dr && var.dr_app_vpc_peering_connection_id != "" ? 1 : 0
+
+  provider = aws.dr
+
+  route_table_id            = module.dr_standby_vpc[0].private_route_table_id
+  destination_cidr_block    = var.dr_app_vpc_cidr
+  vpc_peering_connection_id = var.dr_app_vpc_peering_connection_id
 }
 
 # Módulos independentes (não dependem de VPC/EKS)

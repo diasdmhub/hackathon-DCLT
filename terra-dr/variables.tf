@@ -70,40 +70,34 @@ variable "eks_node_max_size" {
 
 # Variáveis do RDS
 #############################
-variable "db_name" {
-  description = "Nome do database - ignorado quando rds_restore_source_arn está definido (um restore herda o database do backup de origem)"
+# O Postgres não é mais criado/restaurado por este root - terra/main.tf
+# mantém um read replica cross-region sempre-vivo (module.rds_dr_replica),
+# promovido a standalone por lá (var.promote_dr_db). Estas 3 variáveis
+# conectam este root a ele: rds_dr_vpc_id/rds_dr_vpc_cidr para o VPC
+# peering (aws_vpc_peering_connection.to_rds_standby em main.tf) e
+# rds_dr_connection_url para os Secrets ngo-env/donation-env - todas
+# copiadas de outputs de terra/ na ativação, ver terra-dr/README.md.
+
+variable "rds_dr_vpc_id" {
+  description = "ID da VPC mínima do read replica sempre-vivo do RDS (output dr_standby_vpc_id de terra/) - usado no VPC peering com a VPC de app deste root."
   type        = string
-  default     = "sol_db"
 }
 
-variable "db_username" {
-  description = "Usuário master do PostgreSQL - ignorado quando rds_restore_source_arn está definido"
+variable "rds_dr_vpc_cidr" {
+  description = "CIDR da VPC mínima do read replica sempre-vivo do RDS (output dr_standby_vpc_cidr de terra/) - usado na rota de peering."
   type        = string
-  default     = "sol"
 }
 
-variable "db_password" {
-  description = "Senha do usuário master. Quando rds_restore_source_arn está definido, esta variável NÃO define a senha real (um restore herda a senha do backup de origem) - precisa ser exatamente igual à senha real do ambiente ativo, só para compor a rds_connection_url usada pelos Secrets ngo-env/donation-env. Ver terra-dr/README.md."
+variable "rds_dr_connection_url" {
+  description = "URL completa de conexão Postgres do read replica já promovido (output dr_replica_connection_url de terra/, só correto depois que var.promote_dr_db = true por lá - ver o runbook de ativação em terra-dr/README.md)."
   type        = string
   sensitive   = true
 }
 
-variable "rds_instance_class" {
-  description = "Classe da instância RDS"
+variable "db_password" {
+  description = "Senha do usuário master do RDS - precisa ser exatamente igual à senha real do ambiente ativo (terra/terraform.tfvars). Não define a senha efetiva (isso já vem embutido em var.rds_dr_connection_url); usada só para popular o parâmetro SSM rds_password deste root, no mesmo padrão de terra/."
   type        = string
-  default     = "db.t3.micro"
-}
-
-variable "rds_backup_retention_period" {
-  description = "Dias de retenção de backup automatizado desta instância (independente da retenção do ambiente ativo)"
-  type        = number
-  default     = 7
-}
-
-variable "rds_restore_source_arn" {
-  description = "ARN do backup automatizado replicado nesta região (aws_db_instance_automated_backups_replication, criado no state do ambiente ativo - ver terra/main.tf) a partir do qual restaurar. null (padrão) cria uma instância NOVA E VAZIA - errado para uma ativação real de DR, use só para testar a malha de rede/módulos isoladamente. Ver terra-dr/README.md para como descobrir esse ARN na hora da ativação."
-  type        = string
-  default     = null
+  sensitive   = true
 }
 
 # Variáveis do DynamoDB

@@ -5,18 +5,32 @@ resource "aws_db_subnet_group" "rds" {
   tags = { Name = "${var.name_prefix}-rds-subnet-group" }
 }
 
-# Permite tráfego na porta 5432 apenas de dentro da VPC (os nodes do EKS)
+# Permite tráfego na porta 5432 a partir da própria VPC (nodes do EKS) e,
+# quando este módulo hospeda uma réplica/instância promovida alcançada via
+# VPC peering (ver terra/modules/dr-standby-vpc e "Disaster Recovery" em
+# terra/README.md), a partir dos CIDRs extras em var.extra_ingress_cidrs.
 resource "aws_security_group" "rds" {
   name        = "${var.name_prefix}-rds-sg"
   description = "Security Group para o RDS PostgreSQL"
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "Acesso ao PostgreSQL a partir da VPC (nodes do EKS)"
+    description = "Acesso ao PostgreSQL a partir da VPC - nodes do EKS"
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr]
+  }
+
+  dynamic "ingress" {
+    for_each = var.extra_ingress_cidrs
+    content {
+      description = "Acesso adicional ao PostgreSQL - ex. VPC de app alcancada via peering"
+      from_port   = 5432
+      to_port     = 5432
+      protocol    = "tcp"
+      cidr_blocks = [ingress.value]
+    }
   }
 
   egress {
@@ -29,57 +43,34 @@ resource "aws_security_group" "rds" {
   tags = { Name = "${var.name_prefix}-rds-sg" }
 }
 
-resource "aws_db_instance" "main" {
-  # Só criada quando não há restauração pendente (uso normal do ambiente
-  # ativo) - ver aws_db_instance.restored abaixo para o caminho de ativação
-  # do ambiente passivo (terra-dr/).
-  count = var.restore_source_arn == null ? 1 : 0
-
+# Um único recurso, reutilizado nos 3 papéis da estratégia de DR (ver
+# "Disaster Recovery" em terra/README.md):
+#   - var.replicate_source_db_arn == null: instância primária, criada do
+#     zero (papel do ambiente ativo, terra/, no dia a dia).
+#   - var.replicate_source_db_arn != null && !var.promote: read replica
+#     cross-region, sempre viva (papel "sempre-on" do módulo
+#     terra/modules/dr-standby-vpc). engine/db_name/username/password/
+#     allocated_storage ficam null: um replica sempre herda esses valores
+#     da origem, mesmo depois de promovido.
+#   - var.replicate_source_db_arn != null && var.promote: mesmo recurso,
+#     mas sem replicate_source_db - o provider Terraform interpreta essa
+#     mudança como uma promoção in-place (ModifyDBInstance), não um
+#     destroy/recreate. É o mecanismo usado tanto na ativação do ambiente
+#     passivo quanto no failback de volta ao ambiente ativo.
+resource "aws_db_instance" "this" {
   identifier = "${var.name_prefix}-rds-psql"
 
-  engine         = "postgres"
-  engine_version = var.engine_version
-  instance_class = var.instance_class
+  engine         = var.replicate_source_db_arn == null ? "postgres" : null
+  engine_version = var.replicate_source_db_arn == null ? var.engine_version : null
+  db_name        = var.replicate_source_db_arn == null ? var.db_name : null
+  username       = var.replicate_source_db_arn == null ? var.db_username : null
+  password       = var.replicate_source_db_arn == null ? var.db_password : null
 
-  allocated_storage     = var.allocated_storage
+  allocated_storage     = var.replicate_source_db_arn == null ? var.allocated_storage : null
   max_allocated_storage = null
-  storage_type          = "gp3"
 
-  db_name  = var.db_name
-  username = var.db_username
-  password = var.db_password
+  replicate_source_db = var.promote ? null : var.replicate_source_db_arn
 
-  db_subnet_group_name   = aws_db_subnet_group.rds.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  publicly_accessible    = false
-
-  multi_az = false
-
-  # backup_retention_period > 0 (antes era 0, sem backup algum) - necessário
-  # para a replicação cross-region de backups usada pela estratégia de DR
-  # ativo-passivo (ver "Disaster Recovery" em terra/README.md).
-  # skip_final_snapshot continua true e Performance Insights continua
-  # desligado, para não elevar custo além do necessário para o DR.
-  backup_retention_period      = var.backup_retention_period
-  skip_final_snapshot          = true
-  performance_insights_enabled = false
-
-  tags = { Name = "${var.name_prefix}-rds-psql" }
-
-  depends_on = [aws_db_subnet_group.rds, aws_security_group.rds]
-}
-
-# Instância do ambiente passivo (terra-dr/): restaurada a partir do backup
-# automatizado replicado cross-region (aws_db_instance_automated_backups_replication,
-# criado no state do ambiente ativo - ver terra/main.tf), em vez de criada
-# vazia - é assim que os dados chegam na região de DR. engine/engine_version/
-# db_name/username/password/allocated_storage não são informados: um
-# restore herda esses valores do backup de origem. Ver terra-dr/README.md
-# para o passo a passo de ativação (como descobrir restore_source_arn).
-resource "aws_db_instance" "restored" {
-  count = var.restore_source_arn == null ? 0 : 1
-
-  identifier     = "${var.name_prefix}-rds-psql"
   instance_class = var.instance_class
   storage_type   = "gp3"
 
@@ -89,22 +80,15 @@ resource "aws_db_instance" "restored" {
 
   multi_az = false
 
+  # backup_retention_period > 0 também numa réplica: além de ser
+  # pré-requisito para a replicação cross-region em si, uma réplica com
+  # backup próprio pode por sua vez servir de origem para uma nova réplica
+  # (usado no failback - ver terra-dr/README.md).
   backup_retention_period      = var.backup_retention_period
   skip_final_snapshot          = true
   performance_insights_enabled = false
 
-  restore_to_point_in_time {
-    source_db_instance_automated_backups_arn = var.restore_source_arn
-    use_latest_restorable_time               = true
-  }
-
   tags = { Name = "${var.name_prefix}-rds-psql" }
 
   depends_on = [aws_db_subnet_group.rds, aws_security_group.rds]
-}
-
-locals {
-  # Referência única para outputs.tf, independente de qual dos dois
-  # recursos acima foi criado.
-  db_instance = var.restore_source_arn == null ? aws_db_instance.main[0] : aws_db_instance.restored[0]
 }

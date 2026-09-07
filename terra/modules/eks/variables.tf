@@ -3,6 +3,12 @@ variable "name_prefix" {
   type        = string
 }
 
+variable "role_name_suffix" {
+  description = "Sufixo aplicado ao nome das IAM roles deste módulo (cluster, nodes, EBS CSI). Diferente da maioria dos recursos deste módulo (escopados por região, sem risco de colisão entre terra/ e terra-dr/ na mesma conta AWS), nomes de IAM role são um namespace global por conta - por isso terra-dr/ define este valor (ex.: \"-dr\") para não colidir com as roles já criadas pelo ambiente ativo com o mesmo name_prefix. Vazio (padrão) no ambiente ativo."
+  type        = string
+  default     = ""
+}
+
 variable "private_subnet_ids" {
   description = "IDs das subnets privadas onde o control plane e os nodes serão criados"
   type        = list(string)
