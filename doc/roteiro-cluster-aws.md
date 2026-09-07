@@ -169,7 +169,7 @@ Quatro variáveis vêm de outputs do `terra/`:
 - **`rds_dr_vpc_id`/`rds_dr_vpc_cidr`**: o read replica cross-region sempre-vivo do RDS (`module.rds_dr_replica`) e sua VPC mínima (`module.dr_standby_vpc`) já existem desde que `terra/` foi aplicado com `enable_dr = true` - dá para preencher com antecedência: `terraform output dr_standby_vpc_id` / `terraform output dr_standby_vpc_cidr`.
 - **`rds_dr_connection_url`**: idem, já dá para copiar o valor (`terraform output -raw dr_replica_connection_url`) - mas o replica continua **somente leitura** até a promoção (`var.promote_dr_db = true` em `terra/`), que é a única ação deste fluxo realmente restrita ao momento exato da ativação, não algo para preparar com antecedência.
 
-> **Vide ["Ativação (runbook)" em `terra-dr/README.md`][ativadr] para o passo a passo completo quando o DR precisar ser ativado**, incluindo o congelamento de escritas, a promoção do replica e o VPC peering entre as duas VPCs.
+> **Vide [`doc/roteiro-dr-ativacao.md`][ativadr] para o passo a passo completo quando o DR precisar ser ativado**, incluindo o congelamento de escritas, a promoção do replica e o VPC peering entre as duas VPCs.
 
 ### DNS do failover (`manage_dns = true`)
 
@@ -218,4 +218,4 @@ terraform destroy
 [kuberepo]: https://kubernetes.io/docs/tasks/tools
 [tfvars]: /terra/terraform.tfvars.example
 [grafanacloud]: https://grafana.com/products/cloud/
-[ativadr]: /terra/README.md
+[ativadr]: /doc/roteiro-dr-ativacao.md

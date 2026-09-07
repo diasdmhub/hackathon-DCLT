@@ -29,19 +29,27 @@ fi
 
 [ -e ./terraform.tfvars ] || { printf ' Arquivo "terraform.tfvars" indisponível. Defina ele primeiro.\n'; exit 1; }
 
+# Região do backend remoto - igual a terra/init.sh e a terraform.tf (backend
+# "s3") de ambos os roots: us-west-2 (a região de DR), não us-east-1.
+BACKEND_REGION="us-west-2"
+
 # 2. Criação do S3 bucket com idempotencia - ignora se já existir
 
 aws s3api create-bucket \
   --bucket fiap-solidarytech-terraform-state \
+  --region "$BACKEND_REGION" \
+  --create-bucket-configuration LocationConstraint="$BACKEND_REGION" \
   || true
 
 aws s3api put-bucket-versioning \
   --bucket fiap-solidarytech-terraform-state \
+  --region "$BACKEND_REGION" \
   --versioning-configuration Status=Enabled \
   || true
 
 aws s3api put-bucket-encryption \
   --bucket fiap-solidarytech-terraform-state \
+  --region "$BACKEND_REGION" \
   --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}' \
   || true
 
@@ -49,6 +57,7 @@ aws s3api put-bucket-encryption \
 
 aws dynamodb create-table \
   --table-name fiap-solidarytech-terraform-lock \
+  --region "$BACKEND_REGION" \
   --attribute-definitions AttributeName=LockID,AttributeType=S \
   --key-schema AttributeName=LockID,KeyType=HASH \
   --billing-mode PAY_PER_REQUEST \
@@ -58,7 +67,7 @@ aws dynamodb create-table \
 terraform init -reconfigure -upgrade
 
 # 5 Obtenção automática das variáveis derivadas do state de terra/ (ver
-# "Ativação (runbook)" em terra-dr/README.md): rds_dr_vpc_id/
+# doc/roteiro-dr-ativacao.md): rds_dr_vpc_id/
 # rds_dr_vpc_cidr/rds_dr_connection_url (VPC peering até o read replica
 # sempre-vivo, module.rds_dr_replica) e route53_zone_id (registro SECONDARY
 # de failover DNS, só relevante se terra/ tiver manage_dns = true). Lidas
@@ -82,7 +91,7 @@ terraform init -reconfigure -upgrade
 # cai para o valor em terraform.tfvars.
 remote_output() {
     local name="$1"
-    aws s3 cp --region us-east-1 \
+    aws s3 cp --region "$BACKEND_REGION" \
       "s3://fiap-solidarytech-terraform-state/terraform.tfstate" - 2>/dev/null \
         | jq -r --arg n "$name" '.outputs[$n].value // empty' 2>/dev/null || true
 }

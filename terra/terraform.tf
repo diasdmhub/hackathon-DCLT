@@ -40,10 +40,20 @@ terraform {
   # no README.md deste diretório. Blocos de backend não aceitam variáveis,
   # então o nome do bucket é literal aqui; ajuste se já estiver em uso por
   # outra conta (nomes de bucket S3 são globalmente únicos).
+  #
+  # Região do backend = var.dr_aws_region (us-west-2), não var.aws_region
+  # (us-east-1, a região ativa) - de propósito. A promoção do replica de DR
+  # (var.promote_dr_db = true, ver "Disaster Recovery" abaixo e
+  # doc/roteiro-dr-ativacao.md) é um `terraform apply` contra ESTE state, e
+  # precisa dele acessível justamente quando a região ativa pode estar
+  # indisponível. Colocar o backend nessa mesma região ativa acoplaria a
+  # ferramenta de recuperação à própria região em desastre. us-west-2 não
+  # introduz uma nova dependência: já é a região que a ativação do DR precisa
+  # que esteja de pé para ter algum lugar para onde falhar.
   backend "s3" {
     bucket         = "fiap-solidarytech-terraform-state"
     key            = "terraform.tfstate"
-    region         = "us-east-1"
+    region         = "us-west-2"
     dynamodb_table = "fiap-solidarytech-terraform-lock"
     encrypt        = true
   }

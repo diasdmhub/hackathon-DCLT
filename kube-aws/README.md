@@ -7,6 +7,8 @@ vez dos emuladores locais.
 `kube/` continua existindo e válido como está, para o cluster
 `kubeadm-local`. Nada neste diretório o altera.
 
+<BR>
+
 ## O que muda em relação a `kube/`
 
 | | `kube/` (kubeadm-local) | `kube-aws/` (EKS) |
@@ -20,6 +22,8 @@ vez dos emuladores locais.
 | Schema do banco | `docker-entrypoint-initdb.d` do `Dockerfile-psql` roda `db/init.sql` automaticamente na subida do container | Job `rds-init` (`020-rds-init/`) roda os mesmos `db/init.sql` contra o RDS - ver seção abaixo |
 | Backend do HPA (`0NN-hpa.yaml`, min 1/max 4 em cada serviço) | `metrics-server` via `HelmRelease` Flux (`observe/050-metrics-server/`), com `--kubelet-insecure-tls` (certificado autoassinado do kubelet no kubeadm) | Addon EKS `metrics-server` (`terra/modules/eks`), gerenciado pela AWS - sem flag de TLS inseguro, o certificado do kubelet já é confiável |
 
+<BR>
+
 ## Inicialização do schema (RDS)
 
 O RDS provisionado por `terra/modules/rds` sobe como uma instância Postgres em branco - diferente do Compose, nada roda o `db/init.sql` do `ngo-service`/`donation-service` automaticamente nele. Sem isso, os Deployments sobem saudáveis (o `/health` não toca no banco), mas todo `INSERT`/`SELECT` falha com "relation does not exist".
@@ -32,6 +36,8 @@ Pontos de atenção:
 - `kustomize.toolkit.fluxcd.io/ssa: IfNotPresent` faz o Flux não tentar recriar o Job já concluído a cada reconciliação (Jobs são imutáveis).
 
 Os `initContainers` `wait-for-psql`/`wait-for-elasticmq`/`wait-for-dynamodb` de `kube/` também não existem aqui: não há um Service local para esperar, e o RDS/SQS/DynamoDB já estão no ar antes do deploy (provisionados pelo Terraform).
+
+<BR>
 
 ## Secrets
 
@@ -54,6 +60,8 @@ Secret vive em `terra/modules/secrets/secrets.tf`.
 `AWS_SQS_URL` (em `donation-env`) e `AWS_DYNAMODB_TABLE` (em `volunteer-env`)
 não são sensíveis, mas ficam nos mesmos Secrets por conveniência (um único
 `envFrom` por Deployment).
+
+<BR>
 
 ## Exposição externa: NLB única + TargetGroupBinding
 
@@ -83,6 +91,8 @@ rode antes do `flux bootstrap` (ver `doc/roteiro-cluster-aws.md`), o
 controller e o CRD `TargetGroupBinding` já existem quando o Flux aplica
 estes manifests.
 
+<BR>
+
 ## IRSA
 
 `005-serviceaccounts.yaml` cria as ServiceAccounts `donation-service` e `volunteer-service`, anotadas com os ARNs das roles IRSA que `terra/modules/iam` provisiona (escopo mínimo: `sqs:SendMessage`/`GetQueueAttributes` para a primeira, `dynamodb:PutItem`/`GetItem`/`Scan`/`Query` para a segunda). O nome do namespace e das ServiceAccounts aqui precisa continuar batendo com `k8s_namespace`/`donation_service_account`/`volunteer_service_account` em `terra/terraform.tfvars` - a trust policy de cada role é restrita a essa combinação exata via OIDC.
@@ -99,9 +109,13 @@ nenhum passo manual, o mesmo módulo que também aplica
 `gotk-sync.yaml`/`solidarytech-kustomization.yaml` neste cluster. Ver
 "FluxCD via Terraform" em `terra/README.md`.
 
+<BR>
+
 ## Flux
 
 `clusters/eks-aws/solidarytech-kustomization.yaml` já aponta para `./kube-aws`. Falta rodar o bootstrap do Flux nesse cluster (`flux bootstrap ...` com `--path=./clusters/eks-aws`) para que `flux-system/` seja gerado e essa Kustomization passe a ser reconciliada de fato - ver `clusters/eks-aws/`.
+
+<BR>
 
 ## Disaster Recovery
 

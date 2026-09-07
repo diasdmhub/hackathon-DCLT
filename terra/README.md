@@ -8,6 +8,8 @@ As imagens dos 3 microsserviços continuam publicadas no Docker Hub
 (`diasdmhub/{ngo,donation,volunteer}`) pelo pipeline de CI/CD já existente -
 nenhum módulo de registry (ECR) foi criado aqui.
 
+<BR>
+
 ## Módulos
 
 | Módulo | Recurso principal | Observação de custo |
@@ -41,6 +43,8 @@ O EKS control plane, o NAT Gateway e a NLB (`nlb`) são cobrados desde o
 primeiro minuto, independentemente da idade da conta AWS - são os itens que
 mais pesam neste ambiente; destrua o cluster (`terraform destroy`) fora de
 uso para evitar cobrança contínua.
+
+<BR>
 
 ## Observabilidade e monitoração de infraestrutura via Terraform
 
@@ -289,6 +293,8 @@ microsserviços), e `terra/modules/pdc` foi removido por completo. As
 Alloy e o Tempo dependem delas via DNS interno do cluster -, só a exposição
 externa é que não existe mais.
 
+<BR>
+
 ## FluxCD via Terraform
 
 Diferente da observabilidade acima (movida para o Terraform porque o Flux
@@ -327,6 +333,8 @@ O mesmo módulo `flux` é reaplicado, sem alteração, pelo `terra-dr/` (ver
 ambiente passivo, que antes também exigia `flux install` + 3 `kubectl
 apply -f` manuais.
 
+<BR>
+
 ## Disaster Recovery (ambiente ativo-passivo)
 
 Estratégia de DR ativo-passivo entre duas regiões AWS: este diretório
@@ -334,8 +342,8 @@ Estratégia de DR ativo-passivo entre duas regiões AWS: este diretório
 **passivo**, um root Terraform separado que reaplica os mesmos módulos
 (`terra/modules/*`) numa segunda região, normalmente sem nenhum recurso de
 compute rodando (nem cobrando) - "ativar" o ambiente passivo é rodar
-`terraform apply` em `terra-dr/`. Ver `terra-dr/README.md` para o runbook
-completo de ativação/failback.
+`terraform apply` em `terra-dr/`. Ver `doc/roteiro-dr-ativacao.md` para o
+runbook completo de ativação/failback.
 
 O que fica sempre protegido, independente de ativação, custando pouco:
 
@@ -360,8 +368,8 @@ O que fica sempre protegido, independente de ativação, custando pouco:
   espelha o mesmo mecanismo ao contrário: a instância original é destruída
   e recriada como replica do novo primário (limitação da própria AWS - não
   existe conversão in-place de standalone para replica), resincroniza, e é
-  promovida de volta do mesmo jeito. Ver "Runbook de ativação" e "Failback"
-  em `terra-dr/README.md` para o passo a passo completo, incluindo o VPC
+  promovida de volta do mesmo jeito. Ver `doc/roteiro-dr-ativacao.md` para o
+  passo a passo completo, incluindo o VPC
   peering necessário para o EKS de `terra-dr/` alcançar este replica depois
   de promovido.
 - **DynamoDB**: `module.dynamo` recebe `replica_regions = [var.dr_aws_region]`
@@ -423,11 +431,15 @@ esse binding sem exigir nenhuma mudança em `kube-aws/`, que continua
 já passa pelo Secret `irsa-role-arns` por cluster, não por conteúdo
 diferente em `kube-aws/` - ver `clusters/eks-aws-dr/`).
 
+<BR>
+
 ## Pré-requisitos
 
 - Terraform >= 1.6
 - AWS CLI v2 configurado (usado pelo provider `kubernetes` para obter token via `aws eks get-token`)
 - Uma conta AWS com permissão para criar VPC, EKS, RDS, DynamoDB, SQS, IAM e SSM
+
+<BR>
 
 ## Bootstrap do backend remoto (uma única vez)
 
@@ -454,6 +466,16 @@ in S3 bucket "..."` ao rodar `terraform init` é o sintoma desse descompasso -
 a AWS responde 403 em vez de 404 tanto para bucket sem permissão quanto para
 bucket que nem existe (ou pertence a outra conta), então a mensagem não
 distingue as duas causas.
+
+O bucket/tabela ficam em `us-west-2` (a região de DR, `dr_aws_region`), não
+em `us-east-1` (a região ativa, `aws_region`) - de propósito: a promoção do
+replica de DR (`var.promote_dr_db`, ver "Disaster Recovery" abaixo) é um
+`terraform apply` contra este mesmo backend, e precisa dele acessível
+justamente quando a região ativa pode estar indisponível. `terra-dr/init.sh`
+reaproveita o mesmo bucket/tabela (só a `key` do state muda), então basta
+rodar `terra/init.sh` uma única vez.
+
+<BR>
 
 ## Uso
 
@@ -494,6 +516,8 @@ $(terraform output -raw configure_kubectl 2>/dev/null) || \
 `terraform.tfvars` nunca deve ser commitado (já coberto pelo `.gitignore` da
 raiz do repositório, que ignora `*.tfvars`).
 
+<BR>
+
 ## Destruição do ambiente (`terraform destroy`)
 
 Os 3 microsserviços expõem `Service` `type: ClusterIP` (`kube-aws/040-ngo/`,
@@ -525,6 +549,8 @@ passo extra:
 cd terra
 ./destroy.sh
 ```
+
+<BR>
 
 ## Pendências para o cluster ficar totalmente funcional
 

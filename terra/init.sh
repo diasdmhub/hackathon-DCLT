@@ -23,22 +23,33 @@ fi
 
 [ -e ./terraform.tfvars ] || { printf ' Arquivo "terraform.tfvars" indisponível. Defina ele primeiro.\n'; exit 1; }
 
+# Região do backend remoto (bucket S3 + tabela DynamoDB de lock) - igual em
+# terraform.tf (backend "s3"). Fica em us-west-2 (a região de DR), não em
+# us-east-1 (a região ativa), para o backend continuar acessível mesmo se a
+# região ativa estiver indisponível - ver o comentário em terraform.tf.
+BACKEND_REGION="us-west-2"
+
 # 2. Criação do S3 bucket com idempotencia - ignora se já existir
 
-# 2.1 Cria S3 bucket
+# 2.1 Cria S3 bucket - LocationConstraint é obrigatório para qualquer região
+# além de us-east-1 (que é tratada como caso especial pela API do S3)
 aws s3api create-bucket \
   --bucket fiap-solidarytech-terraform-state \
+  --region "$BACKEND_REGION" \
+  --create-bucket-configuration LocationConstraint="$BACKEND_REGION" \
   || true
 
 # 2.2 Habilita o versionamento do bucket
 aws s3api put-bucket-versioning \
   --bucket fiap-solidarytech-terraform-state \
+  --region "$BACKEND_REGION" \
   --versioning-configuration Status=Enabled \
   || true
 
 # 2.3 Habilita a criptografia do bucket
 aws s3api put-bucket-encryption \
   --bucket fiap-solidarytech-terraform-state \
+  --region "$BACKEND_REGION" \
   --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}' \
   || true
 
@@ -47,6 +58,7 @@ aws s3api put-bucket-encryption \
 # 3.1 Cria a tabela DynamoDB
 aws dynamodb create-table \
   --table-name fiap-solidarytech-terraform-lock \
+  --region "$BACKEND_REGION" \
   --attribute-definitions AttributeName=LockID,AttributeType=S \
   --key-schema AttributeName=LockID,KeyType=HASH \
   --billing-mode PAY_PER_REQUEST \

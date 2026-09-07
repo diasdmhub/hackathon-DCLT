@@ -34,10 +34,13 @@ terraform {
   # por padrão - "ativar" o ambiente passivo é rodar `terraform apply`
   # aqui pela primeira vez, ou de novo após um `terraform destroy` de um
   # simulado anterior). Ver terra-dr/README.md.
+  #
+  # region = us-west-2, igual a terra/terraform.tf - ver o comentário lá
+  # sobre por que o backend fica na região de DR, não na região ativa.
   backend "s3" {
     bucket         = "fiap-solidarytech-terraform-state"
     key            = "dr/terraform.tfstate"
-    region         = "us-east-1"
+    region         = "us-west-2"
     dynamodb_table = "fiap-solidarytech-terraform-lock"
     encrypt        = true
   }

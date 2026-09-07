@@ -164,7 +164,7 @@ Quanto aos aspectos de ITSM, o Zabbix é utilizado como ferramenta central de ev
 
 ## Multicloud, Segurança e Disaster Recovery (DR)
 
-Estratégia de DR ativo-passivo entre duas regiões AWS: `terra/` é sempre o ambiente ativo e `terra-dr/` reaplica os mesmos módulos numa segunda região, normalmente sem nenhum recurso de compute em execução. Os dados (backups do RDS e a tabela de voluntários no DynamoDB) são protegidos continuamente por replicação entre regiões, enquanto o compute do ambiente passivo só é provisionado quando um desastre é declarado.
+Estratégia de DR ativo-passivo entre duas regiões AWS: `terra/` é sempre o ambiente ativo e `terra-dr/` reaplica os mesmos módulos numa segunda região, normalmente sem nenhum recurso de compute em execução. Os dados (um read replica cross-region sempre-vivo do RDS, com lag tipicamente de segundos, e a tabela de voluntários no DynamoDB via Global Tables) são protegidos continuamente, enquanto o compute do ambiente passivo só é provisionado quando um desastre é declarado - ver o [roteiro de ativação/failback ⤴️][roteirodr].
 
 Essa estratégia foi formalizada em um [Plano de Continuidade de Negócios (PCN) ⤴️][pcn], com RTO e RPO estimados para os dados de doações, o ativo mais crítico da plataforma.
 
@@ -191,3 +191,4 @@ Essa estratégia foi formalizada em um [Plano de Continuidade de Negócios (PCN)
 [newrelic]: https://newrelic.com
 [estimativa]: ./estimativa-custo.md
 [pcn]: ./plano-continuidade-negocios.md
+[roteirodr]: ./roteiro-dr-ativacao.md
