@@ -21,13 +21,15 @@ enable_prefix_delegation = true
 # SSM local; a senha efetiva já vem embutida em rds_dr_connection_url).
 db_password = "CHANGE_ME"
 
-# Preencha estes 3 na ativação, copiando os outputs de terra/ (dr_standby_vpc_id,
-# dr_standby_vpc_cidr, dr_replica_connection_url - o último só correto depois
-# de terra/ ser aplicado com promote_dr_db = true) - ver o runbook completo
-# em terra-dr/README.md.
-rds_dr_vpc_id          = "CHANGE_ME" # ex.: "vpc-0123456789abcdef0"
-rds_dr_vpc_cidr        = "10.95.0.0/16" # IGUAL a dr_standby_subnet_prefix em terra/terraform.tfvars
-rds_dr_connection_url  = "CHANGE_ME"
+# Estes 3 não precisam mais ser preenchidos na ativação: init.sh os lê
+# direto do state remoto de terra/ (dr_standby_vpc_id, dr_standby_vpc_cidr,
+# dr_replica_connection_url - o último só correto depois de terra/ ser
+# aplicado com promote_dr_db = true) e exporta como TF_VAR_* antes do
+# plan/apply - ver o runbook completo em terra-dr/README.md. Preenchê-los
+# aqui só serve de fallback, usado se o fetch automático vier vazio.
+rds_dr_vpc_id          = "CHANGE_ME" # fallback; ex.: "vpc-0123456789abcdef0"
+rds_dr_vpc_cidr        = "10.95.0.0/16" # fallback; IGUAL a dr_standby_subnet_prefix em terra/terraform.tfvars
+rds_dr_connection_url  = "CHANGE_ME" # fallback
 
 # DynamoDB / SQS
 dynamodb_table_name = "SolidaryTechVolunteers" # IGUAL ao ambiente ativo - é a mesma tabela (réplica), não uma nova

@@ -76,14 +76,7 @@ terraform apply -var="promote_dr_db=true"
 ```
 
 Isso é uma promoção in-place (`ModifyDBInstance`), rápida - não é um
-restore, não há espera de minutos como numa restauração de backup. Depois
-de confirmado, copie os outputs necessários:
-
-```bash
-terraform output dr_standby_vpc_id
-terraform output dr_standby_vpc_cidr
-terraform output -raw dr_replica_connection_url
-```
+restore, não há espera de minutos como numa restauração de backup.
 
 **4. Copie e edite as variáveis de `terra-dr/`:**
 
@@ -91,11 +84,19 @@ terraform output -raw dr_replica_connection_url
 cd ../terra-dr
 cp terraform.tfvars.example terraform.tfvars
 # edite: db_password (IGUAL à senha real do ambiente ativo),
-# rds_dr_vpc_id/rds_dr_vpc_cidr/rds_dr_connection_url (outputs do passo 3),
 # route53_zone_id/dns_record_name (se usar failover automático de DNS -
 # copie route53_zone_id do output route53_zone_id de terra/).
-./init.sh   # reaproveita o bucket S3/tabela DynamoDB de lock já criados por terra/init.sh, valida as variáveis do replica e sobe VPC/EKS/peering/NLB/Flux/observabilidade
+./init.sh   # reaproveita o bucket S3/tabela DynamoDB de lock já criados por terra/init.sh, lê rds_dr_vpc_id/rds_dr_vpc_cidr/rds_dr_connection_url direto do state remoto de terra/ (sem cópia manual) e sobe VPC/EKS/peering/NLB/Flux/observabilidade
 ```
+
+`rds_dr_vpc_id`/`rds_dr_vpc_cidr`/`rds_dr_connection_url` não precisam mais
+ser preenchidos em `terraform.tfvars`: `init.sh` os lê direto do state
+remoto de `terra/` (mesmo bucket S3, key `terraform.tfstate`) via `aws s3
+cp` + `jq` a cada execução - útil sobretudo para `rds_dr_connection_url`,
+que só reflete o endpoint promovido depois do passo 3. Preencher essas 3
+variáveis em `terraform.tfvars` continua funcionando como *fallback*, usado
+só se o fetch automático vier vazio (por exemplo, `terra/` ainda com
+`enable_dr = false`).
 
 **5. Feche o peering.** `init.sh` já criou o VPC peering
 (`aws_vpc_peering_connection.to_rds_standby`) e a rota no sentido

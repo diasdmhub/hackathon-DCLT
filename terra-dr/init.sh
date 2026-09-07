@@ -11,7 +11,7 @@ export AWS_PAGER=""
 
 # 1. Validação de requisitos
 missing=()
-for cmd in aws terraform; do
+for cmd in aws terraform jq; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         missing+=("$cmd")
     fi
@@ -57,16 +57,37 @@ aws dynamodb create-table \
 # 4 Inicialização do Terraform
 terraform init -reconfigure -upgrade
 
-# 5 Validação das variáveis do read replica do RDS (ver "Ativação (runbook)"
-# em terra-dr/README.md) - o Postgres em si não é criado/restaurado por
-# este root, só conectado (via VPC peering) ao read replica sempre-vivo que
-# terra/main.tf mantém (module.rds_dr_replica). rds_dr_vpc_id/
-# rds_dr_vpc_cidr/rds_dr_connection_url precisam ser copiados dos outputs
-# de terra/ (dr_standby_vpc_id/dr_standby_vpc_cidr/dr_replica_connection_url)
-# antes deste apply - sem uma consulta automática possível aqui, porque o
-# segundo (a URL de conexão promovida) só existe depois de terra/ ser
-# aplicado com promote_dr_db = true, uma decisão manual do runbook de
-# ativação, não algo este script deveria inferir sozinho.
+# 5 Obtenção automática das variáveis do read replica do RDS (ver "Ativação
+# (runbook)" em terra-dr/README.md) - o Postgres em si não é criado/
+# restaurado por este root, só conectado (via VPC peering) ao read replica
+# sempre-vivo que terra/main.tf mantém (module.rds_dr_replica).
+# rds_dr_vpc_id/rds_dr_vpc_cidr/rds_dr_connection_url são lidos direto do
+# state remoto de terra/ (mesmo bucket S3 do backend deste root, key
+# "terraform.tfstate" - ver terraform.tf) em vez de exigir cópia manual dos
+# outputs para terraform.tfvars: os dois roots continuam sem
+# terraform_remote_state (nenhum acoplamento no grafo de recursos), essa
+# leitura é só um `aws s3 cp` + `jq` no nível do script, e a confirmação
+# interativa dos `terraform apply` abaixo já serve como ponto de checagem
+# antes de qualquer mudança real. rds_dr_connection_url só reflete o
+# endpoint promovido depois de terra/ ser reaplicado com
+# promote_dr_db = true - se ainda não promovido, ou se terra/ estiver com
+# enable_dr = false, o fetch fica vazio e cai para o valor em
+# terraform.tfvars (se preenchido).
+remote_output() {
+    local name="$1"
+    aws s3 cp --region us-east-1 \
+      "s3://fiap-solidarytech-terraform-state/terraform.tfstate" - 2>/dev/null \
+        | jq -r --arg n "$name" '.outputs[$n].value // empty' 2>/dev/null || true
+}
+
+fetched_rds_dr_vpc_id=$(remote_output dr_standby_vpc_id)
+fetched_rds_dr_vpc_cidr=$(remote_output dr_standby_vpc_cidr)
+fetched_rds_dr_connection_url=$(remote_output dr_replica_connection_url)
+
+[ -n "$fetched_rds_dr_vpc_id" ] && export TF_VAR_rds_dr_vpc_id="$fetched_rds_dr_vpc_id"
+[ -n "$fetched_rds_dr_vpc_cidr" ] && export TF_VAR_rds_dr_vpc_cidr="$fetched_rds_dr_vpc_cidr"
+[ -n "$fetched_rds_dr_connection_url" ] && export TF_VAR_rds_dr_connection_url="$fetched_rds_dr_connection_url"
+
 tfvar() {
     local key="$1" val
     val=$(grep -E "^[[:space:]]*${key}[[:space:]]*=" terraform.tfvars | tail -n1 \
@@ -77,6 +98,10 @@ tfvar() {
 
 missing_vars=()
 for key in rds_dr_vpc_id rds_dr_vpc_cidr rds_dr_connection_url; do
+    env_var="TF_VAR_${key}"
+    if [ -n "${!env_var:-}" ]; then
+        continue
+    fi
     val=$(tfvar "$key")
     if [ -z "$val" ] || [ "$val" = "CHANGE_ME" ]; then
         missing_vars+=("$key")
@@ -84,7 +109,7 @@ for key in rds_dr_vpc_id rds_dr_vpc_cidr rds_dr_connection_url; do
 done
 
 if (( ${#missing_vars[@]} )); then
-    printf 'ERRO: as variáveis abaixo precisam ser preenchidas em terraform.tfvars antes da ativação (copiadas dos outputs de terra/ - ver terra-dr/README.md):\n' >&2
+    printf 'ERRO: as variáveis abaixo não foram obtidas automaticamente do state de terra/ (confira enable_dr = true e, para rds_dr_connection_url, promote_dr_db = true) nem estão preenchidas em terraform.tfvars:\n' >&2
     for v in "${missing_vars[@]}"; do
         printf ' - %s\n' "$v" >&2
     done
