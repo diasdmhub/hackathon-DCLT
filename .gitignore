@@ -61,3 +61,4 @@ coverage
 .cache
 docker-compose.*.yml
 tests/
+*.pdf
