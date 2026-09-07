@@ -115,6 +115,16 @@ Se `manage_dns = true` em `terra/` e `route53_zone_id`/`dns_record_name` definid
 
 <BR>
 
+## O que esta estratégia não cobre
+
+Este roteiro resolve falha de infraestrutura da AWS na região ativa (a instância RDS, o cluster EKS, uma zona de disponibilidade inteira ficando indisponível). Ele não resolve um problema diferente: indisponibilidade de rede entre um grupo específico de usuários e a região ativa, com os recursos da AWS continuando saudáveis.
+
+Um exemplo concreto: se a maior parte das doações vem de uma região geográfica específica, e essa região perde a rota de rede até `us-east-1` (um problema de backbone ou de um ISP local, por exemplo), o administrador e a própria AWS ainda enxergam tudo funcionando normalmente ali. Promover o replica e migrar para `us-west-2` não corrige esse cenário por si só: nada garante que a rota até a nova região esteja íntegra para os mesmos usuários afetados, já que o problema não está na AWS.
+
+Esse segundo tipo de indisponibilidade pertence a outra categoria de solução, tipicamente uma configuração ativo-ativo com roteamento por latência ou geolocalização no Route53, ou o AWS Global Accelerator (que usa a rede backbone própria da AWS via IPs anycast e faz failover na camada de rede, não por TTL de DNS). Qualquer uma dessas opções exige manter múltiplas regiões ativas ao mesmo tempo, o que contradiz a premissa de custo deste projeto (região passiva praticamente desligada, só com a réplica de dados barata e contínua — ver "Disaster Recovery" em [`terra/README.md`][terra]). Por isso, essa classe de problema fica fora do escopo desta estratégia, por decisão deliberada e não por descuido.
+
+<BR>
+
 ## Parte 2 — Failback (voltar para o ambiente principal)
 
 Espelha o mesmo mecanismo da ativação, na direção contrária — a instância original de `terra/` é destruída e recriada como replica do novo primário (limitação da própria AWS: não existe conversão in-place de standalone para replica), resincroniza, e é promovida de volta. Faça isso só depois que a região original estiver confirmada saudável de novo.
