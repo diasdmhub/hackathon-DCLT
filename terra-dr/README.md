@@ -83,20 +83,27 @@ restore, não há espera de minutos como numa restauração de backup.
 ```bash
 cd ../terra-dr
 cp terraform.tfvars.example terraform.tfvars
-# edite: db_password (IGUAL à senha real do ambiente ativo),
-# route53_zone_id/dns_record_name (se usar failover automático de DNS -
-# copie route53_zone_id do output route53_zone_id de terra/).
-./init.sh   # reaproveita o bucket S3/tabela DynamoDB de lock já criados por terra/init.sh, lê rds_dr_vpc_id/rds_dr_vpc_cidr/rds_dr_connection_url direto do state remoto de terra/ (sem cópia manual) e sobe VPC/EKS/peering/NLB/Flux/observabilidade
+# edite: db_password (IGUAL à senha real do ambiente ativo) e
+# dns_record_name (se usar failover automático de DNS - precisa ser IGUAL
+# ao usado em terra/terraform.tfvars).
+./init.sh   # reaproveita o bucket S3/tabela DynamoDB de lock já criados por terra/init.sh, lê rds_dr_vpc_id/rds_dr_vpc_cidr/rds_dr_connection_url/route53_zone_id direto do state remoto de terra/ (sem cópia manual) e sobe VPC/EKS/peering/NLB/Flux/observabilidade
 ```
 
-`rds_dr_vpc_id`/`rds_dr_vpc_cidr`/`rds_dr_connection_url` não precisam mais
-ser preenchidos em `terraform.tfvars`: `init.sh` os lê direto do state
-remoto de `terra/` (mesmo bucket S3, key `terraform.tfstate`) via `aws s3
-cp` + `jq` a cada execução - útil sobretudo para `rds_dr_connection_url`,
-que só reflete o endpoint promovido depois do passo 3. Preencher essas 3
-variáveis em `terraform.tfvars` continua funcionando como *fallback*, usado
-só se o fetch automático vier vazio (por exemplo, `terra/` ainda com
-`enable_dr = false`).
+`rds_dr_vpc_id`/`rds_dr_vpc_cidr`/`rds_dr_connection_url`/`route53_zone_id`
+não precisam mais ser preenchidos em `terraform.tfvars`: `init.sh` os lê
+direto do state remoto de `terra/` (mesmo bucket S3, key
+`terraform.tfstate`) via `aws s3 cp` + `jq` a cada execução, e os passa aos
+`terraform plan`/`apply` via `-var` (a maior precedência do Terraform,
+sempre vence um valor escrito em `terraform.tfvars` - uma variável de
+ambiente `TF_VAR_*`, ao contrário, teria a *menor* precedência e seria
+ofuscada por um `terraform.tfvars` já preenchido). Útil sobretudo para
+`rds_dr_connection_url`, que só reflete o endpoint promovido depois do
+passo 3, e para `route53_zone_id`, que só existe quando `terra/` tem
+`manage_dns = true`. Preencher essas variáveis em `terraform.tfvars`
+continua funcionando como *fallback*, usado só se o fetch automático vier
+vazio (por exemplo, `terra/` ainda com `enable_dr`/`manage_dns = false`) -
+`route53_zone_id` vazio (`""`) nesse caso é o comportamento normal
+(failover de DNS desligado), não um erro.
 
 **5. Feche o peering.** `init.sh` já criou o VPC peering
 (`aws_vpc_peering_connection.to_rds_standby`) e a rota no sentido

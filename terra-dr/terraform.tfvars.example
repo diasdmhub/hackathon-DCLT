@@ -46,8 +46,10 @@ lb_controller_service_account = "aws-load-balancer-controller"
 # FluxCD - versão do chart Helm flux2 (../terra/modules/flux)
 flux_chart_version = "2.19.0"
 
-# Failover DNS (Route53) - copie route53_zone_id do output route53_zone_id
-# de terra/ (só existe quando manage_dns = true por lá); dns_record_name
-# precisa ser IGUAL ao usado em terra/terraform.tfvars.
-route53_zone_id = "CHANGE_ME"
+# Failover DNS (Route53) - route53_zone_id não precisa mais ser preenchido:
+# init.sh o lê direto do output route53_zone_id de terra/ (só existe quando
+# manage_dns = true por lá); "" abaixo é o fallback (= failover desligado,
+# não um placeholder esquecido). dns_record_name não vem de nenhum output -
+# continua manual, precisa ser IGUAL ao usado em terra/terraform.tfvars.
+route53_zone_id = ""
 dns_record_name = "CHANGE_ME" # ex.: "api.solidarytech.meu.dominio"

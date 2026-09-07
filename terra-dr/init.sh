@@ -57,36 +57,35 @@ aws dynamodb create-table \
 # 4 Inicialização do Terraform
 terraform init -reconfigure -upgrade
 
-# 5 Obtenção automática das variáveis do read replica do RDS (ver "Ativação
-# (runbook)" em terra-dr/README.md) - o Postgres em si não é criado/
-# restaurado por este root, só conectado (via VPC peering) ao read replica
-# sempre-vivo que terra/main.tf mantém (module.rds_dr_replica).
-# rds_dr_vpc_id/rds_dr_vpc_cidr/rds_dr_connection_url são lidos direto do
-# state remoto de terra/ (mesmo bucket S3 do backend deste root, key
-# "terraform.tfstate" - ver terraform.tf) em vez de exigir cópia manual dos
-# outputs para terraform.tfvars: os dois roots continuam sem
-# terraform_remote_state (nenhum acoplamento no grafo de recursos), essa
-# leitura é só um `aws s3 cp` + `jq` no nível do script, e a confirmação
-# interativa dos `terraform apply` abaixo já serve como ponto de checagem
-# antes de qualquer mudança real. rds_dr_connection_url só reflete o
-# endpoint promovido depois de terra/ ser reaplicado com
-# promote_dr_db = true - se ainda não promovido, ou se terra/ estiver com
-# enable_dr = false, o fetch fica vazio e cai para o valor em
-# terraform.tfvars (se preenchido).
+# 5 Obtenção automática das variáveis derivadas do state de terra/ (ver
+# "Ativação (runbook)" em terra-dr/README.md): rds_dr_vpc_id/
+# rds_dr_vpc_cidr/rds_dr_connection_url (VPC peering até o read replica
+# sempre-vivo, module.rds_dr_replica) e route53_zone_id (registro SECONDARY
+# de failover DNS, só relevante se terra/ tiver manage_dns = true). Lidas
+# direto do state remoto de terra/ (mesmo bucket S3 do backend deste root,
+# key "terraform.tfstate" - ver terraform.tf) via `aws s3 cp` + `jq` no
+# nível do script - os dois roots continuam sem terraform_remote_state
+# (nenhum acoplamento no grafo de recursos), e a confirmação interativa dos
+# `terraform apply` abaixo já serve como ponto de checagem antes de
+# qualquer mudança real.
+#
+# Passadas via `-var` (maior precedência do Terraform, sempre vence
+# terraform.tfvars) em vez de `export TF_VAR_*`: variável de ambiente é a
+# MENOR precedência, então um `terraform.tfvars` com o placeholder
+# "CHANGE_ME" (mantido como fallback) sempre venceria o valor obtido aqui
+# se fosse só exportado - é exatamente esse bug que fazia os valores
+# chegarem como "CHANGE_ME" no Terraform mesmo com o fetch funcionando.
+#
+# rds_dr_connection_url só reflete o endpoint promovido depois de terra/
+# ser reaplicado com promote_dr_db = true. Se o fetch de uma variável vier
+# vazio (terra/ com enable_dr/manage_dns = false, ou ainda não promovido),
+# cai para o valor em terraform.tfvars.
 remote_output() {
     local name="$1"
     aws s3 cp --region us-east-1 \
       "s3://fiap-solidarytech-terraform-state/terraform.tfstate" - 2>/dev/null \
         | jq -r --arg n "$name" '.outputs[$n].value // empty' 2>/dev/null || true
 }
-
-fetched_rds_dr_vpc_id=$(remote_output dr_standby_vpc_id)
-fetched_rds_dr_vpc_cidr=$(remote_output dr_standby_vpc_cidr)
-fetched_rds_dr_connection_url=$(remote_output dr_replica_connection_url)
-
-[ -n "$fetched_rds_dr_vpc_id" ] && export TF_VAR_rds_dr_vpc_id="$fetched_rds_dr_vpc_id"
-[ -n "$fetched_rds_dr_vpc_cidr" ] && export TF_VAR_rds_dr_vpc_cidr="$fetched_rds_dr_vpc_cidr"
-[ -n "$fetched_rds_dr_connection_url" ] && export TF_VAR_rds_dr_connection_url="$fetched_rds_dr_connection_url"
 
 tfvar() {
     local key="$1" val
@@ -96,14 +95,27 @@ tfvar() {
     printf '%s' "$val"
 }
 
+# terraform_var:terra_output:required|optional - route53_zone_id é opcional
+# porque "" é o default documentado (failover de DNS desligado), não um
+# placeholder esquecido; os outros 3 são sempre obrigatórios.
+auto_var_map=(
+    "rds_dr_vpc_id:dr_standby_vpc_id:required"
+    "rds_dr_vpc_cidr:dr_standby_vpc_cidr:required"
+    "rds_dr_connection_url:dr_replica_connection_url:required"
+    "route53_zone_id:route53_zone_id:optional"
+)
+
+auto_vars=()
 missing_vars=()
-for key in rds_dr_vpc_id rds_dr_vpc_cidr rds_dr_connection_url; do
-    env_var="TF_VAR_${key}"
-    if [ -n "${!env_var:-}" ]; then
+for entry in "${auto_var_map[@]}"; do
+    IFS=':' read -r key output_name mode <<< "$entry"
+    fetched=$(remote_output "$output_name")
+    if [ -n "$fetched" ]; then
+        auto_vars+=("-var=${key}=${fetched}")
         continue
     fi
     val=$(tfvar "$key")
-    if [ -z "$val" ] || [ "$val" = "CHANGE_ME" ]; then
+    if [ "$val" = "CHANGE_ME" ] || { [ -z "$val" ] && [ "$mode" = "required" ]; }; then
         missing_vars+=("$key")
     fi
 done
@@ -119,10 +131,10 @@ fi
 # 6 Apply do module.eks isolado - mesma limitação de Terraform+EKS de
 # terra/ (os providers kubernetes/helm/kubectl não conseguem se conectar
 # antes do cluster existir no state) - ver "Uso" em terra/README.md.
-terraform plan -target=module.eks
-terraform apply -target=module.eks
+terraform plan -target=module.eks "${auto_vars[@]}"
+terraform apply -target=module.eks "${auto_vars[@]}"
 
 # 7 Plan/apply do restante (ativação do ambiente passivo: VPC peering até o
 # replica já promovido, EKS/NLB/Flux/observabilidade).
-terraform plan
-terraform apply
+terraform plan "${auto_vars[@]}"
+terraform apply "${auto_vars[@]}"
