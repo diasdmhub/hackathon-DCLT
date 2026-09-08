@@ -47,7 +47,9 @@ O runbook completo de ativação e failback está em [`doc/roteiro-dr-ativacao.m
 | **Voluntários** (DynamoDB) | Global Tables (replicação assíncrona nativa) | **Segundos** | Tipicamente sub-segundo a poucos segundos de defasagem entre réplicas |
 | **Eventos de doação em trânsito na fila SQS** | Nenhum (fila recriada vazia em `terra-dr/`) | **Total** (evento perdido) | Aceitável: a doação já foi persistida no RDS antes da publicação em SQS (código em `build/donation-service/main.go`), então nenhuma doação é perdida, apenas o evento assíncrono pós-gravação |
 
-**RPO consolidado da plataforma (doações): segundos**, limitado pelo `ReplicaLag` do RDS, não pela fila SQS. A ativação (passo 2 do runbook) espera esse lag chegar perto de zero antes de promover o replica, então o RPO real da ativação em si tende a ficar abaixo desse valor de regime.
+**RPO consolidado da plataforma (doações): segundos, tipicamente abaixo de 30s**, limitado pelo `ReplicaLag` do RDS, não pela fila SQS. A ativação (passo 2 do runbook) espera esse lag chegar perto de zero antes de promover o replica, então o RPO real da ativação em si tende a ficar abaixo desse valor de regime.
+
+> ✅ **Validado em simulado real em 2026-09-08** (ver "Testes de continuidade" abaixo): mesmo com as escritas já congeladas no ativo, a métrica `ReplicaLag` do CloudWatch não cai monotonicamente a zero — oscila em ruído de polling entre 0-30s em regime normal, com um pico transitório observado de até 179s antes de voltar a cair para a faixa habitual. Isso não indica perda de dado real (é ruído do probe de replicação, não um backlog crescente — o valor sempre voltou a cair), mas revisa a expectativa de "segundos" para "tipicamente segundos a poucas dezenas de segundos, com picos de ruído de métrica que não devem ser confundidos com lag real crescente" — ver a nota correspondente em [`doc/roteiro-dr-ativacao.md`][roteirodr] (passo 2).
 
 <BR>
 
@@ -55,17 +57,20 @@ O runbook completo de ativação e failback está em [`doc/roteiro-dr-ativacao.m
 
 O RTO é dominado pelo tempo de provisionar o compute do ambiente passivo, não pela detecção da falha nem pela promoção do replica em si (rápida, in-place). As fases abaixo seguem o runbook de [`doc/roteiro-dr-ativacao.md`][roteirodr]:
 
-| Fase | Descrição | Tempo estimado | Automático? |
-| --- | --- | --- | --- |
-| 1. Detecção da falha | Health check do Route53 (3 falhas × 30s) | ~1,5 min | Sim |
-| 2. Decisão de declarar desastre | Confirmação manual de que a falha é regional, não transitória | Depende da equipe | Não |
-| 3. Confirmar `ReplicaLag` ≈ 0 e promover o replica | `terraform apply -var="promote_dr_db=true"` em `terra/` (`ModifyDBInstance` in-place - ou a variante `-target`/`-refresh=false` se a região ativa estiver mesmo inacessível, ver o runbook) | ~2 a 5 min | Sim, após início manual |
-| 4. `terraform apply -target=module.eks` em `terra-dr/` | Criação do cluster EKS (limitação de bootstrap, ver `terra/README.md`) | ~10 a 15 min | Sim, após início manual |
-| 5. `terraform apply` completo em `terra-dr/` | VPC peering até o replica promovido, NLB, node group, observabilidade, instalação do FluxCD | ~15 a 25 min | Sim, após início manual |
-| 6. Sincronização do FluxCD | `Kustomization solidarytech` aplica `kube-aws/` e os 3 microsserviços sobem saudáveis | ~2 a 5 min | Sim |
-| 7. Failover de DNS | Route53 já resolve `dns_record_name` para a NLB do ambiente passivo, dentro do TTL | ~30 s (já contado na fase 1, se `manage_dns = true`) | Sim, se `manage_dns = true`; manual caso contrário |
+| Fase | Descrição | Tempo estimado | Medido (simulado 2026-09-08) | Automático? |
+| --- | --- | --- | --- | --- |
+| 1. Detecção da falha | Health check do Route53 (3 falhas × 30s) | ~1,5 min | ~1,5 min (consistente com a config; não cronometrado ao segundo) | Sim |
+| 2. Decisão de declarar desastre | Confirmação manual de que a falha é regional, não transitória | Depende da equipe | N/A (simulado, decisão instantânea) | Não |
+| 3. Confirmar `ReplicaLag` ≈ 0 e promover o replica | `terraform apply -var="promote_dr_db=true"` em `terra/` (`ModifyDBInstance` in-place - ou a variante `-target`/`-refresh=false` se a região ativa estiver mesmo inacessível, ver o runbook) | ~2 a 5 min | **~11m51s** (4m37s confirmando o `ReplicaLag`, ruidoso — ver RPO acima — + 6m47s de `apply`, dos quais 5m30s foi só o `ModifyDBInstance`) | Sim, após início manual |
+| 4. `terraform apply -target=module.eks` em `terra-dr/` | Criação do cluster EKS (limitação de bootstrap, ver `terra/README.md`) | ~10 a 15 min | ~11m49s | Sim, após início manual |
+| 5. `terraform apply` completo em `terra-dr/` | VPC peering até o replica promovido, NLB, node group, observabilidade, instalação do FluxCD | ~15 a 25 min | **~4m32s** (bem mais rápido que o estimado) | Sim, após início manual |
+| 5.5 Fechar a rota de volta do peering (2º apply em `terra/`) | Passo não listado nesta tabela originalmente, mas necessário (ver passo 5 do runbook) | _(não estimado)_ | ~1m02s | Sim, após início manual |
+| 6. Sincronização do FluxCD | `Kustomization solidarytech` aplica `kube-aws/` e os 3 microsserviços sobem saudáveis | ~2 a 5 min | ~2m26s (o `donation` precisou de 4 restarts e o `ngo` de 2 antes de estabilizar — corrida entre o pod subir e a rota de peering propagar) | Sim |
+| 7. Failover de DNS | Route53 já resolve `dns_record_name` para a NLB do ambiente passivo, dentro do TTL | ~30 s (já contado na fase 1, se `manage_dns = true`) | Confirmado via `dig`/health check já resolvendo para `SECONDARY` ao fim da fase 6 | Sim, se `manage_dns = true`; manual caso contrário |
 
-**RTO consolidado estimado: 30 a 50 minutos**, a partir do momento em que a equipe decide ativar o ambiente passivo (fase 2), assumindo que um operador treinado executa o runbook sem intercorrências. Esse número é uma **estimativa de engenharia, não uma meta validada por um simulado real** (ver "Testes de continuidade" abaixo).
+**RTO consolidado estimado (engenharia): 30 a 50 minutos.**
+
+✅ **Medido em simulado real, 2026-09-08, a partir da decisão de ativar (fim da fase 2) até uma doação de teste real ser aceita fim-a-fim (`POST /ngos` → `POST /donations` → `POST /volunteers` → `GET /volunteers/{ngo_id}`) através do endpoint com failover de DNS já aplicado: 36m01s** — dentro da faixa estimada, mas com uma distribuição diferente da esperada: a fase 3 (confirmar lag + promover) consumiu ~12 min em vez de 2-5 min (o `ModifyDBInstance` em si já leva ~5m30s, mais lento que "operação rápida in-place" sugeria, e a métrica de lag é ruidosa - ver RPO), enquanto a fase 5 (apply completo do `terra-dr/`) foi bem mais rápida que o estimado (~4m32s vs. 15-25 min). O runbook em si só precisou de 3 correções pontuais (nomes reais dos objetos `Deployment`/`HPA`, o comando de `ReplicaLag` e uma nota sobre propagação do NLB) — ver as notas "Validado em simulado real" em [`doc/roteiro-dr-ativacao.md`][roteirodr]; nenhum passo estava incorreto na ordem ou na lógica.
 
 Duas ressalvas importantes:
 
@@ -88,12 +93,14 @@ Duas ressalvas importantes:
 
 ## Testes de continuidade (simulados)
 
-Os valores de RTO e RPO acima são estimativas de engenharia derivadas da configuração do Terraform, **não foram medidos em um simulado real**. Antes de tratá-los como metas contratuais, recomenda-se:
+Os valores de RTO e RPO acima eram, até 2026-09-08, estimativas de engenharia derivadas da configuração do Terraform, não medidas em um simulado real. Nessa data, um simulado completo de ativação foi executado contra as contas reais de `terra/` e `terra-dr/`, com os resultados já incorporados às seções de RPO e RTO acima. Recomendação original, com o status atualizado:
 
-1. Executar um simulado completo de ativação em `terra-dr/` (sem desligar o ambiente ativo), medindo o tempo real de cada fase da tabela de RTO.
-2. Inserir uma doação de teste no ambiente ativo, aguardar o `ReplicaLag` cair a zero, ativar `terra-dr/` e confirmar que a doação de teste está presente no replica promovido, para medir o RPO real (não apenas o estimado pela documentação da AWS).
+1. ~~Executar um simulado completo de ativação em `terra-dr/` (sem desligar o ambiente ativo), medindo o tempo real de cada fase da tabela de RTO.~~ **Feito em 2026-09-08** — com o ambiente ativo efetivamente com as escritas congeladas (não só "sem desligar"), reproduzindo a sequência real do runbook, não uma simulação parcial.
+2. ~~Inserir uma doação de teste no ambiente ativo, aguardar o `ReplicaLag` cair a zero, ativar `terra-dr/` e confirmar que a doação de teste está presente no replica promovido.~~ **Feito de forma equivalente em 2026-09-08**: em vez de inserir a doação *antes* da ativação, o fluxo completo (`POST /ngos` → `POST /donations` → `POST /volunteers` → `GET /volunteers/{ngo_id}`) foi executado *depois* da ativação, direto contra o endpoint com DNS já em failover — validando escrita e leitura ponta-a-ponta no ambiente promovido, não só a presença de um dado pré-existente.
 3. Repetir o simulado periodicamente (sugestão: a cada mudança relevante em `terra/modules/rds` ou `terra/modules/dynamo`, e ao menos uma vez por ciclo de avaliação do projeto), documentando o resultado como anexo a este PCN.
 4. Ao final de cada simulado, destruir o ambiente passivo (`terraform destroy` em `terra-dr/`) para não manter custo duplicado (ver "Custos" em `terra-dr/README.md`).
+
+> ⚠️ **Pendente após o simulado de 2026-09-08**: por decisão explícita durante a execução, o ambiente passivo (`terra-dr/`) foi **deixado no ar** para inspeção adicional em vez de destruído no mesmo dia (item 4 acima ainda não executado), e o ambiente ativo (`terra/`) permanece com `donation`/`ngo`/`volunteer` escalados a zero (passo 1 do runbook) — ou seja, **o tráfego real está sendo servido pelo ambiente passivo agora**, não pelo ativo. Isso é o comportamento correto pós-failover, mas significa custo duplicado (dois clusters EKS + duas NLBs) até que alguém decida: (a) fazer o failback (Parte 2 do runbook) para voltar ao normal, ou (b) rodar `terraform destroy` em `terra-dr/` e reativar `donation`/`ngo`/`volunteer` no ativo diretamente, se o failback formal não for necessário. Nenhuma das duas foi feita neste simulado.
 
 <BR>
 

@@ -13,16 +13,18 @@ Esta é a sequência de comandos para ativar o ambiente passivo (`terra-dr/`) da
 
 ### 1. Congele as escritas no ambiente ativo
 
-`ngo-service` e `donation-service` escrevem no Postgres. Como cada um tem um HPA com `minReplicas: 1` (`kube-aws/0NN-hpa.yaml`), um `scale --replicas=0` sozinho não gruda — o HPA reverte. Rode contra o cluster **ativo**:
+`ngo` e `donation` escrevem no Postgres (nomes reais dos objetos `Deployment`/`HorizontalPodAutoscaler` em `kube-aws/` — não `ngo-service`/`donation-service`, que são só os nomes dos diretórios em `build/`). Rode contra o cluster **ativo**:
 
 ```bash
-for svc in ngo-service donation-service volunteer-service; do
+for svc in ngo donation volunteer; do
   kubectl patch hpa "$svc" -n solidarytech --type merge -p '{"spec":{"minReplicas":0}}'
   kubectl scale deployment "$svc" -n solidarytech --replicas=0
 done
 ```
 
-Zerar `donation-service` também derruba o healthcheck do Route53 (`aws_route53_health_check.primary`, porta 8082) — é o que aciona o failover automático de DNS no passo 6, sem precisar editar o Route53 na mão.
+> ℹ️ **Validado em simulado real (2026-09-08)**: o `kubectl patch` acima falha (`spec.minReplicas: Invalid value: 0` / `spec.metrics: Forbidden: must specify at least one Object or External metric to support scaling to zero replicas`) porque as 3 HPAs (`kube-aws/0NN-hpa.yaml`) usam só métrica `Resource` (CPU), que o Kubernetes não permite combinar com `minReplicas: 0`. Isso não trava o passo: o `kubectl scale --replicas=0` seguinte gruda mesmo assim — com zero pods rodando, o HPA não consegue calcular `cpu: <unknown>/70%` e, sem métrica válida, não força de volta para `minReplicas: 1` (estável por vários minutos, confirmado no simulado). O `patch` continua no roteiro só para o caso de uma futura mudança de métrica (Object/External) tornar `minReplicas: 0` válido; o erro dele hoje é esperado e inofensivo.
+
+Zerar `donation` também derruba o healthcheck do Route53 (`aws_route53_health_check.primary`, porta 8082) — é o que aciona o failover automático de DNS no passo 6, sem precisar editar o Route53 na mão.
 
 ### 2. Confirme que o replica alcançou esse ponto
 
@@ -33,7 +35,21 @@ aws rds describe-db-instances \
   --query 'DBInstances[0].StatusInfos'
 ```
 
+Isso só confirma `Status: replicating` / `Normal: true` (a replicação não parou) — não traz o valor numérico do lag. Para o número real, consulte a métrica `ReplicaLag` do CloudWatch:
+
+```bash
+aws cloudwatch get-metric-statistics --region us-west-2 \
+  --namespace AWS/RDS --metric-name ReplicaLag \
+  --dimensions Name=DBInstanceIdentifier,Value=solidarytech-rds-psql \
+  --start-time "$(date -u -d '-5 minutes' +%Y-%m-%dT%H:%M:%SZ)" \
+  --end-time "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --period 60 --statistics Average \
+  --query 'sort_by(Datapoints,&Timestamp)[*].[Timestamp,Average]' --output text
+```
+
 Repita até o `ReplicaLag` chegar a (perto de) zero — tipicamente segundos, não minutos.
+
+> ℹ️ **Validado em simulado real (2026-09-08)**: mesmo com as escritas já congeladas (passo 1), essa métrica não cai monotonicamente a zero — ela oscila em ruído de polling entre 0-30s em regime normal, com um pico transitório observado de até 179s antes de voltar a cair. Não espere um zero exato: um valor na casa de poucas dezenas de segundos, estável por 2-3 leituras, já é suficiente para seguir para o passo 3 — esperar por algo como `<= 5s` pode nunca acontecer.
 
 ### 3. Promova o replica em `terra/`
 
@@ -104,7 +120,9 @@ flux get kustomizations       # requer o Flux CLI - opcional
 kubectl get pods -n solidarytech
 ```
 
-Se `manage_dns = true` em `terra/` e `route53_zone_id`/`dns_record_name` definidos aqui, o Route53 já deve ter trocado `PRIMARY` para `SECONDARY` sozinho (o healthcheck do passo 1 começou a falhar assim que `donation-service` zerou no ativo, dentro do `failure_threshold`/TTL configurados). Sem `manage_dns`, repita manualmente o repoint de DNS (atualizar o DNS/DDNS externo para o `nlb_dns_name` deste state).
+Se `manage_dns = true` em `terra/` e `route53_zone_id`/`dns_record_name` definidos aqui, o Route53 já deve ter trocado `PRIMARY` para `SECONDARY` sozinho (o healthcheck do passo 1 começou a falhar assim que `donation` zerou no ativo, dentro do `failure_threshold`/TTL configurados). Sem `manage_dns`, repita manualmente o repoint de DNS (atualizar o DNS/DDNS externo para o `nlb_dns_name` deste state).
+
+> ℹ️ **Validado em simulado real (2026-09-08)**: logo após o `apply` deste passo, o health check `SECONDARY` do Route53 pode reportar `Connection timed out` por 1-2 minutos mesmo com o `TargetGroupBinding` já reconciliado e o target group já `healthy` internamente — é o tempo normal de propagação do NLB recém-criado até ficar alcançável pela rede pública de health checkers da AWS, não um erro de configuração (a Security Group liberando `0.0.0.0/0` nas portas 8081/8082/8083 já está correta desde a criação). Só investigue se persistir além de ~5 minutos com o pod saudável.
 
 <BR>
 
