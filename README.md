@@ -2,7 +2,11 @@
 
 > Análise geral e implementação comentada do "hackathon" da Fase 5 do curso DevOps e Arquitetura Cloud da FIAP.
 
-Este é o ecossistema de microsserviços da SolidaryTech que simulam um ambiente corporativo distribuído para um plataforma de doações NGO. A SolidaryTech é uma iniciativa sem fins lucrativos que conecta ONGs a doadores e voluntários.
+Este é o ecossistema de microsserviços da SolidaryTech que simulam um ambiente corporativo distribuído para um plataforma de doações a ONGs (_NGO em inglês_). A SolidaryTech é uma iniciativa sem fins lucrativos que conecta ONGs a doadores e voluntários.
+
+O projeto foi estruturado em partes distintas e correlacionadas. Para tanto, o índice abaixo foi criado para a melhor compreensão do contexto e possibilitar a replicação do ambiente na AWS.
+
+> A proposta inicial do projeto foi extraída do repositório e segue ao fim deste documento para apreciação.
 
 <BR>
 
