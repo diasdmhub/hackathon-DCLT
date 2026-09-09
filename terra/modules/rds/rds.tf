@@ -55,8 +55,38 @@ resource "aws_security_group" "rds" {
 #   - var.replicate_source_db_arn != null && var.promote: mesmo recurso,
 #     mas sem replicate_source_db - o provider Terraform interpreta essa
 #     mudança como uma promoção in-place (ModifyDBInstance), não um
-#     destroy/recreate. É o mecanismo usado tanto na ativação do ambiente
-#     passivo quanto no failback de volta ao ambiente ativo.
+#     destroy/recreate. É o mecanismo usado na ativação do ambiente passivo
+#     (promove o replica sempre-vivo) e na etapa final do failback (promove
+#     de volta o replica recriado na região original - ver abaixo).
+#
+# ⚠️ Validado em simulado real (2026-09-08) - a direção OPOSTA (uma
+# instância standalone existente virando replica, sem nunca ter sido criada
+# como replica) NÃO é suportada in-place pela AWS: tentar isso (por exemplo,
+# só reaplicar terra/ com var.dr_failback_source_arn preenchido, sem mais
+# nada) resulta em "Error: cannot elect new source database for
+# replication" - a API rejeita, sem efeito colateral (nenhum dado é
+# tocado), mas também não faz o que o failback precisa. Terraform também
+# não marca essa mudança como "forces replacement" no plano (mostra como
+# update in-place, o que é enganoso). O failback (passo 3 do runbook) e o
+# reestabelecimento do replica sempre-vivo (passo 6) por isso exigem forçar
+# a substituição explicitamente:
+#   terraform apply -target=<endereço deste recurso> -replace=<mesmo endereço> -var=...
+# -target é essencial junto com -replace: sem ele, o -replace force-destrói
+# esta instância e o Terraform recalcula o restante do grafo a partir dela,
+# o que pode arrastar outra instância deste mesmo módulo (a que ainda está
+# servindo tráfego real) para dentro do mesmo apply só porque ela referencia
+# o ARN desta como replicate_source_db_arn - ver "Failback" em
+# doc/roteiro-dr-ativacao.md para os comandos exatos e o motivo.
+#
+# Efeito colateral inofensivo, também validado no simulado: ao sair do papel
+# de replica (replicate_source_db_arn volta a null), engine_version e
+# password voltam a ser gerenciados por este recurso (linhas abaixo) - um
+# apply subsequente pode mostrar essas duas mudanças mesmo sem nenhuma
+# intenção de alterá-las. Não é uma regressão de versão real (AWS não faz
+# downgrade silencioso; "18" é só a forma abreviada de fixar a major
+# version, compatível com o "18.x" já em execução) nem uma rotação de senha
+# real (mesmo valor de var.db_password de sempre) - apenas o campo voltando
+# a ficar sob gestão explícita do Terraform.
 resource "aws_db_instance" "this" {
   identifier = "${var.name_prefix}-rds-psql"
 

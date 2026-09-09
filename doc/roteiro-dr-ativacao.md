@@ -151,6 +151,8 @@ Espelha o mesmo mecanismo da ativação, na direção contrária — a instânci
 
 Mesmo procedimento do passo 1 da ativação, mas contra o cluster que hoje está no ar (o antigo passivo, `terra-dr/`).
 
+> ℹ️ **Só se aplica a um simulado, não a um desastre real**: se o "ambiente ativo original" foi zerado manualmente (passo 1 da ativação) só para simular o desastre, ele continua zerado nesta altura — uma recuperação real de região não teria essa marca. Depois do passo 4 abaixo (promoção concluída), lembre de rodar o mesmo `for svc in ngo donation volunteer; do kubectl scale deployment "$svc" -n solidarytech --replicas=1; kubectl patch hpa "$svc" -n solidarytech --type merge -p '{"spec":{"minReplicas":1}}'; done` contra o cluster **original** antes de esperar o failover de DNS — validado em simulado real (2026-09-08): sem isso, o health check do Route53 nunca volta a passar porque não há pod nenhum para responder, mesmo com o banco já promovido corretamente.
+
 ### 2. Pegue o ARN da instância atualmente ativa
 
 O replica promovido em `terra-dr/` durante a ativação:
@@ -164,33 +166,49 @@ terraform output -raw rds_outputs 2>/dev/null || \
 
 ### 3. Recrie a instância primária como replica dessa origem
 
-`var.dr_failback_source_arn`/`var.dr_failback_promote` existem exatamente para isso (ver `terra/variables.tf`), sem precisar editar `main.tf` na mão. A AWS não suporta converter uma instância standalone em replica in-place, então este passo destrói e recria `module.rds` (sem perda de dado — a réplica nova resincroniza a partir da origem atual, só perde a "identidade" da instância antiga):
+`var.dr_failback_source_arn`/`var.dr_failback_promote` existem exatamente para isso (ver `terra/variables.tf`), sem precisar editar `main.tf` na mão. A AWS não suporta converter uma instância standalone em replica in-place, então este passo precisa destruir e recriar `module.rds` (sem perda de dado — a réplica nova resincroniza a partir da origem atual, só perde a "identidade" da instância antiga):
 
 ```bash
 cd ../terra
-terraform apply -var="dr_failback_source_arn=<ARN copiado no passo 2>"
+terraform apply -target=module.rds.aws_db_instance.this -replace=module.rds.aws_db_instance.this -var="dr_failback_source_arn=<ARN copiado no passo 2>"
 ```
+
+> ⚠️ **Validado em simulado real (2026-09-08) — `-target`/`-replace` não são opcionais aqui.** Rodar só `terraform apply -var="dr_failback_source_arn=<ARN>"` (sem `-target`/`-replace`, como uma versão anterior deste roteiro documentava) faz o Terraform tentar um `ModifyDBInstance` in-place em vez de destruir/recriar — a AWS rejeita com `Error: cannot elect new source database for replication` (falha limpa, nenhum dado é tocado, mas o failback não avança). E usar só `-replace` sem `-target` é pior: força a substituição desta instância e arrasta `module.rds_dr_replica[0]` (a instância **atualmente servindo tráfego real**) para o mesmo plano, só porque ela referencia o ARN desta via `replicate_source_db_arn` — esse módulo tem `skip_final_snapshot = true` e nenhum `deletion_protection`, então um `-replace` sem escopo correto arriscaria destruir o banco ativo sem snapshot. O par `-target`+`-replace` juntos limita a mudança só à instância parada de fato. Ver o comentário em `terra/modules/rds/rds.tf` para o detalhe técnico.
+>
+> **Cuidado ao colar este comando em várias linhas com `\|`**: se uma quebra de linha perder a barra de continuação, o shell executa só o `terraform apply -auto-approve` (sem nenhuma das flags), o que reproduz exatamente o erro acima contra a instância errada. Prefira colar como uma única linha.
 
 ### 4. Confirme o lag e promova
 
-Mesmo comando do passo 2 da ativação, contra este novo replica. Quando `ReplicaLag` ≈ 0:
+Mesmo comando (com a variante CloudWatch) do passo 2 da ativação, contra este novo replica (agora na região original). Quando `ReplicaLag` ≈ 0:
 
 ```bash
-terraform apply \
+terraform apply -target=module.rds.aws_db_instance.this \
   -var="dr_failback_source_arn=<mesmo ARN do passo 3>" \
-  -var="dr_failback_promote=true"
+  -var="dr_failback_promote=true" \
+  -var="promote_dr_db=true"
 ```
+
+`promote_dr_db=true` também precisa continuar presente aqui (mesmo padrão do passo 5 da ativação) — sem ele, `module.rds_dr_replica[0]` (ainda a instância ativa nesta altura) tentaria voltar a ser replica, o mesmo erro `cannot elect new source database for replication` do passo 3, desta vez contra o banco em produção. `-target` mantém o apply restrito só à instância sendo promovida. Validado em simulado real (2026-09-08): ~4m22s.
 
 ### 5. Reponte o DNS
 
-Automaticamente, quando `aws_route53_health_check.primary` voltar a passar (reative `donation-service` no ativo antes) — ou manualmente, se `manage_dns` não estiver habilitado.
+Automaticamente, quando `aws_route53_health_check.primary` voltar a passar (reative os 3 serviços no ativo antes, e reative `donation` especificamente — ver a nota no passo 1) — ou manualmente, se `manage_dns` não estiver habilitado. Validado em simulado real (2026-09-08): ~3 min entre a promoção do passo 4 e o health check reportando `Success` outra vez.
 
 ### 6. Restabeleça o replica sempre-vivo e encerre o passivo
 
-Depois da confirmação de que o tráfego voltou para `terra/`, reaplique `terra/` sem `dr_failback_source_arn`/`dr_failback_promote` (volta ao padrão, `module.rds_dr_replica` já aponta de novo para `module.rds.rds_arn`) e encerre o compute do ambiente passivo:
+Depois da confirmação de que o tráfego voltou para `terra/`, force a recriação de `module.rds_dr_replica[0]` como uma réplica nova (mesmo motivo do passo 3 — não existe conversão in-place de standalone para replica) e encerre o compute do ambiente passivo:
 
 ```bash
-cd terra-dr
+cd ../terra
+terraform apply -target='module.rds_dr_replica[0].aws_db_instance.this' -replace='module.rds_dr_replica[0].aws_db_instance.this'
+```
+
+Sem `dr_failback_source_arn`/`dr_failback_promote`, essas variáveis voltam ao padrão (`null`/`false`) e `module.rds_dr_replica` volta a apontar para `module.rds.rds_arn` como réplica sempre-viva — exatamente o papel original. Por depender de `module.rds`, o `-target` também reavalia (mas não substitui) esse recurso: espere ver `engine_version`/`password` aparecerem como alterados nele — é o efeito colateral inofensivo documentado em `terra/modules/rds/rds.tf` (nenhum downgrade real, mesma senha de sempre), não um sinal de erro. Validado em simulado real (2026-09-08): ~21 min (a criação de uma réplica cross-region do zero é o passo mais lento do failback, maior até que qualquer fase da ativação).
+
+Por fim, encerre o compute do ambiente passivo:
+
+```bash
+cd ../terra-dr
 terraform destroy
 ```
 

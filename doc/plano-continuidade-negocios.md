@@ -74,8 +74,24 @@ O RTO é dominado pelo tempo de provisionar o compute do ambiente passivo, não 
 
 Duas ressalvas importantes:
 
-- **O failback tem um mecanismo definido, mas sem RTO medido.** Diferente de uma versão anterior deste plano, voltar para a região original hoje segue um runbook simétrico e determinístico (destruir e recriar `module.rds` como replica do novo primário, aguardar o lag zerar, promover de volta - ver "Failback" em [`doc/roteiro-dr-ativacao.md`][roteirodr]), não uma reconciliação manual de dados. Ainda assim, esse processo não passou por um simulado cronometrado, então seu RTO fica de fora do número consolidado acima, tratado como uma operação planejada.
+- ~~O failback tem um mecanismo definido, mas sem RTO medido.~~ **Failback também medido em simulado real, 2026-09-08** (ver detalhe abaixo) — deixou de ser uma operação só planejada.
 - **A fase 2 (decisão de declarar desastre) não está automatizada de propósito.** Um failover automático de compute (sem revisão manual) poderia disparar um `terraform apply` completo em resposta a uma falha transitória, o que tem custo e risco maiores do que aguardar poucos minutos de confirmação.
+
+### Failback — resultado do simulado (2026-09-08)
+
+O mesmo simulado de 2026-09-08 incluiu o failback completo de volta para `terra/` (congelar escritas → recriar a instância original como replica → confirmar lag e promover → reponte de DNS → recriar o replica sempre-vivo → `terraform destroy` em `terra-dr/`). Durações medidas por fase:
+
+| Fase do failback | Tempo medido | Observação |
+| --- | --- | --- |
+| Recriar a instância original como replica do banco ativo (passo 3) | ~36 min (não representativo) | Inclui o diagnóstico de um bug real encontrado no meio do simulado (ver abaixo) - a operação em si, já com o comando corrigido, tem ordem de grandeza comparável à fase seguinte |
+| Confirmar lag e promover de volta (passo 4) | ~4m22s | Consistente com a promoção medida na ativação (~5m30s) |
+| Reponte de DNS + reativar os 3 serviços no ativo (passo 5) | ~3 min | Inclui reescalar `donation`/`ngo`/`volunteer` de volta a 1 réplica - necessário só porque o "desastre" desta rodada foi simulado zerando-os manualmente; numa recuperação real da região isso não seria um passo à parte |
+| Recriar o replica sempre-vivo em `terra-dr` (passo 6) | ~21 min | **A fase mais lenta de todo o ciclo ativação+failback** - criar uma réplica cross-region do zero é mais lento que qualquer promoção in-place |
+| `terraform destroy` em `terra-dr/` (97 recursos) | ~10 min | Inclui destruir o cluster EKS, NLB e VPC do ambiente passivo |
+
+**Achado principal: o failback é estruturalmente mais lento que a ativação**, porque ele precisa de **duas** criações de réplica cross-region do zero (recriar a instância original como replica no passo 3, e recriar o replica sempre-vivo no passo 6) contra a **única** promoção in-place que a ativação usa. Uma estimativa de engenharia para o failback já com os comandos corrigidos (excluindo o tempo de diagnóstico do bug): promoção (~5 min) + DNS/app (~3 min) + recriar réplica original (~15-20 min, mesma ordem de grandeza do passo 6) + recriar réplica sempre-vivo (~21 min) + destroy (~10 min) ≈ **55 a 60 minutos**, contra os ~36 min medidos na ativação.
+
+> ⚠️ **Bug real encontrado e corrigido durante o simulado**: o comando de failback documentado anteriormente neste roteiro (`terraform apply -var="dr_failback_source_arn=<ARN>"`, sem `-target`/`-replace`) não funciona - a AWS rejeita a tentativa de converter uma instância standalone existente em replica in-place (`Error: cannot elect new source database for replication`), e forçar a substituição sem `-target` arrastaria para o mesmo apply a instância **atualmente servindo tráfego real**, que tem `skip_final_snapshot = true` e nenhuma proteção contra exclusão. O comando corrigido (`-target=<recurso> -replace=<mesmo recurso>`) foi validado com sucesso nas duas etapas que precisam dele (passos 3 e 6) sem nenhum dado tocado indevidamente - ver as notas "Validado em simulado real" em [`doc/roteiro-dr-ativacao.md`][roteirodr] e o comentário técnico em `terra/modules/rds/rds.tf`.
 
 <BR>
 
@@ -100,7 +116,7 @@ Os valores de RTO e RPO acima eram, até 2026-09-08, estimativas de engenharia d
 3. Repetir o simulado periodicamente (sugestão: a cada mudança relevante em `terra/modules/rds` ou `terra/modules/dynamo`, e ao menos uma vez por ciclo de avaliação do projeto), documentando o resultado como anexo a este PCN.
 4. Ao final de cada simulado, destruir o ambiente passivo (`terraform destroy` em `terra-dr/`) para não manter custo duplicado (ver "Custos" em `terra-dr/README.md`).
 
-> ⚠️ **Pendente após o simulado de 2026-09-08**: por decisão explícita durante a execução, o ambiente passivo (`terra-dr/`) foi **deixado no ar** para inspeção adicional em vez de destruído no mesmo dia (item 4 acima ainda não executado), e o ambiente ativo (`terra/`) permanece com `donation`/`ngo`/`volunteer` escalados a zero (passo 1 do runbook) — ou seja, **o tráfego real está sendo servido pelo ambiente passivo agora**, não pelo ativo. Isso é o comportamento correto pós-failover, mas significa custo duplicado (dois clusters EKS + duas NLBs) até que alguém decida: (a) fazer o failback (Parte 2 do runbook) para voltar ao normal, ou (b) rodar `terraform destroy` em `terra-dr/` e reativar `donation`/`ngo`/`volunteer` no ativo diretamente, se o failback formal não for necessário. Nenhuma das duas foi feita neste simulado.
+✅ **Atualização (2026-09-08, mesmo dia)**: o failback (opção (a) acima) foi executado depois, completando o ciclo — ver "Failback — resultado do simulado" na seção de RTO. `terra-dr/` foi destruído (item 4 desta lista, agora sim executado) e o tráfego voltou a ser servido por `terra/`. O ambiente terminou o dia no estado normal de operação (réplica sempre-viva ligada, compute passivo desligado).
 
 <BR>
 
