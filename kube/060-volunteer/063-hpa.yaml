@@ -1,7 +1,10 @@
-# min=1/max=4: reduz o consumo de CPU/memória nos nodes quando a carga cai
-# (mínimo de 1 pod, não 2 como o "replicas" fixo anterior) e absorve picos
-# escalando até 4 réplicas. Depende do metrics-server
-# (observe/050-metrics-server/) para a API metrics.k8s.io.
+# min=2/max=4: mantém redundância mesmo em carga baixa (2 réplicas), o que
+# permite ao PodDisruptionBudget (064-pdb.yaml) proteger de fato contra
+# drain de node sem travar a manutenção indefinidamente - com 1 réplica só,
+# nenhuma configuração de PDB consegue impedir indisponibilidade e liberar o
+# drain ao mesmo tempo. Ainda escala até 4 réplicas sob pico de carga.
+# Depende do metrics-server (observe/050-metrics-server/) para a API
+# metrics.k8s.io.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -16,7 +19,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: volunteer
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 4
   metrics:
     - type: Resource

@@ -1,0 +1,19 @@
+# maxUnavailable (não minAvailable): com minReplicas=2 da HPA (063-hpa.yaml),
+# limita um "kubectl drain"/atualização de node a remover no máximo 1 réplica
+# por vez, mantendo pelo menos 1 réplica servindo tráfego durante a
+# manutenção. minAvailable travaria a eviction sempre que a HPA estivesse com
+# apenas 1 réplica (ex.: logo após um scale-down), sem nunca liberar o drain.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: volunteer
+  namespace: solidarytech
+  labels:
+    app.kubernetes.io/part-of: solidarytech
+    Project: SolidaryTech
+    Environment: secondary
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: volunteer
