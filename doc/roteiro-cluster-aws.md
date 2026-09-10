@@ -3,41 +3,43 @@
 
 # Roteiro de implementação inicial do cluster K8s na AWS
 
-Esta é uma sequência de passos para a implementação do ambiente EKS, incluindo os recursos de infraestrutura AWS, o AWS Load Balancer Controller e recursos de observabilidade e monitoração do ambiente (Loki/Tempo/Alloy/Prometheus self-hosted, este último complementado por kube-state-metrics e node-exporter para as métricas de cluster/pod), tudo via Terraform. Os microsserviços da SolidaryTech ficam sob gestão do FluxCD. Detalhes e justificativas de cada etapa estão em `terra/README.md` e `kube-aws/README.md`; este roteiro só reúne os comandos na ordem correta.
+Esta é uma sequência de passos para a implementação do cluster Kubernetes, incluindo os recursos de infraestrutura, o AWS Load Balancer Controller, além de recursos de observabilidade e monitoração do ambiente, tudo via Terraform. Os microsserviços da SolidaryTech são gerenciados pelo FluxCD. Mais detalhes e justificativas de cada etapa estão disponíveis em [`terra/README.md`][terra] e [`kube-aws/README.md`][kubeaws]. Este roteiro foca nos passos para a ativação do ambiente AWS.
 
 <BR>
 
 ## 🔑 Pré-requisitos
 
-**1.** De preferência, faça um **"_fork_" deste repositório** para possibilitar a execução do CI workflow. Ele é utilizado para testar e, principalmente, para enviar as imagens dos microserviços ao Docker Hub.
+**1.** De preferência, faça um **"_fork_" deste repositório** para possibilitar a execução do _CI workflow_. Ele é utilizado para testar e, principalmente, para enviar as imagens dos microserviços ao Docker Hub.
 
 > **É necessário habilitar o serviço de `Actions` no repositório.**
 
-**2.** Copie todo o código-fonte do repositório para um ambiente de execução/desenvolvimento local. Recomenda-se **clonar o repositório com o Git**:
+**2.** Inclua as credenciais de login do Docker Hub como _secrets_ do repositório. São necessários o `username` e o `token` do Docker Hub.
+
+**3.** Copie todo o código-fonte do repositório para um ambiente de execução/desenvolvimento local. Recomenda-se **clonar o repositório com o Git**:
 
 > **`git clone https://github.com/SUA_CONTA/FORK_DO_REPO.git && cd FORK_DO_REPO`**
 
-**3.** O ambiente de execução/desenvolvimento local deve estar **autenticado na AWS** com o [**AWS CLI**][awscli], pois ele é utilizado em configurações do Terraform.
+**4.** O ambiente de execução/desenvolvimento local deve estar **autenticado na AWS** por meio do [**AWS CLI**][awscli], pois ele é utilizado em configurações do Terraform.
 
-**4.** É necessário [**instalar o Terraform**][terraform] no ambiente de execução/desenvolvimento local para implementar os serviços da AWS que serão utilizados pela SolidaryTech;
+**5.** [**Instale o Terraform**][terraform] no ambiente de execução/desenvolvimento local para implementar os serviços da AWS que serão utilizados pela SolidaryTech;
 
-**5.** O **`kubectl`** é muito eficiente para gerenciar o cluster Kubernetes e seus recursos, caso necessário. Recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
+**6.** O **`kubectl`** é muito eficiente para gerenciar o cluster Kubernetes e seus recursos, se necessário. Recomenda-se instalá-lo utilizando o [**repositório oficial do Kubernetes**][kuberepo];
 
-**6.** O [FluxCD CLI][fluxcli] é opcional, pois o Terraform instala e configura ele, mas o CLI continua útil para consultar o estado da reconciliação (`flux get kustomizations`) ou depurar, caso necessário.
+**7.** A instalação do [**FluxCD CLI**][fluxcli] é opcional, pois o Terraform o instala e o configura. No entanto, o CLI é útil para consultar o estado da reconciliação (`flux get kustomizations`) ou realizar depurações, caso necessário.
 
-**7.** Um [Grafana][grafanacloud] já em operação.
+**8.** É necessário ter uma instância [**Grafana Cloud**][grafanacloud] já em operação para o envio de dados de monitoramento e observabilidade.
 
 <BR>
 
 ## 1. Variáveis Terraform
 
-Para a implementação inicial, é necessário configurar alguns dados para permitir que o ambiente seja criado de forma consistente.
+Para a implementação inicial, é necessário configurar alguns dados para permitir que o ambiente seja criado de maneira consistente.
 
-O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser definido com as principais variáveis do ambiente, incluindo senhas. Embora seja disponibilizado um arquivo de exemplo (`terraform.tfvars.example`) com alguns valores pré-definidos, é **altamente recomendado que as variáveis a seguir sejam definidas de acordo com o ambiente final**.
+O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser preenchido com as principais variáveis do ambiente, incluindo senhas. Embora um arquivo de exemplo (`terraform.tfvars.example`) esteja disponível com alguns valores pré-definidos, **recomenda-se fortemente que as variáveis a seguir sejam ajustadas de acordo com o ambiente final**.
 
-> ⚠️ **Note que este arquivo contém dados sensíveis e deve ter seu acesso restrito. Portanto, ele é ignorado pelo Git.**
+> ⚠️ **Note que este arquivo contém dados sensíveis, portanto, seu acesso deve ser restrito. Por isso, ele é ignorado pelo Git.**
 
-> **Preencha os dados no host de controle da infraestrutura e guarde o arquivo completo em um local seguro fora da AWS. Um gerenciador de senhas, por exemplo, não somente no disco local.**
+> **Preencha os dados no host de controle da infraestrutura e guarde o arquivo completo em um local seguro fora da AWS. Um gerenciador de senhas, por exemplo, e não o armazene apenas no disco local.**
 
 #### Lista de variáveis:
 
@@ -74,58 +76,58 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `grafana_cloud_tempo_username` | Instance ID do stack Grafana Cloud de Traces (opcional) | _(vazio)_ |
 | `grafana_cloud_tempo_api_key` | API key do Grafana Cloud com permissão de escrita em Traces (opcional, sensível) | _(vazio)_ |
 | `enable_dr` | Habilita a proteção contínua de dados para DR (read replica cross-region sempre-vivo do RDS + Global Table do DynamoDB) | _`true`_ |
-| `dr_aws_region` | Região AWS do ambiente passivo (`terra-dr/`) | _`us-west-2`_ |
+| `dr_aws_region` | Região AWS do ambiente passivo ([`terra-dr/`][terradr]) | _`us-west-2`_ |
 | `rds_backup_retention_period` | Dias de retenção de backup automatizado do RDS (pré-requisito para criar o read replica cross-region) | _`7`_ |
 | `dr_standby_subnet_prefix` | CIDR (2 primeiros octetos) da VPC mínima que hospeda o read replica sempre-vivo do RDS | _`10.95`_ |
-| `dr_app_vpc_cidr` | CIDR da VPC de app do ambiente passivo (`terra-dr/`) - precisa bater com o `subnet_prefix` de lá | _`10.90.0.0/16`_ |
+| `dr_app_vpc_cidr` | CIDR da VPC de app do ambiente passivo ([`terra-dr/`][terradr]) - precisa bater com o `subnet_prefix` de lá | _`10.90.0.0/16`_ |
 | `manage_dns` | Habilita a hosted zone Route53 + failover DNS entre os ambientes ativo/passivo | _`true`_ |
 | `dns_zone_name` | Subdomínio delegado à hosted zone Route53 (_ex.: `solidarytech.meu.dominio`_) | _`CHANGE_ME`_ |
 | `dns_record_name` | Nome do registro DNS com failover que os clientes usam (_ex.: `api.solidarytech.meu.dominio`_) | _`CHANGE_ME`_ |
 
-> As 9 variáveis de Grafana Cloud (3 para métricas, 3 para logs, 3 para traces) são opcionais: servem para Prometheus/Loki/Tempo enviarem (via `remote_write`/`loki.write`/`otelcol.exporter.otlp`) os dados para fora do cluster, já que o armazenamento local (PVC, retenção curta) não é replicado para o ambiente passivo (`terra-dr/`). Ver "Remote_write para o Grafana Cloud" e "Logs e traces para o Grafana Cloud" em `terra/README.md`, e o passo 5 abaixo para onde obter esses valores.
+> **As 9 variáveis do Grafana Cloud (3 para métricas, 3 para logs, 3 para traces) são opcionais, pois permitem que o Prometheus/Loki/Tempo enviem dados para fora do cluster, já que o armazenamento local não é replicado no ambiente passivo ([`terra-dr/`][terradr]). Consulte "Remote_write para o Grafana Cloud" e "Logs e traces para o Grafana Cloud" em [`terra/README.md`][terra].**
 
-> As variáveis de DR (`enable_dr`, `dr_aws_region`, `rds_backup_retention_period`, `manage_dns`, `dns_zone_name`, `dns_record_name`) vêm com valores padrão já habilitados no `.example`, pois cobrem apenas a proteção contínua de dados (barata, sem compute extra) - o ambiente passivo em si (`terra-dr/`) continua uma ativação separada e sob demanda, ver passo 4. `dns_zone_name`/`dns_record_name` exigem um domínio próprio já registrado (fora da AWS ou não) para funcionar - ver passo 4.
+> **As variáveis de DR (`enable_dr`, `dr_aws_region`, `rds_backup_retention_period`, `manage_dns`, `dns_zone_name`, `dns_record_name`) já vêm habilitadas com valores padrão no arquivo `.example`, pois cobrem apenas a proteção contínua de dados (com custos reduzidos e sem necessidade de computação adicional). A ativação do ambiente passivo ([`terra-dr/`][terradr]) é feita separadamente e sob demanda (_veja o passo 4_).**
 
 <BR>
 
 ## 2. Provisionamento de infraestrutura
 
-Neste passo serão provisionados a infraestrutura AWS, o Load Balancer Controller, o FluxCD (controladores + bootstrap dos microsserviços) e os serviços de observabilidade e monitoramento, tudo com o Terraform.
+Nesta etapa, a infraestrutura da AWS, o Load Balancer Controller, o FluxCD (_controladores que inicializam os microsserviços_) e os serviços de observabilidade e monitoramento serão provisionados com o uso do **Terraform**.
 
-> **Os comandos abaixo devem ser executados a partir de um host de controle da infraestrutura.**
+> **Os comandos a seguir devem ser executados a partir de um host de controle da infraestrutura.**
 
 ---
 
-Crie e edite o arquivo `terraform.tfvars`. **Evite usar os valores de exemplo.**
+**2.1** Crie e edite o arquivo `terraform.tfvars`.
 
-> **No mínimo `db_password` deve ser definido.**
+> **No mínimo o valor de `db_password` deve ser definido. Evite usar os valores de exemplo.**
 
 ```bash
 cd terra
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Execute o script de inicialização para criar o bucket S3, a tabela de estado do Terraform no DynamoDB e inicializar o Terraform.
+**2.2** Execute o script de inicialização para criar o bucket S3, a tabela de estado do Terraform no DynamoDB e inicializar o Terraform.
 
 ```bash
 ./init.sh
 ```
 
-Na primeira inicialização, com um cluster totalmente novo, os providers `kubernetes/helm/kubectl` tentam usar outputs do cluster EKS, que não existem num _state_ vazio. Portantanto, o cluster EKS deve ser criado primeiro. _Vide "Uso" em terra/README.md (limitação de Terraform+EKS)_.
+**2.3** Na primeira inicialização de um cluster totalmente novo, os _providers_ `kubernetes`, `helm` e `kubectl` tentam usar _outputs_ do cluster EKS, que não existem em um estado vazio. Portanto, o cluster EKS deve ser criado primeiro. _Consulte "Uso" em terra/README.md (limitação de Terraform+EKS)_.
 
 ```bash
 terraform plan -target=module.eks
 terraform apply -target=module.eks
 ```
 
-Um segundo `apply` (já com o cluster criado) gera os demais recursos AWS: instala o "_Load Balancer Controller_", instala o FluxCD e aplica o `GitRepository`/`Kustomization` que faz os 3 microsserviços (`./kube-aws`) subirem, e também aplica o `Loki/Tempo/Alloy/Prometheus` direto no cluster. A ordem entre eles passa por dependências do Terraform. Em clusters já existentes (com o `module.eks` criado), siga direto para o `terraform plan`/`apply`.
+**2.4** Um segundo `apply` (já com o cluster criado) gera os demais recursos da AWS: instala o "_Load Balancer Controller_", instala o FluxCD e aplica o `GitRepository`/`Kustomization` que faz com que os 3 microsserviços ([`./kube-aws`][kubeaws]) sejam iniciados. Também é aplicado o `Loki`/`Tempo`/`Alloy`/`Prometheus` diretamente no cluster. Em clusters já existentes, onde o `module.eks` já foi criado, siga direto para o `terraform plan`/`apply` a seguir.
 
 ```bash
 terraform plan
 terraform apply
 ```
 
-Ao final, aponte o `kubectl` local para o cluster criado.
+**2.5** Ao final, aponte o `kubectl` local para o cluster criado a fim de gerenciar os recursos K8s.
 
 ```bash
 $(terraform output -raw configure_kubectl 2>/dev/null) || \
@@ -136,73 +138,91 @@ $(terraform output -raw configure_kubectl 2>/dev/null) || \
 
 ## 3. FluxCD no cluster
 
-O `terraform apply` do passo 2 já instalou os controladores do FluxCD e aplicou o `GitRepository` (`clusters/eks-aws/flux-system/gotk-sync.yaml`), a `Kustomization` da SolidaryTech (`clusters/eks-aws/solidarytech-kustomization.yaml`) e o Secret `irsa-role-arns` com os ARNs reais das roles IRSA, vindos direto de `module.iam`.
+No passo 2, o `terraform apply` instalou os controladores do FluxCD e aplicou o `GitRepository` ([`clusters/eks-aws/flux-system/gotk-sync.yaml`][gotksync]), a `Kustomization` da SolidaryTech ([`clusters/eks-aws/solidarytech-kustomization.yaml`][solidkustom]) e o Secret `irsa-role-arns` com os ARNs reais das _roles_ IRSA, obtidos diretamente do módulo IAM.
 
-Se um dia o `url`/`branch` do `GitRepository`, o `path`/`interval` da `Kustomization`, ou os ARNs de IRSA mudarem (_ex.: `terraform destroy`/`apply` recriando as roles_), basta executar o `terraform apply` novamente. Assim, o Terraform reconcilia a diferença, sem a necessidade de um `kubectl apply -f` manual.
+Caso a URL/Branch do `GitRepository`, o `path`/`interval` da `Kustomization`, ou os ARNs de IRSA sejam alterados (_ex.: `terraform destroy`/`apply` recriando as roles_), basta executar o `terraform apply` novamente. Dessa forma, o Terraform concilia as diferenças, sem a necessidade de um `kubectl apply -f` manual.
 
 ```bash
-flux get kustomizations  # Consulta (requer o Flux CLI - opcional, ver Pré-requisitos)
-kubectl get kustomization solidarytech -n flux-system  # Alternativa sem o Flux CLI
+# Consulta (requer o Flux CLI - opcional, ver Pré-requisitos)
+flux get kustomizations
+# Alternativa sem o Flux CLI
+kubectl get kustomization solidarytech -n flux-system
 ```
 
 <BR>
 
 ## 4. Preparar o ambiente passivo
 
-Aproveite que o ambiente principal está ativo e saudável para deixar pronto o `terraform.tfvars` do ambiente passivo (`terra-dr/`).
+Aproveite que o ambiente principal está ativo e saudável para preparar o `terraform.tfvars` do ambiente passivo ([`terra-dr/`][terradr]).
 
-> **Não espere um desastre real para preparar os dados.**
+> ⚠️ **Não espere um desastre real para preparar os dados.**
 
-Parte dos dados dependem do `terraform output` no ambiente ativo, o `terra/`, o que exige que o bucket S3 e a tabela DynamoDB do backend remoto estejam acessíveis.
+Parte desses dados dependem do `terraform output` no ambiente ativo ([`terra/`][terra]), o que exige que o bucket S3 e a tabela DynamoDB do _backend_ remoto estejam acessíveis.
 
 ```bash
 cd terra-dr
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-A maioria das variáveis é de configuração estática, sem nenhuma consulta ao ambiente ativo. Elas também são similares às variáveis do passo 1. Preencha elas com os mesmos valores (ou equivalentes) do `terra/terraform.tfvars` já usado no passo 2.
+A maioria das variáveis é de configuração estática, sem consulta alguma ao ambiente ativo. Elas também são semelhantes às variáveis do passo 1, portanto, preencha-as elas com os mesmos valores (ou equivalentes) do `terra/terraform.tfvars` já usado no passo 2.
 
-Quatro variáveis vêm de outputs do `terra/`:
+Quatro variáveis são provenientes de dados do ambiente ativo:
 
-- **`db_password`**: precisa ser **IGUAL** à senha real do ambiente ativo, mas não de consulta ao parâmetro SSM criado por `module.secrets`.
-- **`route53_zone_id`**: copie este valor direto do `terra/` (_Route53 é um serviço global da AWS, e o valor está pronto no ambiente ativo_): `terraform output -raw route53_zone_id`
-- **`rds_dr_vpc_id`/`rds_dr_vpc_cidr`**: o read replica cross-region sempre-vivo do RDS (`module.rds_dr_replica`) e sua VPC mínima (`module.dr_standby_vpc`) já existem desde que `terra/` foi aplicado com `enable_dr = true` - dá para preencher com antecedência: `terraform output dr_standby_vpc_id` / `terraform output dr_standby_vpc_cidr`.
-- **`rds_dr_connection_url`**: idem, já dá para copiar o valor (`terraform output -raw dr_replica_connection_url`) - mas o replica continua **somente leitura** até a promoção (`var.promote_dr_db = true` em `terra/`), que é a única ação deste fluxo realmente restrita ao momento exato da ativação, não algo para preparar com antecedência.
+- **`db_password`**: precisa ser **IGUAL** à senha real do ambiente ativo;
+- **`route53_zone_id`**: copie este valor diretamente do Terraform;
+    - Route53 é um serviço global da AWS, e o valor fica disponível no ambiente ativo: `terraform output -raw route53_zone_id`
+- **`rds_dr_vpc_id`/`rds_dr_vpc_cidr`**: o _read replica cross-region_ sempre-vivo do RDS (`module.rds_dr_replica`) e sua VPC mínima (`module.dr_standby_vpc`) já existem desde a aplicação do `enable_dr = true` no ambiente principal.
+    - É possível preencher as variáveis antecipadamente: `terraform output dr_standby_vpc_id` / `terraform output dr_standby_vpc_cidr`.
+- **`rds_dr_connection_url`**: é possivel preencher com o valor de `terraform output -raw dr_replica_connection_url`;
+    - A replica permanece **somente em modo de leitura** até a promoção (`var.promote_dr_db = true` em [`terra/`][terra]). Essa é a única ação nesse fluxo que é realmente restrita ao momento exato da ativação, portanto não é algo que possa ser preparado antecipadamente.
 
-> **Vide [`doc/roteiro-dr-ativacao.md`][ativadr] para o passo a passo completo quando o DR precisar ser ativado**, incluindo o congelamento de escritas, a promoção do replica e o VPC peering entre as duas VPCs.
+**Consulte [`doc/roteiro-dr-ativacao.md`][ativadr] para obter o passo a passo completo para ativação do DR.**
 
 ### DNS do failover (`manage_dns = true`)
 
-`dns_zone_name`/`dns_record_name` (passo 1) pressupõem um **domínio próprio já registrado** (em qualquer registrador, não precisa ser a Route53) - `dns_zone_name` é um subdomínio desse domínio (_ex.: `solidarytech.meu.dominio`_), não o domínio raiz inteiro. O `terraform apply` do passo 2 cria a hosted zone Route53 desse subdomínio, mas ela só resolve de fato depois que o domínio raiz **delegar** a resolução para ela. Depois do `apply`, consulte os nameservers gerados:
+As variáveis `dns_zone_name` e `dns_record_name` (passo 1) pressupõem um **domínio próprio**, que já deve ter sido registrado em algum registrador. Não é necessário que seja a Route53.
+
+- `dns_zone_name` corresponde a um subdomínio desse domínio (_ex.: `solidarytech.meu.dominio`_), e não ao domínio raiz inteiro. O `terraform apply` do passo 2 cria a _hosted zone_ na Route53 para esse subdomínio, mas ela só resolve de fato depois que o domínio raiz **delegar** a resolução para ela.
+
+Após o `apply`, é possivel consultar os nameservers gerados:
 
 ```bash
 terraform output route53_name_servers
 ```
 
-Cadastre esses 4 nameservers como registros **NS** do subdomínio (`dns_zone_name`) no provedor DNS do domínio raiz (o mesmo lugar onde o domínio foi registrado ou onde seu DNS é gerenciado hoje). Sem esse cadastro, `dns_record_name` não resolve, mesmo com a hosted zone e os registros `PRIMARY`/`SECONDARY` já criados no Route53.
+Cadastre esses 4 nameservers como registros **NS** do subdomínio (`dns_zone_name`) no provedor DNS do domínio raiz. É o mesmo provedor em que o domínio foi registrado ou em que seu DNS é gerenciado. Sem esse cadastro, `dns_record_name` não será resolvido, mesmo com a hosted zone e os registros `PRIMARY`/`SECONDARY` já criados no Route53.
+
+> ⚠️ **O registro de domínios envolve custos antecipados, que estão fora do escopo deste projeto, e sua configuração pode variar de acordo com a região e o provedor. Eles não são obrigatórios para o projeto, mas, após a migração de clusters, auxiliam no acesso aos serviços, pois exigem menos ação manual.**
 
 <BR>
 
 ## 5. Grafana externo
 
-Loki, Tempo e Prometheus são implementados com o `terraform apply` do passo 2, e (se as variáveis de Grafana Cloud do passo 1 estiverem preenchidas) já empurram logs/traces/métricas para os datasources nativos e hospedados do próprio Grafana Cloud (`remote_write`/`loki.write`/`otelcol.exporter.otlp` - ver "Remote_write..."/"Logs e traces..." em `terra/README.md`). Não há NLB pública nem passo de cadastro de datasource: nada a configurar manualmente aqui.
+Loki, Tempo, Alloy e Prometheus são implementados com o `terraform apply` do passo 2. Se as variáveis do Grafana Cloud do passo 1 estiverem preenchidas, os logs/traces/métricas serão enviados para os _datasources_ nativos e hospedados do próprio Grafana Cloud (veja "Remote_write..." - "Logs e traces..." em [`terra/README.md`][terra]).
 
-As 9 variáveis (`grafana_cloud_remote_write_url`/`_username`/`_api_key` para métricas, `grafana_cloud_loki_url`/`_username`/`_api_key` para logs, `grafana_cloud_tempo_endpoint`/`_username`/`_api_key` para traces) são obtidas direto na conta do Grafana Cloud, sem precisar de nenhum contato ou solicitação:
+As 9 variáveis são obtidas diretamente na conta do Grafana Cloud.
 
-1. Acesse [grafana.com][grafanacloud] e entre na sua conta (ou crie uma, o tier gratuito já é suficiente).
-2. No portal, abra o stack desejado e, em **"Connections" > "Add new connection"** (ou na página de detalhes do stack), localize os cartões **Prometheus**, **Loki** e **Tempo** (cada um pertence a um Instance ID/stack próprio, mesmo dentro da mesma conta).
-3. Cada cartão traz a **URL de push** (`remote_write`/`loki.write`/OTLP endpoint) e o **Instance ID** (usado como username/basic-auth) prontos para copiar.
-4. Gere uma **API key** (ou "Cloud Access Policy Token") com permissão de escrita (`MetricsPublisher`/`LogsPublisher`/`TracesPublisher`, conforme o cartão) em **"Access Policies"**.
+- Métricas: `grafana_cloud_remote_write_url`/`_username`/`_api_key`;
+- Logs: `grafana_cloud_loki_url`/`_username`/`_api_key`;
+- Traces: `grafana_cloud_tempo_endpoint`/`_username`/`_api_key`.
 
-Preencha esses valores em `terra/terraform.tfvars` (passo 1) e rode `terraform apply` novamente. **Preencher qualquer um dos 3 grupos de variáveis já ativa o envio remoto correspondente** (métricas, logs ou traces, de forma independente) - deixar um grupo vazio mantém aquele envio desativado, sem afetar os demais.
+**5.1** Acesse o [grafana.com][grafanacloud] e faça login em sua conta (ou crie uma; o **tier gratuito** é o suficiente).
+
+**5.2** No portal do Grafana Cloud Stack, acesse os detalhes da Stack (_Details_). Em seguida, localize os recursos **Prometheus**, **Loki** e **Tempo**.
+
+**5.3** Cada recurso apresenta a **URL de push** (`remote_write`/`loki.write`/OTLP endpoint) e o **Instance ID** (usado como username/basic-auth), prontos para serem copiados.
+
+**5.4** Gere uma **API key** (ou "Cloud Access Policy Token") com permissão de escrita (`MetricsPublisher`/`LogsPublisher`/`TracesPublisher`, conforme o recurso) em **"Access Policies"**.
+
+**5.5** Preencha esses valores em `terra/terraform.tfvars` (passo 1) e execute o comando `terraform apply` novamente. **Preencher qualquer um dos 3 grupos de variáveis ativa o envio remoto correspondente** de forma independente (métricas, logs ou traces). Deixar um grupo vazio mantém o envio correspondente desativado, sem afetar os demais.
 
 <BR>
 
 ## Destruição do ambiente
 
-> **É necessário estar conectado ao cluster AWS.**
+> **É necessário estar conectado ao cluster da AWS.**
 
-> Se o ambiente passivo (`terra-dr/`) chegou a ser ativado, destrua-o **antes** do ambiente principal.
+> **Caso o ambiente passivo ([`terra-dr/`][terradr]) tenha sido ativado, ele deve ser destrído antes do ambiente principal.**
 
 ```bash
 cd terra
@@ -219,3 +239,8 @@ terraform destroy
 [tfvars]: /terra/terraform.tfvars.example
 [grafanacloud]: https://grafana.com/products/cloud/
 [ativadr]: /doc/roteiro-dr-ativacao.md
+[gotksync]: /clusters/eks-aws/flux-system/gotk-sync.yaml
+[solidkustom]: clusters/eks-aws/solidarytech-kustomization.yaml
+[terradr]: /terra-dr/
+[terra]: /terra/
+[kubeaws]: /kube-aws/
