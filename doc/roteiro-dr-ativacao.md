@@ -157,7 +157,7 @@ Esse segundo tipo de indisponibilidade exige uma solução diferente, tipicament
 
 <BR>
 
-## Parte 2 — Failback (voltar para o ambiente principal)
+## Failback (voltar para o ambiente principal)
 
 O mesmo mecanismo de ativação é espelhado, na direção contrária: a instância original de `terra/` é destruída e recriada como réplica do novo primário (_não existe conversão in-place de _standalone_ para replica_), é resincronizada e é promovida de volta. Faça isso somente após a confirmação da saúde da região original.
 
