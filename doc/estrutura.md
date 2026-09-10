@@ -75,7 +75,7 @@ Deploy testado ponta a ponta no cluster remoto. Os serviços da SolidaryTech com
 
 ### Observabilidade e APM
 
-Stack completa executando Prometheus, Loki e Alloy. Códigos dos microserviços instrumentados para o APM Tempo com Distributed Tracing.
+Stack completa executando Prometheus, Loki, Tempo e Alloy (OTEL). Códigos dos microserviços instrumentados para o APM Tempo com Distributed Tracing.
 
 - **Tracing distribuído**: OTLP dos 3 serviços, com correlação log etrace via trace_id nas linhas de log. _equivalente ao "Log-Trace Correlation" do Datadog._
 - **Service map / RED metrics**: o _service-graphs_ processor do Tempo gera o mapa de dependências entre serviços; o _span-metrics_ processor gera traces, incluindo dimensão extra para, cobrir erros 4xx - _equivalente ao Service Map + APM metrics do Datadog._
@@ -91,6 +91,20 @@ Definidos **SLIs de latência e erros** para todos os serviços da SolidaryTech.
 Essa especificação é relativa a um **período mensal** de `720h`, contabilizando o mínimo de `705,6h` de disponibilidade do serviço e `14.4h` de tolerância a erros. Esses valores estabelecem uma margem segura de manutenções e atualizações do ambiente, caso necessário, e mantêm um alta disponibilidade para os clientes.
 
 A quebra do SLO, implicará no congelamento imediato de atualizações programadas do Donation Service e exige a estabilização do ambiente até o próximo período mensal e alívio do _error budget_.
+
+Foi disponibilizado um conjunto de [dashboards do Grafana][dashgrafana] para apresentar dados de saúde da SolidaryTech, o que inclui os SLI/SLO mencionados e demais dados dos serviços. Essas dashboards podem ser sincronizadas com o repositório Git, complementando a estrutura de GitOps.
+
+---
+
+### Respostas a falhas e recuperação automática
+
+O ambiente dispõe das características a seguir para recuperação automática de falhas.
+
+- Falha de containers - reinício pelo Kubernetes (_liveness probe_).
+- Sobrecarga de CPU - absorvida pelo HPA (_1 a N réplicas_).
+- Divergência de configuração: conciliação pelo FluxCD no repositório.
+
+> **Note que as aplicações da SolidaryTech não possuem verificações reais de saúde, pois o `/health` é estático. Este é um aspecto fora do contexto do projeto, conforme roteiro disponibilizado.**
 
 <BR>
 
@@ -192,3 +206,4 @@ Essa estratégia foi formalizada em um [Plano de Continuidade de Negócios (PCN)
 [estimativa]: ./estimativa-custo.md
 [pcn]: ./plano-continuidade-negocios.md
 [roteirodr]: ./roteiro-dr-ativacao.md
+[dashgrafana]: /doc/grafana/
