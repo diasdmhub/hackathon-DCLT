@@ -5,13 +5,13 @@
 
 > ⚠️ **_Em construção_**
 
-Abaixo são descritas algumas das disciplinas utilizadas neste projeto.
+Esta é uma descrição suscinta das disciplinas utilizadas neste projeto.
 
 <BR>
 
 ## Fundamentos DevOps
 
-O projeto utiliza algumas disciplinas principais de DevOps, conforme descrito a seguir.
+O projeto utiliza algumas das principais disciplinas de DevOps, conforme descrito a seguir.
 
 <BR>
 
@@ -94,17 +94,22 @@ A quebra do SLO, implicará no congelamento imediato de atualizações programad
 
 Foi disponibilizado um conjunto de [dashboards do Grafana][dashgrafana] para apresentar dados de saúde da SolidaryTech, o que inclui os SLI/SLO mencionados e demais dados dos serviços. Essas dashboards podem ser sincronizadas com o repositório Git, complementando a estrutura de GitOps.
 
----
+<BR>
 
 ### Respostas a falhas e recuperação automática
 
-O ambiente dispõe das características a seguir para recuperação automática de falhas.
+Os mecanismos automáticos de nível de pod/node reduzem o MTTR de _crash_, sobrecarga e manutenção planejada, eliminando, sobretudo, o aspecto humano para as classes de incidente que eles conseguem reconhecer.
 
 - Falha de containers - reinício pelo Kubernetes (_liveness probe_).
-- Sobrecarga de CPU - absorvida pelo HPA (_1 a N réplicas_).
-- Divergência de configuração: conciliação pelo FluxCD no repositório.
+- Sobrecarga de CPU/Mem - absorvida pelo HPA (_1 a N réplicas_) escalando os pods horizontalmente até o limite dos _nodes_.
+- Divergência de configuração - reconciliação do FluxCD com o repositório Git em até 5 minutos para o caso de alterações diretamente no cluster.
+- HPA e PDB - Mantém o mínimo de pods ativos durante manutenções de ambiente, evitando indisponibilidades.
 
-> **Note que as aplicações da SolidaryTech não possuem verificações reais de saúde, pois o `/health` é estático. Este é um aspecto fora do contexto do projeto, conforme roteiro disponibilizado.**
+> - **As aplicações da SolidaryTech não possuem verificações reais de saúde, pois o `/health` é estático.**
+> - **Os eventos de notificação com o SQS são considerados `fire-and-forget`, sem tratamento ou consumo real.**
+> - ⚠️ **Estes são aspectos fora do contexto do projeto, pois necessitariam de alterações na lógica das aplicações, conforme indicado no roteiro disponibilizado.**
+
+Um ponto não automatizado é a indisponibilidade da camada de persistência (Postgres, DynamoDB, SQS). Neste caso, a detecção ocorre por meio da montoração ativa do ambiente (Grafana) com alerta de até 1m, e a resolução depende da intervenção humana, o que pode elevar o MTTR.
 
 <BR>
 
