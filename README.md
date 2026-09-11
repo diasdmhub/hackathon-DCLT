@@ -1,12 +1,12 @@
 # FIAP - Projeto da Fase 5 - "Hackathon" SolidaryTech
 
-> Análise geral e implementação comentada do "hackathon" da Fase 5 do curso DevOps e Arquitetura Cloud da FIAP.
+> Análise geral e implementação **opinativa** do "hackathon" da Fase 5 do curso DevOps e Arquitetura Cloud da FIAP.
 
-Este é o ecossistema de microsserviços da SolidaryTech que simulam um ambiente corporativo distribuído para um plataforma de doações a ONGs (_NGO em inglês_). A SolidaryTech é uma iniciativa sem fins lucrativos que conecta ONGs a doadores e voluntários.
+Este é o ecossistema de microsserviços da SolidaryTech, que simula um ambiente corporativo distribuído para uma plataforma de doações a ONGs (_NGO em inglês_). A SolidaryTech é uma organizações sem fins lucrativos que conecta ONGs a doadores e voluntários.
 
-O projeto foi estruturado em partes distintas e correlacionadas. Para tanto, o índice abaixo foi criado para a melhor compreensão do contexto e possibilitar a replicação do ambiente na AWS.
+O projeto foi estruturado em partes distintas e correlacionadas. Para melhor compreensão do contexto e possibilitar a replicação do ambiente na AWS, foi criado o índice abaixo.
 
-> A proposta inicial do projeto foi extraída do repositório e segue ao fim deste documento para apreciação.
+> A proposta inicial do projeto está disponível no repositório e é apresentada ao final deste documento.
 
 <BR>
 
@@ -25,11 +25,10 @@ O projeto foi estruturado em partes distintas e correlacionadas. Para tanto, o �
 
 ## Considerações
 
-- Conforme as orientações gerais do projeto Hackthon, divulgadas na plataforma Pós-tech, o foco não é no código das aplicações, mas nas práticas de SRE, FinOps, Segurança e ITSM/AIOps. Portanto, a [issue documentada no repositório original][issue3] pode prejudicar ou atrasar o andamento do projeto pois traz uma carga desnecessária de _troubleshooting_ e está fora de contexto com o projeto. Entendo que esta é uma realidade de muitas aplicações em ambientes de produção. Contudo, para a boa continuidade do aprendizado na FIAP, acredito que o _donation-service_ precisa ser revisado com parcimônia a fim de otimizar o aprendizado.
-- Devido às limitações do ambiente de laboratório da AWS, principalmente quanto aos acessos, não foi possivel implementar toda a infraestrutura do projeto adequadamente.
-Foi utilizado um conta privada da AWS para este projeto, no entanto, a infraestrutura do projeto só é mantida em produção pelo período de demonstração e testes para evitar custos elevados.
-- Para desenvolvimento, testes ou uso limitado, foi implementado um ambiente local de emulação AWS utilizando o Docker Compose ([`docker-compose.yaml`][dockercompose]) a fim de evitar o uso do ambiente real da AWS e seus custos agregados. Foi incluído o ElasticMQ para emular o SQS, e o DynamoDB Local para a tabela do DynamoDB do _volunteer-service_.
-- O Zabbix é utilizado como ferramenta central de eventos devido sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é _open-source_. Integrado a ele, estão recursos de tratamento e automatção de eventos.
+- De acordo com as orientações gerais do projeto "Hackathon", divulgadas na plataforma Pós-tech, o foco não está no código das aplicações, mas nas práticas de SRE, FinOps, segurança e ITSM/AIOps. Portanto, a [issue documentada no repositório original][issue3] pode prejudicar ou atrasar o andamento do projeto, pois traz uma carga desnecessária de _troubleshooting_ e não está relacionada ao projeto. Entendo que esaa é uma realidade de muitas aplicações em ambientes de produção. Contudo, para a boa continuidade do aprendizado na FIAP, acredito que o _donation-service_ deve ser revisto com parcimônia a fim de otimizar o aprendizado.
+- Devido às limitações do ambiente de laboratório da AWS, principalmente no que se refere aos acessos, não foi possível implementar adequadamente toda a infraestrutura do projeto. Por isso, foi utilizado um conta privada da AWS para este projeto. No entanto, a infraestrutura do projeto é mantida em produção apenas pelo período de demonstração e testes, a fim de evitar custos elevados.
+- Para o desenvolvimento, os testes ou o uso limitado, implementou-se um ambiente local de emulação da AWS utilizando, inicialmente, o Docker Compose ([`docker-compose.yaml`][dockercompose]), e, em seguida, o Kubernetes, a fim de evitar o uso do ambiente real da AWS e seus custos agregados. O ElasticMQ foi incluído para emular o SQS, e o DynamoDB Local, para a tabela do DynamoDB do _volunteer-service_.
+- O Zabbix é utilizado como ferramenta central de eventos, devido à sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é _open-source_. Integrados a ele, estão recursos de tratamento e automação de eventos.
 
 <BR>
 

@@ -1,31 +1,33 @@
 | [↩️ Voltar](./) |
 | --- |
 
-# Arquitetura
+# Arquitetura dos microserviços
 
 > ⚠️ **_Em construção_**
 
-Este é um resumo da arquitetura do ambiente da SolidaryTech.
+Este é um resumo da arquitetura dos microserviços da SolidaryTech.
 
 <BR>
 
 ## Microserviços
 
-A SolidaryTech possui 3 microsserviços independentes, desenvolvidos com tecnologias diferentes para simular um ambiente corporativo distribuído.
+A SolidaryTech possui 3 microsserviços independentes, desenvolvidos com tecnologias distintas, que simulam um ambiente corporativo distribuído.
 
-1. **`ngo-service`**: (_Non-Gorvermental Organization_) responsável pelo gerenciamento e cadastro das ONGs parceiras da plataforma.
-2. **`donation-service`**: responsável pelo processamento das doações e publicação de eventos assíncronos em filas para processamento posterior (_Caminho Crítico/Hot Path_).
-3. **`volunteer-service`**: gerencia o cadastro e inscrição de voluntários interessados em apoiar as ONGs parceiras.
+1. **`ngo-service`**: Responsável pelo gerenciamento e cadastro de ONGs parceiras da plataforma.
+2. **`donation-service`**: Responsável pelo processamento de doações e pela publicação de eventos assíncronos em filas para processamento posterior (_Caminho Crítico/Hot Path_).
+3. **`volunteer-service`**: Responsável pela gestão do cadastro e da inscrição de voluntários interessados em apoiar as ONGs parceiras.
 
-O [`README.md`](/) original descreve os 3 microserviços isoladamente, mas não deixa claro **quais endpoints existem**, **quais campos cada um espera** e **como uma ONG se conecta a doações e voluntários**. Este resumo cobre os três pontos, na forma de uma cadeia de chamadas manuais que podem ser [reproduzidas manualmente com o `curl`][testemanual].
+No entanto, o [`README.md`](/) original descreve os 3 microsserviços isoladamente, sem deixar claro **quais endpoints existem**, **quais campos cada um espera** e **como uma ONG se conecta a doações e voluntários**. Este resumo aborda os três pontos na forma de uma cadeia de chamadas manuais que podem ser [reproduzidas manualmente com o `curl`][testemanual].
 
 <BR>
 
 ### Como os microserviços se correlacionam
 
-Os três serviços **não se chamam entre si**. A única correlação é o campo `ngo_id`, que `donation-service` e `volunteer-service` gravam como um número inteiro solto. **Nenhum dos dois valida se a ONG existe** no `ngo-service`. Isso significa que, nos testes, é perfeitamente possível (e não gera erro) criar uma doação ou um voluntário apontando para um `ngo_id` inexistente.
+Os três serviços **não se comunicam entre si**. A única correlação é o campo `ngo_id`, gravado como um número inteiro solto pelos serviços `donation-service` e `volunteer-service`. **Nenhum dos dois valida se a ONG existe** no `ngo-service`. Isso significa que, nos testes, é perfeitamente possível (e não gera erro) criar uma doação ou um voluntário apontando para um `ngo_id` inexistente.
 
 > **Vale ter isso em mente ao interpretar os resultados.**
+
+O diagrama a seguir mostra como ocorre a comunicação entre os microserviços ocorre sem que haja uma relação real entre eles.
 
 ```mermaid
 sequenceDiagram
