@@ -3,19 +3,11 @@
 
 # Estrutura de disciplinas - "Hackathon" SolidaryTech
 
-> ⚠️ **_Em construção_**
-
-Esta é uma descrição suscinta das disciplinas utilizadas neste projeto.
+Esta é uma descrição suscinta das disciplinas utilizadas neste projeto. Ele utiliza algumas das principais disciplinas de **DevOps**, conforme descrito a seguir.
 
 <BR>
 
-## Fundamentos DevOps
-
-O projeto utiliza algumas das principais disciplinas de DevOps, conforme descrito a seguir.
-
-<BR>
-
-### Docker/Podman - Containers
+## Docker/Podman - Containers
 
 - Dockerfiles otimizados para o _build_ dos 3 microserviços e implantação no Kubernetes.
     - Os microserviços utilizam imagens reduzidas, como `alpine`.
@@ -25,7 +17,7 @@ O projeto utiliza algumas das principais disciplinas de DevOps, conforme descrit
 
 <BR>
 
-### CI e DevSecOps
+## CI e DevSecOps
 
 Trata-se de um modelo onde o Git é a fonte de verdade e o próprio cluster K8s sincroniza as mudanças. Esse formato mantém o ambiente em um estado desejado de forma declarativa trazendo mais flexibilidade e portabilidade.
 
@@ -39,7 +31,7 @@ Os dois workflows equivalentes ([`.gitea/workflows/ci-cd.yaml`][cigitea] e [`.gi
 
 <BR>
 
-### Gitops (CD)
+## Gitops (CD)
 
 O pipeline CI combinado ao FluxCD formam duas metades de um macro fluxo de GitOps.
 
@@ -53,7 +45,7 @@ São declarados 3 conciliações com manifestos do Kubernetes:
 
 <BR>
 
-### Infraestrutura como Código (IaC)
+## Infraestrutura como Código (IaC)
 
 Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) via Terraform.
 
@@ -63,7 +55,7 @@ Provisionamento de todo o ambiente (Cluster, Bancos de Dados, Mensageria, Rede) 
 
 <BR>
 
-### Kubernetes
+## Kubernetes
 
 > **O projeto foi estruturado em plataformas de desenvolvimento e produção.**
 
@@ -73,7 +65,7 @@ Deploy testado ponta a ponta no cluster remoto. Os serviços da SolidaryTech com
 
 <BR>
 
-### Observabilidade e APM
+## Observabilidade e APM
 
 Stack completa executando Prometheus, Loki, Tempo e Alloy (OTEL). Códigos dos microserviços instrumentados para o APM Tempo com Distributed Tracing.
 
@@ -186,12 +178,6 @@ Quanto aos aspectos de ITSM, o Zabbix é utilizado como ferramenta central de ev
 Estratégia de DR ativo-passivo entre duas regiões AWS: `terra/` é sempre o ambiente ativo e `terra-dr/` reaplica os mesmos módulos numa segunda região, normalmente sem nenhum recurso de compute em execução. Os dados (um read replica cross-region sempre-vivo do RDS, com lag tipicamente de segundos, e a tabela de voluntários no DynamoDB via Global Tables) são protegidos continuamente, enquanto o compute do ambiente passivo só é provisionado quando um desastre é declarado - ver o [roteiro de ativação/failback ⤴️][roteirodr].
 
 Essa estratégia foi formalizada em um [Plano de Continuidade de Negócios (PCN) ⤴️][pcn], com RTO e RPO estimados para os dados de doações, o ativo mais crítico da plataforma.
-
-<BR>
-
-## Artefatos
-
-- Documentação de arquitetura e teste manual em `doc/`.
 
 <BR>
 

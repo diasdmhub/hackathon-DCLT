@@ -3,9 +3,7 @@
 
 # Arquitetura dos microserviços
 
-> ⚠️ **_Em construção_**
-
-Este é um resumo da arquitetura dos microserviços da SolidaryTech.
+Este é um resumo da arquitetura de comunicação dos microserviços da SolidaryTech.
 
 <BR>
 

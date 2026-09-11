@@ -74,5 +74,5 @@
 - **Estimativa de imposto não é por hora** - A taxa é cobrada uma única vez por cobrança de fatura, não um custo contínuo. Esse valor depende do custo total no fechamento do mês.
 - **Os dados avaliados para a região `us-west-2` são escassos**, pois a ela foi utilizada por pouco tempo, principalmente devido a sua natureza passiva, semi-ativada, para o projeto.
 
-| [⬆️ Top](#august-2026---estimativas-de-custo-para-a-solidarytech) |
+| [⬆️ Top](#estimativas-de-custo-mensal-para-a-solidarytech) |
 | --- |
