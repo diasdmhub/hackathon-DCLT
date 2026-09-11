@@ -23,7 +23,7 @@ No entanto, o [`README.md`](/) original descreve os 3 microsserviços isoladamen
 
 ### Como os microserviços se correlacionam
 
-Os três serviços **não se comunicam entre si**. A única correlação é o campo `ngo_id`, gravado como um número inteiro solto pelos serviços `donation-service` e `volunteer-service`. **Nenhum dos dois valida se a ONG existe** no `ngo-service`. Isso significa que, nos testes, é perfeitamente possível (e não gera erro) criar uma doação ou um voluntário apontando para um `ngo_id` inexistente.
+Os três serviços **não se comunicam entre si**. A única correlação entre eles é o campo `ngo_id`, gravado como um número inteiro solto pelos serviços `donation-service` e `volunteer-service`. **Nenhum dos dois valida se a ONG existe** no `ngo-service`. Isso significa que, nos testes, é possível (e não gera erro) criar uma doação ou um voluntário apontando para um `ngo_id` inexistente.
 
 > **Vale ter isso em mente ao interpretar os resultados.**
 
@@ -31,13 +31,13 @@ O diagrama a seguir mostra como ocorre a comunicação entre os microserviços o
 
 ```mermaid
 sequenceDiagram
-    participant T as Teste manual (curl)
+    participant T as Requisição
     participant NGO as ngo-service :8081
     participant DON as donation-service :8082
     participant VOL as volunteer-service :8083
-    participant PG as PostgreSQL (sol_db)
-    participant SQS as ElasticMQ (emula SQS)
-    participant DDB as DynamoDB Local
+    participant PG as PostgreSQL
+    participant SQS as ElasticMQ (SQS)
+    participant DDB as DynamoDB
 
     T->>NGO: POST /ngos
     NGO->>PG: INSERT INTO ngos
@@ -77,7 +77,7 @@ sequenceDiagram
 | **volunteer-service** | POST   | `/volunteers`          | `name, email, ngo_id`        | `201` + registro (`volunteer_id` UUID gerado)   | `400` Campo ausente ou inválido - `500` Erro interno ao processar dados |
 |                       | GET    | `/volunteers/<ngo_id>` | num inteiro no path          | `200` + lista filtrada                          | `404` se `ngo_id` não for inteiro - `500` Erro interno |
 
-| [⬆️ Top](#arquitetura) |
+| [⬆️ Top](#arquitetura-dos-microserviços) |
 | --- |
 
 [testemanual]: ./teste-manual.md

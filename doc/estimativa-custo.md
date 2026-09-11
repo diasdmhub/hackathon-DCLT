@@ -5,10 +5,10 @@
 
 ## Custo de Agosto/2026
 
-**Data:** 2026-09-02
-**Métrica:** Custos reais
-**Período:** 2026-08-01 to 2026-08-31
-**Contexto:** Os recursos foram temporários, ativos por algumas horas em alguns dias (~11 de 31 dias).
+- **Data:** 2026-09-02
+- **Métrica:** Custos reais
+- **Período:** 2026-08-01 to 2026-08-31
+- **Contexto:** Os recursos foram temporários, ativos por algumas horas em alguns dias (~11 de 31 dias).
 
 <BR>
 
@@ -35,10 +35,10 @@
 
 ## Projeção de Setembro/2026
 
-**Data:** 2026-09-15
-**Métrica:** Custos estimados
-**Período:** 2026-09-01 to 2026-09-30
-**Contexto:** Os recursos foram temporários, ativos por algumas horas em alguns dias (~3 de 30 dias).
+- **Data:** 2026-09-15
+- **Métrica:** Custos estimados
+- **Período:** 2026-09-01 to 2026-09-30
+- **Contexto:** Os recursos foram temporários, ativos por algumas horas em alguns dias (~3 de 30 dias).
 
 <BR>
 
