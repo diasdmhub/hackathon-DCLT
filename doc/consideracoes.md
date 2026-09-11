@@ -1,7 +1,7 @@
 | [↩️ Voltar](./) |
 | --- |
 
-# Recomendações
+# Considerações Técnicas
 
 > ⚠️ **_Em construção_**
 

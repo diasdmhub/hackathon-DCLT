@@ -23,7 +23,7 @@ O projeto foi estruturado em partes distintas e correlacionadas. Para melhor com
 
 <BR>
 
-## Considerações
+## Considerações Gerais
 
 - De acordo com as orientações gerais do projeto "Hackathon", divulgadas na plataforma Pós-tech, o foco não está no código das aplicações, mas nas práticas de SRE, FinOps, segurança e ITSM/AIOps. Portanto, a [issue documentada no repositório original][issue3] pode prejudicar ou atrasar o andamento do projeto, pois traz uma carga desnecessária de _troubleshooting_ e não está relacionada ao projeto. Entendo que esaa é uma realidade de muitas aplicações em ambientes de produção. Contudo, para a boa continuidade do aprendizado na FIAP, acredito que o _donation-service_ deve ser revisto com parcimônia a fim de otimizar o aprendizado.
 - Devido às limitações do ambiente de laboratório da AWS, principalmente no que se refere aos acessos, não foi possível implementar adequadamente toda a infraestrutura do projeto. Por isso, foi utilizado um conta privada da AWS para este projeto. No entanto, a infraestrutura do projeto é mantida em produção apenas pelo período de demonstração e testes, a fim de evitar custos elevados.

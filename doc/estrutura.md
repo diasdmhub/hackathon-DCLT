@@ -86,8 +86,6 @@ A quebra do SLO, implicará no congelamento imediato de atualizações programad
 
 Foi disponibilizado um conjunto de [dashboards do Grafana][dashgrafana] para apresentar dados de saúde da SolidaryTech, o que inclui os SLI/SLO mencionados e demais dados dos serviços. Essas dashboards podem ser sincronizadas com o repositório Git, complementando a estrutura de GitOps.
 
-<BR>
-
 ### Respostas a falhas e recuperação automática
 
 Os mecanismos automáticos de nível de pod/node reduzem o MTTR de _crash_, sobrecarga e manutenção planejada, eliminando, sobretudo, o aspecto humano para as classes de incidente que eles conseguem reconhecer.
