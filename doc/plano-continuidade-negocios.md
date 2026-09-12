@@ -5,13 +5,13 @@
 
 > ⚠️ **_Em construção_**
 
-Este documento formaliza, no formato de um Plano de Continuidade de Negócios, a estratégia de Disaster Recovery (DR) ativo-passivo já implementada em [`terra/`][terra] e [`terra-dr/`][terradr]. O objetivo é definir o RTO (Recovery Time Objective) e o RPO (Recovery Point Objective) da plataforma SolidaryTech, com atenção especial aos dados de doações, o ativo mais crítico do negócio.
+Este documento formaliza, por meio de um Plano de Continuidade de Negócios, a estratégia de Disaster Recovery (DR) "ativo-passivo" já implementada em [`terra/`][terra] e [`terra-dr/`][terradr] conforme definido no repositório Git. Seu objetivo é definir o RTO (Recovery Time Objective) e o RPO (Recovery Point Objective) da plataforma SolidaryTech, dedicando atenção especial aos dados de doações, que são o ativo mais crítico do negócio.
 
 <BR>
 
 ## Escopo e ativos cobertos
 
-O PCN cobre a indisponibilidade total da região AWS ativa (definida em `terra/`), incluindo o cluster EKS, a instância RDS e a NLB. Os três armazenamentos de dados da plataforma têm estratégias de proteção distintas, descritas a seguir.
+O PCN abrange a indisponibilidade total da região ativa da AWS (definida em `terra/`), incluindo o cluster EKS, a instância RDS e o NLB. Os três principais formas de armazenamento de dados da plataforma possuem estratégias de proteção distintas, descritas a seguir.
 
 | Ativo | Serviço | Armazenamento | Protegido continuamente? |
 | --- | --- | --- | --- |
@@ -20,7 +20,7 @@ O PCN cobre a indisponibilidade total da região AWS ativa (definida em `terra/`
 | Voluntários | `volunteer-service` | DynamoDB (`SolidaryTechVolunteers`) | Sim, via Global Tables (réplica sempre ativa) |
 | Eventos assíncronos de doação | `donation-service` → SQS | Fila SQS | Não. Ver "O que não é coberto" abaixo |
 
-O `donation-service` é o **hot path** da plataforma (ver `README.md`) e é tratado como prioridade nas metas de recuperação abaixo. Como `ngo-service` e `donation-service` compartilham a mesma instância RDS, a recuperação de um implica a recuperação do outro.
+O `donation-service` é o **hot path** da plataforma (_ver `README.md`_) e é tratado como prioridade nas metas de recuperação a seguir. Como o `ngo-service` e o `donation-service` compartilham a mesma instância RDS, a recuperação de um implica a recuperação do outro.
 
 <BR>
 

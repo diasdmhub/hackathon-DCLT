@@ -181,7 +181,7 @@ No que se refere aos aspectos de ITSM, o Zabbix é utilizado como ferramenta cen
 
 Foi escolhida a estratégia de DR **ativo-passivo** entre duas regiões da AWS. Considerando o repositório Git, `terra/` é sempre o ambiente ativo, e `terra-dr/` reaplica os mesmos módulos em uma segunda região, geralmente sem nenhum recurso de processamento em execução. Os dados (uma réplica de leitura _"cross-region"_, sempre ativa, do RDS, com atraso tipicamente de segundos, e a tabela de voluntários no DynamoDB via _"Global Tables"_) são protegidos continuamente, enquanto a capacidade de processamento do ambiente passivo só é provisionada quando um desastre é declarado - _ver o [roteiro de ativação/failback ⤴️][roteirodr]_.
 
-Essa estratégia está formalizada no [Plano de Continuidade de Negócios (PCN) ⤴️][pcn], com RTO e RPO estimados para os dados de doações, que é ativo mais crítico da plataforma.
+Essa estratégia está formalizada no [Plano de Continuidade de Negócios (PCN) ⤴️][pcn], com RTO e RPO estimados para os dados de doações, que são o ativo mais crítico da plataforma.
 
 <BR>
 
