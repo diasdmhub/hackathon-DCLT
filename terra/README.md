@@ -1,4 +1,4 @@
-# terra/
+# Ambiente Ativo
 
 Infraestrutura da AWS para a SolidaryTech é definida em Terraform. Ela possui diversos módulos que definem os diferentes recursos provisionados para atender a SolidaryTech.
 

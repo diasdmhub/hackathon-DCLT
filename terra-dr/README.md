@@ -1,10 +1,10 @@
-# terra-dr/
+# Ambiente Passivo
 
 Este é p ambiente **passivo** da estratégia de Disaster Recovery (DR) ativo-passivo da SolidaryTech (_ver "Disaster Recovery" em `terra/README.md` para a estratégia completa_). Este diretório é um _root_ Terraform independente de `terra/`, mas reaplica os mesmos módulos compartilhados (`../terra/modules/*`) numa região AWS diferente, garantindo a mesma configuração do ambiente ativo sem duplicar código.
 
 <BR>
 
-## O que fica sempre ligado, e o que não fica
+## O que fica sempre ativo e o que não fica
 
 | Camada | Estado normal (sem desastre) | Onde vive |
 |---|---|---|
