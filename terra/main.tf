@@ -271,7 +271,8 @@ module "flux" {
 
 # Observabilidade e métricas de infraestrutura, aplicadas direto pelo
 # Terraform (providers helm/kubernetes/kubectl) em vez do FluxCD - ver
-# "Observabilidade via Terraform" em terra/README.md para o porquê. Só os
+# "Observabilidade e monitoração de infraestrutura via Terraform" em
+# terra/README.md para o porquê. Só os
 # microsserviços (kube-aws/) e o AWS Load Balancer Controller
 # (lb-controller/) continuam sob Flux.
 resource "kubernetes_namespace_v1" "observe" {

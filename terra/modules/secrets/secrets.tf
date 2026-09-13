@@ -47,7 +47,8 @@ resource "aws_ssm_parameter" "dynamodb_table_name" {
 # envFrom (042-ngo.yaml, 052-donation.yaml, 062-volunteer.yaml). Criados
 # aqui, direto pelo provider kubernetes, em vez de aplicados manualmente
 # fora do Flux: mesmo raciocínio de terra/modules/{loki,tempo,alloy,
-# prometheus} (ver "Observabilidade via Terraform" em terra/README.md) -
+# prometheus} (ver "Observabilidade e monitoração de infraestrutura via
+# Terraform" em terra/README.md) -
 # evita um passo manual sem tirar o dado sensível (senha do RDS) do Flux/git.
 resource "kubernetes_secret_v1" "ngo_env" {
   metadata {

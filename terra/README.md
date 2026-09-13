@@ -11,6 +11,7 @@ Infraestrutura da AWS para a SolidaryTech é definida em Terraform. Ela possui d
 | `vpc` | VPC, subnets públicas/privadas, 1 NAT Gateway | NAT Gateway não é free tier (cobra por hora + dados) |
 | `eks` | Cluster EKS + node group gerenciado + OIDC + addons + EBS CSI | Control plane do EKS não é free tier (~US$0,10/h fixo) |
 | `rds` | PostgreSQL `db.t3.micro`, single-AZ, 20GB gp3 | Free tier nos primeiros 12 meses de conta nova |
+| `dr-standby-vpc` | VPC mínima sempre ativa (sem Internet Gateway/NAT), hospedando só o read replica cross-region do RDS (`module.rds_dr_replica`) - criada apenas quando `enable_dr = true` | Sem custo relevante (VPC/subnets/route table são gratuitos, sem NAT Gateway) |
 | `dynamo` | Tabela `SolidaryTechVolunteers`, PROVISIONED 5/5 | Dentro do always-free tier (25 RCU/25 WCU/25GB, sem prazo) |
 | `sqs` | Fila standard de eventos de doação | Always-free até 1M requisições/mês, sem prazo |
 | `iam` | Roles IRSA (donation-service → SQS, volunteer-service → DynamoDB) | Sem custo |
@@ -22,7 +23,7 @@ Infraestrutura da AWS para a SolidaryTech é definida em Terraform. Ela possui d
 | `alloy` | DaemonSet (coleta de logs + roteamento OTLP) via recursos `kubernetes_*` | Sem custo AWS além do já discriminado (node group) |
 | `flux` | Controladores do FluxCD (`helm_release`) + `GitRepository`/`Kustomization` `solidarytech` + Secret `irsa-role-arns`, via recursos `kubernetes_*`/`kubectl_manifest` (ver "FluxCD via Terraform" abaixo) | Sem custo AWS além do já discriminado (node group) |
 
-> **Os últimos 6 módulos não provisionam recursos da AWS, mas aplicam o Kubernetes/Helm diretamente no cluster criado pelos módulos anteriores, por meio dos _providers_ `kubernetes`/`helm`/`kubectl` (_ver "Observabilidade via Terraform" e "FluxCD via Terraform" abaixo_).**
+> **Os módulos `lb`, `loki`, `tempo`, `prometheus`, `alloy` e `flux` não provisionam recursos da AWS diretamente, só aplicam o Kubernetes/Helm no cluster criado pelos módulos anteriores, por meio dos _providers_ `kubernetes`/`helm`/`kubectl` (_ver "Observabilidade e monitoração de infraestrutura via Terraform" e "FluxCD via Terraform" abaixo_).**
 
 ### Custos que não têm free tier
 
@@ -114,7 +115,7 @@ O que fica sempre protegido, independente de ativação, custando pouco:
   > O health check (`aws_route53_health_check.primary`) só verifica se > `donation-service:8082/health` responde 200 pela rede. Isso cobre bem uma indisponibilidade de rede/região inteira, mas não detecta desastres em que o endpoint continua respondendo apesar do sistema estar quebrado por trás (corrupção de dados, uma bad deploy, um bug de aplicação). Para esses casos, a ativação do ambiente passivo continua sendo uma decisão manual, não algo que o failover de DNS resolve sozinho.
 
 - O que **não** replica continuamente, por escolha é a fila **SQS** (eventos em trânsito no momento do desastre não são reprocessados, e a fila é recriada vazia em `terra-dr/`) e o **EKS/VPC/NLB/observabilidade** do ambiente passivo (só existem depois de `terra-dr/` ser aplicado).
-- `enable_dr` e `manage_dns` vêm ativos por padrão (`true`). Desabilitá-los muda o comportamento/custo do ambiente já em produção, então é explicitamente opicional via `terraform.tfvars` (ver `terraform.tfvars.example`).
+- `enable_dr` e `manage_dns` têm `default = false` em `variables.tf`. É o `terraform.tfvars.example` (e o `terraform.tfvars` do ambiente) que os liga explicitamente. Desabilitá-los muda o comportamento/custo do ambiente já em produção, então a decisão fica em `terraform.tfvars`.
 - **IAM entre as duas regiões**: como IAM é um namespace global por conta AWS, `terra/modules/eks` (roles do cluster/nodes/EBS CSI), `terra/modules/iam` e `terra/modules/lb-iam` aceitam `role_name_suffix` (vazio em `terra/` e `"-dr"` em `terra-dr/`) para as roles de cada ambiente não colidirem, mesmo usando o mesmo `name_prefix`. O `name_prefix` **precisa** ficar igual entre os dois roots. Os target groups da NLB usam nomes determinísticos (`${name_prefix}-<service>-tg`) que `kube-aws/*.yaml` já referencia via `targetGroupName`. Um `name_prefix` diferente quebraria esse binding sem exigir nenhuma mudança em `kube-aws/`, que continua 100% compartilhado entre os dois clusters (a diferenciação de ARNs de IRSA já passa pelo Secret `irsa-role-arns` por cluster, não por conteúdo diferente em `kube-aws/` - ver `clusters/eks-aws-dr/`).
 
 <BR>
