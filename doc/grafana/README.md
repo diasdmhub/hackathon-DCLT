@@ -21,7 +21,7 @@ Dashboard interna de saúde da SolidaryTech, pensada para o dia a dia de operaç
 
 <BR>
 
-## [SolidaryTech - Infraestrutura (Cluster)](dashboard-solidarytech-infra.json): Infraestrutura (Cluster)
+## [SolidaryTech - Infraestrutura (Cluster)](dashboard-solidarytech-infra.json)
 
 Dashboard focada na saúde da infraestrutura por trás da SolidaryTech. É uma visão separada da visão de negócio que ajuda a avaliar a saúde da infraestrutura e do cluster K8s.
 
@@ -31,7 +31,7 @@ Dashboard focada na saúde da infraestrutura por trás da SolidaryTech. É uma v
 
 <BR>
 
-## [SolidaryTech - Golden Metrics (Latência e Erros)](dashboard-solidarytech-golden-metrics.json): Golden Metrics (Latência e Erros)
+## [SolidaryTech - Golden Metrics (Latência e Erros)](dashboard-solidarytech-golden-metrics.json)
 
 Dashboard de acompanhamento de metas de qualidade (SLO) por microserviço, organizada em duas abas:
 
@@ -42,7 +42,7 @@ Dashboard de acompanhamento de metas de qualidade (SLO) por microserviço, organ
 
 <BR>
 
-## [SolidaryTech - Visão Externa](dashboard-solidarytech-externo.json): Visão Externa
+## [SolidaryTech - Visão Externa](dashboard-solidarytech-externo.json)
 
 Dashboard extra que simula a perspectiva de um cliente externo consultando a SolidaryTech por fora, sem acesso ao cluster (dados vindos do Zabbix, via monitoramento HTTP dos três serviços).
 
