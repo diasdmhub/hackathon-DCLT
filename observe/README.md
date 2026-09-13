@@ -1,7 +1,7 @@
 | [↩️ Voltar](../) |
 | --- |
 
-# Observabilidade do ambiente local
+# Observabilidade do ambiente
 
 Este é um resumo da stack de observabilidade da SolidaryTech e de como configurá-la no Grafana.
 
