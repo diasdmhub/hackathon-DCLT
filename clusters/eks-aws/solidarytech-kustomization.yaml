@@ -20,9 +20,9 @@ spec:
   # kube-aws/005-serviceaccounts.yaml pelos ARNs reais das roles IRSA (contêm
   # o account ID da AWS - por isso não ficam hardcoded em kube-aws/, que é
   # público). O Secret precisa estar no mesmo namespace desta Kustomization
-  # (flux-system, não solidarytech) - ver
-  # clusters/eks-aws/flux-system/irsa-role-arns-secret.example.yaml e
-  # doc/roteiro-cluster-aws.md para como criá-lo.
+  # (flux-system, não solidarytech) - criado automaticamente pelo
+  # `terraform apply` (ver "FluxCD via Terraform" em terra/README.md e
+  # doc/roteiro-cluster-aws.md).
   postBuild:
     substituteFrom:
       - kind: Secret

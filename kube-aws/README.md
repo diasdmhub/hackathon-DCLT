@@ -15,7 +15,9 @@ Este diretório é equivalente a `kube/`, contendo os 3 microsserviços da Solid
 | Exposição externa | 3x `Service` `LoadBalancer` compartilhando um IP fixo do MetalLB (`allow-shared-ip`), diferenciados por porta | `Service` `ClusterIP` + `TargetGroupBinding` por serviço, apontando para uma NLB única (`terra/modules/nlb`) |
 | Tag de imagem | Timestamp UTC, atualizada pelo Flux Image Automation | `:latest` - este cluster não executa a Kustomization `image-automation` (só `kubeadm-local`, para evitar dois Flux commitando a mesma alteração em `./kube`) |
 | Schema do banco | `docker-entrypoint-initdb.d` do `Dockerfile-psql` executa `db/init.sql` automaticamente na subida do container | Job `rds-init` (`020-rds-init/`) executa os mesmos `db/init.sql` contra o RDS - ver seção abaixo |
-| Backend do HPA (`0NN-hpa.yaml`, min 1/max 4 em cada serviço) | `metrics-server` via `HelmRelease` Flux (`observe/050-metrics-server/`), com `--kubelet-insecure-tls` (certificado autoassinado do kubelet no kubeadm) | Addon EKS `metrics-server` (`terra/modules/eks`), gerenciado pela AWS - sem flag de TLS inseguro, o certificado do kubelet já é confiável |
+| Backend do HPA (`0NN-hpa.yaml`, min 2/max 4 em cada serviço) | `metrics-server` via `HelmRelease` Flux (`observe/050-metrics-server/`), com `--kubelet-insecure-tls` (certificado autoassinado do kubelet no kubeadm) | Addon EKS `metrics-server` (`terra/modules/eks`), gerenciado pela AWS - sem flag de TLS inseguro, o certificado do kubelet já é confiável |
+
+Cada serviço também carrega um `PodDisruptionBudget` (`0NN-pdb.yaml`, `maxUnavailable: 1`), idêntico nos dois diretórios. Ele só consegue proteger de fato contra um `kubectl drain`/atualização de node sem travar a manutenção indefinidamente porque o HPA acima já garante `minReplicas: 2` - com 1 réplica só, nenhuma configuração de PDB consegue impedir indisponibilidade e liberar o drain ao mesmo tempo.
 
 <BR>
 
@@ -63,7 +65,7 @@ O ARN de cada role não fica hardcoded em `005-serviceaccounts.yaml`, já que o 
 
 ## Flux
 
-`clusters/eks-aws/solidarytech-kustomization.yaml` aponta para `./kube-aws`. Falta executar o bootstrap do Flux nesse cluster (`flux bootstrap ...` com `--path=./clusters/eks-aws`) para que `flux-system/` seja gerado e essa Kustomization passe a ser reconciliada de fato - ver `clusters/eks-aws/`.
+`clusters/eks-aws/solidarytech-kustomization.yaml` aponta para `./kube-aws`. Diferente do `kubeadm-local`, este cluster não usa `flux bootstrap`: os controladores do Flux, o `GitRepository` (`clusters/eks-aws/flux-system/gotk-sync.yaml`) e esta própria Kustomization são aplicados pelo `terraform apply` em `terra/` (módulo `flux`, via `helm_release` + `kubectl_manifest`), sem nenhum passo manual - _ver "FluxCD via Terraform" em `terra/README.md` e a seção "GitOps" do `CLAUDE.md` para o motivo de não se autogerenciar (o mirror unidirecional Gitea→GitHub apagaria qualquer commit que um `flux bootstrap` fizesse só no GitHub, o que já causou a autodestruição do Flux neste cluster duas vezes)_.
 
 <BR>
 
