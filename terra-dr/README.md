@@ -1,6 +1,6 @@
 # Ambiente Passivo
 
-Este é p ambiente **passivo** da estratégia de Disaster Recovery (DR) ativo-passivo da SolidaryTech (_ver "Disaster Recovery" em `terra/README.md` para a estratégia completa_). Este diretório é um _root_ Terraform independente de `terra/`, mas reaplica os mesmos módulos compartilhados (`../terra/modules/*`) numa região AWS diferente, garantindo a mesma configuração do ambiente ativo sem duplicar código.
+Este é o ambiente **passivo** da estratégia de Disaster Recovery (DR) ativo-passivo da SolidaryTech (_ver "Disaster Recovery" em `terra/README.md` para a estratégia completa_). Este diretório é um _root_ Terraform independente de `terra/`, mas reaplica os mesmos módulos compartilhados (`../terra/modules/*`) numa região AWS diferente, garantindo a mesma configuração do ambiente ativo sem duplicar código.
 
 <BR>
 
@@ -32,6 +32,6 @@ O passo a passo completo (congelamento de escritas, promoção do replica, `init
 
 ## Custos
 
-Além do que já é cobrado independente de região, a réplica do RDS e a réplica DynamoDB, ambas pequenas. (_ver "Disaster Recovery" em `terra/README.md`_). Ativar o _compute_ deste diretório custa exatamente o mesmo que o ambiente ativo já custa hoje pelo tempo em que ficar ativo (EKS control plane, NAT Gateway, NLB, node group - _ver "Custos que não têm free tier" em `terra/README.md`_).
+Além do que já é cobrado independente de região, há o custo da réplica do RDS e da réplica DynamoDB, ambas pequenas (_ver "Disaster Recovery" em `terra/README.md`_). Ativar o _compute_ deste diretório custa exatamente o mesmo que o ambiente ativo já custa hoje pelo tempo em que ficar ativo (EKS control plane, NAT Gateway, NLB, node group - _ver "Custos que não têm free tier" em `terra/README.md`_).
 
 [roteirodr]: /doc/roteiro-dr-ativacao.md
