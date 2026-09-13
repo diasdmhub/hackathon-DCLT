@@ -14,7 +14,7 @@ Este é um resumo da stack de observabilidade da SolidaryTech e de como configur
 | Métricas de cluster/pod | kube-state-metrics + node-exporter (`HelmRelease`s, `observe/040-prometheus/`) | Prometheus | Grafana |
 | Logs | Grafana Alloy (DaemonSet, tail dos arquivos CRI em `/var/log/pods`) | Loki | Grafana |
 | Traces | SDK OpenTelemetry nos 3 microserviços, export OTLP ao Alloy, que roteia ao Tempo | Grafana Tempo | Grafana |
-| Métricas de RED / service graph | Metrics-generator do próprio Tempo (deriva das traces) | Prometheus (`observe/040-prometheus/`, dedicado a este fim) | Grafana (via datasource Tempo) |
+| Métricas de RED / service graph | Metrics-generator do próprio Tempo (deriva das traces) | Prometheus (`observe/040-prometheus/`) | Grafana (via datasource Tempo) |
 
 Os manifestos de Loki, Alloy, Tempo e Prometheus vivem em [`observe/`](/observe) e são aplicados pelo Flux através da Kustomization `observe`. Além de receber via `remote_write` as métricas de service-graph/span-metrics que o Tempo deriva das traces, o Prometheus deste diretório também faz scraping das métricas de cluster/pod (ver "Métricas de cluster via Prometheus" abaixo).
 
@@ -33,7 +33,7 @@ Como o Prometheus roda no cluster, toda a observabilidade foi concentrada no Gra
 - **kube-state-metrics** (`046-kube-state-metrics.yaml`): estado dos objetos do Kubernetes - fase dos pods, restarts, réplicas prontas/desejadas de Deployments/DaemonSets/StatefulSets/ReplicaSets, condições dos nodes. `collectors` fica restrito a esses objetos (o chart cobre por padrão praticamente todo tipo de objeto do cluster, incluindo secrets/ingresses/PDBs/webhooks/RBAC, sem uso real aqui) - é a peça que dá a "saúde dos pods da solidarytech".
 - **node-exporter** (`047-node-exporter.yaml`): métricas de host por node (CPU, memória, disco, rede).
 
-Os dois Services já saem com a anotação `prometheus.io/scrape: "true"` (default de ambos os charts), então o job `kubernetes-service-endpoints` em `prometheus.yml` os descobre via `kubernetes_sd_configs` sem precisar de ServiceMonitor/Prometheus Operator. Um terceiro job, `kubelet-resource`, complementa com CPU/memória por node/pod/container direto do kubelet, via proxy do apiserver (`/api/v1/nodes/<node>/proxy/metrics/resource` - o endpoint de resumo, mais leve que `/metrics/cadvisor` completo); precisa da ClusterRole `prometheus` (`044-rbac.yaml`), vinculada à ServiceAccount que o Deployment do Prometheus usa (`043-prometheus.yaml`.
+Os dois Services já saem com a anotação `prometheus.io/scrape: "true"` (default de ambos os charts), então o job `kubernetes-service-endpoints` em `prometheus.yml` os descobre via `kubernetes_sd_configs` sem precisar de ServiceMonitor/Prometheus Operator. Um terceiro job, `kubelet-resource`, complementa com CPU/memória por node/pod/container direto do kubelet, via proxy do apiserver (`/api/v1/nodes/<node>/proxy/metrics/resource` - o endpoint de resumo, mais leve que `/metrics/cadvisor` completo); precisa da ClusterRole `prometheus` (`044-rbac.yaml`), vinculada à ServiceAccount que o Deployment do Prometheus usa (`043-prometheus.yaml`).
 
 Deliberadamente enxuto: cobre saúde/consumo de cluster e pods, não todo detalhe que kube-state-metrics/kubelet conseguem expor.
 
@@ -138,26 +138,27 @@ Os painéis de infraestrutura apontam para o Prometheus, em [`doc/grafana/dashbo
 
 Os painéis de RED contam respostas HTTP 4xx e 5xx como erro, pelo motivo explicado em [Taxa de erro incluindo 4xx](#taxa-de-erro-incluindo-4xx); o mapa de serviços continua refletindo só 5xx (_limitação do Tempo_). Para investigar um erro específico, use o Explore do datasource Tempo diretamente.
 
-A _row_ "Recursos dos Pods" traz 6 painéis, com CPU e memória sugeridas (p95) para cada um dos 3 serviços, calculados a partir do `kubelet-resource` (`container_cpu_usage_seconds_total`/`container_memory_working_set_bytes`, rotulados por `container` `ngo`/`donation`/`volunteer`). A query usa `avg by (container)` antes do `quantile_over_time` para obter o uso típico de **um** pod (não a soma da frota), o que mantém o número comparável a `requests`/`limits` do Deployment mesmo com o HPA variando a contagem de réplicas. Os thresholds estão alianhados com as definições de `kube/0{40,50,60}-*/*.yaml`. Se os _requests_ ou _limits_ mudarem, atualize os thresholds desses painéis para não ficarem desalinhados. **O objetivo é dar o insumo (_p95 de uso real_) para reajustar manualmente `requests`/`limits` ao longo do tempo**, já que o VPA foi descartado, pois causaria _drift_ contra o FluxCD (_ver `doc/estrutura.md`_).
+A _row_ "Recursos dos Pods" traz 6 painéis, com CPU e memória sugeridas (p95) para cada um dos 3 serviços, calculados a partir do `kubelet-resource` (`container_cpu_usage_seconds_total`/`container_memory_working_set_bytes`, rotulados por `container` `ngo`/`donation`/`volunteer`). A query usa `avg by (container)` antes do `quantile_over_time` para obter o uso típico de **um** pod (não a soma da frota), o que mantém o número comparável a `requests`/`limits` do Deployment mesmo com o HPA variando a contagem de réplicas. Os thresholds estão alinhados com as definições de `kube/0{40,50,60}-*/*.yaml`. Se os _requests_ ou _limits_ mudarem, atualize os thresholds desses painéis para não ficarem desalinhados. **O objetivo é dar o insumo (_p95 de uso real_) para reajustar manualmente `requests`/`limits` ao longo do tempo**, já que o VPA foi descartado, pois causaria _drift_ contra o FluxCD (_ver `doc/estrutura.md`_).
 
 <BR>
 
 ## Template Zabbix
 
-São disponibilizadas 2 templates para uso no Zabbix, a fim de criar uma visão externa (_BlackBox do cliente_) da Solidarytech.
+São disponibilizadas 2 templates para uso no Zabbix, a fim de criar uma visão externa (_BlackBox do cliente_) da Solidarytech. O dashboard [SolidaryTech - Visão Externa](/doc/grafana/dashboard-solidarytech-externo.json) (_ver `doc/grafana/README.md`_) consome esses dados no Grafana.
 
-### SolidaryTech Health by HTTP
+### [SolidaryTech Health by HTTP][tempzabbix]
 
 É a template para monitorar os serviços da SolidaryTech externamente. Ela abrange dois aspectos principais:
 
 - **Saúde**: consultas HTTP por serviço ao recurso `/health`, e retornando o status e a latência;
 - **Negócio**: itens para a contagem de ONGs, doações e voluntários por ONG.
 
-### SolidaryTech Load by HTTP (Testes)
+### [SolidaryTech Load by HTTP (Testes)][tempzabbixload]
 
 **É uma template para testes de carga**. Ela envia requisições periódicas para criar ONGs, voluntários e doações na SolidaryTech.
 
-| [⬆️ Top](#observabilidade-do-ambiente-local) |
+| [⬆️ Top](#observabilidade-do-ambiente) |
 | --- |
 
 [tempzabbix]: /doc/zabbix/template-solidarytech-by-http.yaml
+[tempzabbixload]: /doc/zabbix/template-solidarytech-load-by-http.yaml
