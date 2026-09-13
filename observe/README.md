@@ -144,7 +144,7 @@ A _row_ "Recursos dos Pods" traz 6 painéis, com CPU e memória sugeridas (p95) 
 
 ## Template Zabbix
 
-São disponibilizadas 2 templates para uso no Zabbix, a fim de criar uma visão externa (_BlackBox do cliente_) da Solidarytech. O dashboard [SolidaryTech - Visão Externa](/doc/grafana/dashboard-solidarytech-externo.json) (_ver `doc/grafana/README.md`_) consome esses dados no Grafana.
+São disponibilizadas 2 templates para uso no Zabbix, a fim de criar uma visão externa (_BlackBox do cliente_) da Solidarytech.
 
 ### [SolidaryTech Health by HTTP][tempzabbix]
 
@@ -152,6 +152,8 @@ São disponibilizadas 2 templates para uso no Zabbix, a fim de criar uma visão 
 
 - **Saúde**: consultas HTTP por serviço ao recurso `/health`, e retornando o status e a latência;
 - **Negócio**: itens para a contagem de ONGs, doações e voluntários por ONG.
+
+A dashboard ["SolidaryTech - Visão Externa"][dashvisaoext] consome esses dados no Grafana (_ver `doc/grafana/README.md`_).
 
 ### [SolidaryTech Load by HTTP (Testes)][tempzabbixload]
 
@@ -162,3 +164,4 @@ São disponibilizadas 2 templates para uso no Zabbix, a fim de criar uma visão 
 
 [tempzabbix]: /doc/zabbix/template-solidarytech-by-http.yaml
 [tempzabbixload]: /doc/zabbix/template-solidarytech-load-by-http.yaml
+[dashvisaoext]: /doc/grafana/dashboard-solidarytech-externo.json
