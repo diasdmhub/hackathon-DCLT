@@ -15,7 +15,7 @@ A SolidaryTech possui 3 microsserviços independentes, desenvolvidos com tecnolo
 2. **`donation-service`**: Responsável pelo processamento de doações e pela publicação de eventos assíncronos em filas para processamento posterior (_Caminho Crítico/Hot Path_).
 3. **`volunteer-service`**: Responsável pela gestão do cadastro e da inscrição de voluntários interessados em apoiar as ONGs parceiras.
 
-No entanto, o [`README.md`](/) original descreve os 3 microsserviços isoladamente, sem deixar claro **quais endpoints existem**, **quais campos cada um espera** e **como uma ONG se conecta a doações e voluntários**. Este resumo aborda os três pontos na forma de uma cadeia de chamadas manuais que podem ser [reproduzidas manualmente com o `curl`][testemanual].
+No entanto, o [`README.md`](/) original descreve os 3 microsserviços isoladamente, sem deixar claro **quais endpoints existem**, **quais campos cada um espera** e **como uma ONG se conecta a doações e voluntários**. Este resumo aborda os três pontos na forma de uma cadeia de chamadas manuais que podem ser [reproduzidas manualmente][testemanual].
 
 <BR>
 
