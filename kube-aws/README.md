@@ -65,7 +65,7 @@ O ARN de cada role não fica hardcoded em `005-serviceaccounts.yaml`, já que o 
 
 ## Flux
 
-`clusters/eks-aws/solidarytech-kustomization.yaml` aponta para `./kube-aws`. Diferente do `kubeadm-local`, este cluster não usa `flux bootstrap`: os controladores do Flux, o `GitRepository` (`clusters/eks-aws/flux-system/gotk-sync.yaml`) e esta própria Kustomization são aplicados pelo `terraform apply` em `terra/` (módulo `flux`, via `helm_release` + `kubectl_manifest`), sem nenhum passo manual - _ver "FluxCD via Terraform" em `terra/README.md` e a seção "GitOps" do `CLAUDE.md` para o motivo de não se autogerenciar (o mirror unidirecional Gitea→GitHub apagaria qualquer commit que um `flux bootstrap` fizesse só no GitHub, o que já causou a autodestruição do Flux neste cluster duas vezes)_.
+`clusters/eks-aws/solidarytech-kustomization.yaml` aponta para `./kube-aws`. Os controladores do Flux, o `GitRepository` (`clusters/eks-aws/flux-system/gotk-sync.yaml`) e esta própria Kustomization são aplicados pelo `terraform apply` em `terra/` (módulo `flux`, via `helm_release` + `kubectl_manifest`).
 
 <BR>
 
