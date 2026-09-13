@@ -3,8 +3,6 @@
 
 # Plano de Continuidade de Negócios (PCN)
 
-> ⚠️ **_Em construção_**
-
 Este documento formaliza, por meio de um Plano de Continuidade de Negócios, a estratégia de Disaster Recovery (DR) "ativo-passivo" já implementada em [`terra/`][terra] e [`terra-dr/`][terradr] conforme definido no repositório Git. Seu objetivo é definir o RTO (Recovery Time Objective) e o RPO (Recovery Point Objective) da plataforma SolidaryTech, dedicando atenção especial aos dados de doações, que são o ativo mais crítico do negócio.
 
 <BR>
