@@ -2,9 +2,9 @@
 
 > Análise geral e implementação **opinativa** do "hackathon" da Fase 5 do curso DevOps e Arquitetura Cloud da FIAP.
 
-Este é o ecossistema de microsserviços da SolidaryTech, que simula um ambiente corporativo distribuído para uma plataforma de doações a ONGs (_NGO em inglês_). A SolidaryTech é uma organizações sem fins lucrativos que conecta ONGs a doadores e voluntários.
+A SolidaryTech é uma organização sem fins lucrativos que conecta ONGs a doadores e voluntários. Este é o seu ecossistema de microsserviços, que simula um ambiente corporativo distribuído para uma plataforma de doações a ONGs (_NGO em inglês_).
 
-O projeto foi estruturado em partes distintas e correlacionadas. Para melhor compreensão do contexto e possibilitar a replicação do ambiente na AWS, foi criado o índice abaixo.
+O projeto foi estruturado em partes distintas e correlacionadas. Foi criado o índice abaixo para melhor compreensão do contexto e possibilitar a replicação do ambiente na AWS.
 
 > A proposta inicial do projeto está disponível no repositório e é apresentada ao final deste documento.
 
@@ -12,12 +12,13 @@ O projeto foi estruturado em partes distintas e correlacionadas. Para melhor com
 
 ---
 
-### [↗️ Estrutura de disciplinas do ambiente][estrutura]
+### [↗️ Estrutura de disciplinas do projeto][estrutura]
 ### [↗️ Arquitetura dos microserviços][arquiteturamicro]
 ### [↗️ Implementação inicial][implementacao]
 ### [↗️ Teste manual dos microserviços][testemanual]
 ### [↗️ Plano de Continuidade de Negócios (PCN)][pcn]
 ### [↗️ Roteiro de ativação/failback do DR][roteirodr]
+### [↗️ Considerações para Otimização de Custos][consideracoes]
 
 ---
 
@@ -421,3 +422,4 @@ Faça a diferença com a **SolidaryTech** 💙
 [roteirodr]: /doc/roteiro-dr-ativacao.md
 [issue3]: https://github.com/dougls/hackathon-DCLT/issues/3
 [dockercompose]: /build/docker-compose.yaml
+[consideracoes]: /doc/consideracoes.md
