@@ -1,4 +1,4 @@
-| [↩️ Voltar](./) |
+| [↩️ Voltar](/) |
 | --- |
 
 # Considerações para Otimização de Custos

@@ -1,4 +1,4 @@
-| [↩️ Voltar](./) |
+| [↩️ Voltar](/) |
 | --- |
 
 # Estrutura de disciplinas - "Hackathon" SolidaryTech

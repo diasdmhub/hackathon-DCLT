@@ -1,4 +1,4 @@
-| [↩️ Voltar](./) |
+| [↩️ Voltar](/) |
 | --- |
 
 # Roteiro de implementação inicial do cluster K8s na AWS

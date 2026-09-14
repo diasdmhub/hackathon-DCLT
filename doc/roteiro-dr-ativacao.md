@@ -1,4 +1,4 @@
-| [↩️ Voltar](./) |
+| [↩️ Voltar](/) |
 | --- |
 
 # Roteiro de ativação e failback do ambiente de DR

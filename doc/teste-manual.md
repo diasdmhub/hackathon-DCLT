@@ -1,4 +1,4 @@
-| [↩️ Voltar](./) |
+| [↩️ Voltar](/) |
 | --- |
 
 # Teste de fluxo de execução da SolidaryTech
