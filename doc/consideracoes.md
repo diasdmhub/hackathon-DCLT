@@ -39,7 +39,7 @@ O uso do [Docker Hub][dockerhub] em vez do ECR otimiza o armazenamento, o gerenc
 
 A escolha do modelo "ativo-**passivo**", e não "ativo-_ativo_" reduz significativamente o custo, pois não mantém um cluster oscioso completo em execução. Nesse projeto, apenas a réplica de RDS (_cross-region_) e a "Global Table" do DynamoDB permanecem ativas, o que é o mínimo necessário para um RPO baixo.
 
-| [⬆️ Top](#consideracoes-para-otimizacao-de-custos) |
+| [⬆️ Top](#considerações-para-otimização-de-custos) |
 | --- |
 
 [dockerhub]: https://docs.docker.com/docker-hub
