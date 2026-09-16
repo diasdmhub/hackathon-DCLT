@@ -56,20 +56,18 @@ Dashboard extra que simula a perspectiva de um cliente externo consultando a Sol
 
 ## [Contact Point - Zabbix Trapper](contact-point-zabbix-trapper.json)
 
-Contact Point do Grafana Alerting que publica alertas num item Zabbix trapper via `history.push`, para centralizar alertas do Grafana no mesmo Zabbix que já cobre o monitoramento HTTP externo (ver dashboard "Visão Externa" acima). É o export real de um Contact Point criado, testado e confirmado (`"response":"success"` na resposta do Zabbix) manualmente pela UI do Grafana — não um provisioning file de import direto: a versão local do Grafana usada neste projeto não aceitou o formato clássico `apiVersion: 1` + `contactPoints:` via provisioning por arquivo, provavelmente por usar o mecanismo mais novo baseado em manifests estilo Kubernetes.
+Contact Point do Grafana Alerting que publica alertas num item Zabbix trapper via `history.push`, para centralizar alertas do Grafana no mesmo Zabbix que já cobre o monitoramento HTTP externo. É o export de um Contact Point criado pela UI do Grafana.
 
-Como recriar na UI do Grafana (Alerting → Contact points → New):
+Como recriar na UI do Grafana (`Alerting` → `Notification configuration` → `New contact point`):
 
 - **URL**: a URL do `api_jsonrpc.php` do Zabbix.
 - **Authorization Header - Scheme**: `Bearer`.
-- **Authorization Header - Credentials**: o token de API Zabbix (Users → API tokens), com o usuário dono do token tendo permissão de API habilitada e permissão de escrita no host/grupo do item alvo.
-- **Extra Headers**: `Content-Type: application/json-rpc` (sobrescreve o `application/json` default do Grafana).
+- **Authorization Header - Credentials**: o token de API Zabbix, com o usuário dono do token tendo permissão de API habilitada e permissão de escrita no host/grupo do item alvo.
+- **Extra Headers**: `Content-Type: application/json-rpc`.
 - **Custom Payload → Edit Payload Template**: o template em `settings.payload.template` deste arquivo, referenciando `{{ .Vars.zabbix_itemid }}`.
-- **Payload Variables**: uma entrada `zabbix_itemid` com o itemid Zabbix de destino (o item precisa ser do tipo "Zabbix trapper", habilitado, com o Value type compatível com o valor enviado). Manter o itemid como variável, em vez de fixo no template, facilita trocar o item sem reescrever o template.
+- **Payload Variables**: uma entrada `zabbix_itemid` com o itemid Zabbix de destino (o item precisa ser do tipo "Zabbix trapper").
 
-Como os `payload.vars` são fixos por Contact Point (não variam por alerta), este modelo assume um Contact Point por item Zabbix. Para rotear alertas diferentes a itens diferentes, crie um Contact Point por item (cada um com seu próprio `zabbix_itemid`) e use as notification policies do Grafana para direcionar por label — ou, para um único alerta que dispara vários itens de uma vez, adapte o template para iterar em `.Alerts` e ler o itemid de um label do alerta em vez de `.Vars`.
-
-Um ponto que vale registrar como referência de depuração: o Grafana só reporta "notificação enviada com sucesso" com base no status HTTP da resposta. A API JSON-RPC do Zabbix normalmente responde HTTP 200 mesmo quando o corpo contém um erro lógico (token inválido, sem permissão, itemid errado, tipo de item incompatível), então "sucesso" no Grafana não confirma sozinho que o Zabbix aceitou o valor — reproduzir a chamada com curl e inspecionar o corpo da resposta foi o que revelou os nomes de campo corretos neste caso.
+> ℹ️ **O Grafana só reporta "Test notification sent successfully" com base no status HTTP da resposta. A API JSON-RPC do Zabbix normalmente responde HTTP 200 mesmo quando o corpo contém um erro lógico (token inválido, sem permissão, itemid errado, tipo de item incompatível), então "sucesso" no Grafana não confirma sozinho que o Zabbix aceitou o valor.**
 
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |
