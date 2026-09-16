@@ -54,9 +54,17 @@ Dashboard extra que simula a perspectiva de um cliente externo consultando a Sol
 
 <BR>
 
-## [Contact Point - Zabbix Trapper](contact-point-zabbix-trapper.yaml)
+## [Contact Point - Zabbix Trapper](contact-point-zabbix-trapper.json)
 
-Modelo (não um export pronto — ver ressalvas no próprio arquivo) de Contact Point do Grafana Alerting que publica alertas num item Zabbix trapper via `history.push`, para centralizar alertas do Grafana no mesmo Zabbix que já cobre o monitoramento HTTP externo (ver dashboard "Visão Externa" acima). Diferente dos dashboards deste diretório, que são exports prontos para importar, este arquivo precisa de ajustes (URL da API, token, itemid) antes de ser aplicado — os detalhes estão comentados no próprio YAML.
+Contact Point do Grafana Alerting que publica alertas num item Zabbix trapper via `history.push`, para centralizar alertas do Grafana no mesmo Zabbix que já cobre o monitoramento HTTP externo (ver dashboard "Visão Externa" acima). É o export real de um Contact Point criado e testado manualmente pela UI do Grafana (não um provisioning file de import direto — a versão local do Grafana usado neste projeto não aceitou o formato clássico `apiVersion: 1` + `contactPoints:` via provisioning por arquivo, provavelmente por usar o mecanismo mais novo baseado em manifests estilo Kubernetes).
+
+Antes de usar como referência para recriar o Contact Point:
+
+- Substituir `<ZABBIX_API_URL>` pela URL do `api_jsonrpc.php` do Zabbix.
+- Substituir `<ZABBIX_API_TOKEN>` por um token de API Zabbix válido (Users → API tokens), com o usuário dono do token tendo permissão de API habilitada e permissão de escrita no host/grupo do item alvo.
+- Cada regra de alerta roteada para este Contact Point precisa de um label `zabbix_itemid` com o itemid Zabbix de destino (o item precisa ser do tipo "Zabbix trapper", habilitado, com o Value type compatível com o valor enviado).
+
+Um ponto que vale registrar: o Grafana só reporta "notificação enviada com sucesso" com base no status HTTP da resposta. A API JSON-RPC do Zabbix normalmente responde HTTP 200 mesmo quando o corpo contém um erro lógico (token inválido, sem permissão, itemid errado, tipo de item incompatível), então "sucesso" no Grafana não confirma que o Zabbix aceitou o valor — vale sempre reproduzir a chamada com curl e inspecionar o corpo da resposta ao depurar.
 
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |

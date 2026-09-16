@@ -1,0 +1,24 @@
+{
+    "apiVersion": 1,
+    "contactPoints": [
+        {
+            "orgId": 1,
+            "name": "Zabbix",
+            "receivers": [
+                {
+                    "uid": "",
+                    "type": "webhook",
+                    "settings": {
+                        "url": "<ZABBIX_API_URL>",
+                        "httpMethod": "POST",
+                        "authorization_scheme": "Bearer <ZABBIX_API_TOKEN>",
+                        "payload": {
+                            "template": "{{ define \"zabbix.default.payload\" }}{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"history.push\",\n  \"params\": [\n    {{ range $index, $alert := .Alerts }}{{ if $index }},{{ end }}\n    {\"itemid\": {{ $alert.Labels.zabbix_itemid }}, \"value\": \"{{ $alert.ValueString }}\"}\n    {{ end }}\n  ],\n  \"id\": 1\n}\n{{ end }}"
+                        }
+                    },
+                    "disableResolveMessage": false
+                }
+            ]
+        }
+    ]
+}
