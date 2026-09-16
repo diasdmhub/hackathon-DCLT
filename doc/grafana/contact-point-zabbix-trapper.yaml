@@ -1,0 +1,81 @@
+# Contact Point do Grafana que publica alertas num item Zabbix trapper via
+# `history.push` (Zabbix API >= 7.0), no schema de file-based provisioning
+# do Grafana (Alerting → Notification configuration → Contact points →
+# "Export"/"Import" usam esse mesmo formato).
+#
+# Como aplicar:
+#   - Grafana self-hosted: copiar para
+#     <grafana_data>/provisioning/alerting/contact-point-zabbix-trapper.yaml
+#     e reiniciar/deixar o provisioning reconciliar.
+#   - Grafana Cloud (o caso deste projeto — ver doc/observabilidade.md):
+#     não há provisioning por arquivo; usar a HTTP Provisioning API,
+#     enviando o objeto de `receivers[0]` (uid/name/type/settings/
+#     disableResolveMessage) como body:
+#
+#       curl -X POST https://<stack>.grafana.net/api/v1/provisioning/contact-points \
+#         -H "Authorization: Bearer <service-account-token>" \
+#         -H "Content-Type: application/json" \
+#         -H "X-Disable-Provenance: true" \
+#         -d '{ ... conteúdo de receivers[0] convertido para JSON ... }'
+#
+# IMPORTANTE — verificar antes de aplicar:
+#   Os nomes exatos de alguns campos de `settings` variam entre versões/
+#   documentação do Grafana (ex.: `authorization_scheme` vs
+#   `authorizationScheme`, formato do cabeçalho extra de Content-Type). O
+#   campo `payload` (template do corpo customizado) foi confirmado contra
+#   o schema do provider Terraform `grafana_contact_point` — os demais,
+#   não. Forma mais segura de validar: criar este Contact Point uma vez
+#   pela UI do Grafana (como descrito na conversa que gerou este arquivo)
+#   e usar "Export" no próprio Contact Point para obter o YAML/JSON exato
+#   da sua versão — o mesmo processo usado para gerar os `dashboard-*.json`
+#   deste diretório — e então substituir este rascunho pelo export real.
+#
+# Antes de usar:
+#   - Substituir <ZABBIX_API_URL> pela URL do api_jsonrpc.php do Zabbix.
+#   - Substituir <ZABBIX_API_TOKEN> por um token de API Zabbix (Users →
+#     API tokens). Nunca commitar o valor real — manter em secureSettings/
+#     secret do pipeline que aplica este arquivo, não neste arquivo.
+#   - O item Zabbix alvo precisa ser do tipo "Zabbix trapper", e o Value
+#     type do item precisa bater com o formato de `value` enviado abaixo.
+#   - Cada regra de alerta roteada para este Contact Point precisa ter um
+#     label `zabbix_itemid` com o itemid Zabbix de destino (ver template
+#     do payload). Para o caso de uma regra == um item, dá pra remover o
+#     `range` abaixo e fixar o itemid direto no template.
+
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: zabbix-trapper
+    receivers:
+      - uid: zabbix_trapper_history_push
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: <ZABBIX_API_URL> # ex.: https://zabbix.example.com/api_jsonrpc.php
+          httpMethod: POST
+
+          # Cabeçalho Authorization: Bearer <token>. Nome de campo a
+          # confirmar via Export (ver nota acima).
+          authorization_scheme: Bearer
+          authorization_credentials: <ZABBIX_API_TOKEN>
+
+          # Zabbix espera Content-Type: application/json-rpc, diferente do
+          # application/json default do Grafana. Nome de campo/formato do
+          # cabeçalho extra a confirmar via Export (ver nota acima).
+          extraHeaders:
+            Content-Type: application/json-rpc
+
+          # Corpo customizado (substitui title/message). Campo confirmado
+          # contra o schema do provider Terraform grafana_contact_point.
+          payload: |
+            {
+              "jsonrpc": "2.0",
+              "method": "history.push",
+              "params": [
+                {{ range $index, $alert := .Alerts }}{{ if $index }},{{ end }}
+                {"itemid": {{ $alert.Labels.zabbix_itemid }}, "value": "{{ $alert.ValueString }}"}
+                {{ end }}
+              ],
+              "id": 1
+            }

@@ -52,5 +52,11 @@ Dashboard extra que simula a perspectiva de um cliente externo consultando a Sol
 
 É a dashboard mais próxima de "como um cliente enxergaria a SolidaryTech".
 
+<BR>
+
+## [Contact Point - Zabbix Trapper](contact-point-zabbix-trapper.yaml)
+
+Modelo (não um export pronto — ver ressalvas no próprio arquivo) de Contact Point do Grafana Alerting que publica alertas num item Zabbix trapper via `history.push`, para centralizar alertas do Grafana no mesmo Zabbix que já cobre o monitoramento HTTP externo (ver dashboard "Visão Externa" acima). Diferente dos dashboards deste diretório, que são exports prontos para importar, este arquivo precisa de ajustes (URL da API, token, itemid) antes de ser aplicado — os detalhes estão comentados no próprio YAML.
+
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |
