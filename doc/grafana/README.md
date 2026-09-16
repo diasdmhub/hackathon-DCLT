@@ -69,5 +69,7 @@ Como recriar na UI do Grafana (`Alerting` → `Notification configuration` → `
 
 > ℹ️ **O Grafana só reporta "Test notification sent successfully" com base no status HTTP da resposta. A API JSON-RPC do Zabbix normalmente responde HTTP 200 mesmo quando o corpo contém um erro lógico (token inválido, sem permissão, itemid errado, tipo de item incompatível), então "sucesso" no Grafana não confirma sozinho que o Zabbix aceitou o valor.**
 
+> ⚠️ **Ao importar este arquivo via provisioning (`Administration` → `Plugins and data` → `Provisioning`, ou reconciliação de arquivo), `apiVersion` precisa ser string (`"1"`), não número. Aparentemente o parser de provisioning trata isso com mais rigor de tipo ao ler JSON do que YAML.**
+
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |
