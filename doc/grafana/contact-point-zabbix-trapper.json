@@ -11,9 +11,16 @@
                     "settings": {
                         "url": "<ZABBIX_API_URL>",
                         "httpMethod": "POST",
-                        "authorization_scheme": "Bearer <ZABBIX_API_TOKEN>",
+                        "authorization_scheme": "Bearer",
+                        "authorization_credentials": "<ZABBIX_API_TOKEN>",
+                        "headers": {
+                            "Content-Type": "application/json-rpc"
+                        },
                         "payload": {
-                            "template": "{{ define \"zabbix.default.payload\" }}{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"history.push\",\n  \"params\": [\n    {{ range $index, $alert := .Alerts }}{{ if $index }},{{ end }}\n    {\"itemid\": {{ $alert.Labels.zabbix_itemid }}, \"value\": \"{{ $alert.ValueString }}\"}\n    {{ end }}\n  ],\n  \"id\": 1\n}\n{{ end }}"
+                            "template": "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"history.push\",\n  \"params\": [\n    {\"itemid\": {{.Vars.zabbix_itemid}}, \"value\": \"{{ .CommonLabels.alertname }}: {{ .Status }}\"}\n  ],\n  \"id\": 1\n}",
+                            "vars": {
+                                "zabbix_itemid": "<ZABBIX_ITEM_ID>"
+                            }
                         }
                     },
                     "disableResolveMessage": false
