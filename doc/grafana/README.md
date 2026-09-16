@@ -58,18 +58,30 @@ Dashboard extra que simula a perspectiva de um cliente externo consultando a Sol
 
 Contact Point do Grafana Alerting que publica alertas num item Zabbix trapper via `history.push`, para centralizar alertas do Grafana no mesmo Zabbix que já cobre o monitoramento HTTP externo. É o export de um Contact Point criado pela UI do Grafana.
 
-Como recriar na UI do Grafana (`Alerting` → `Notification configuration` → `New contact point`):
+> ⚠️ **Este arquivo não é aplicável pelo Git Sync, pois essa funcionalidade só suporta "dashboards" e "folders" hoje. Para aplicar este "Contact Point", é necessário copiar este arquivo para `Grafana_DIR/provisioning/alerting/` no filesystem do host do Grafana, não pela UI. O Grafana Cloud não possui a funcionalidade de file provisioning, portanto, este Contact Point deve ser incluído manualmente.**
+
+Para recriar o Contact Point na UI do Grafana, siga para `Alerting` → `Notification configuration` → `New contact point`, e preencha o formulário com, pelo menos, os valores abaixo.
 
 - **URL**: a URL do `api_jsonrpc.php` do Zabbix.
 - **Authorization Header - Scheme**: `Bearer`.
 - **Authorization Header - Credentials**: o token de API Zabbix, com o usuário dono do token tendo permissão de API habilitada e permissão de escrita no host/grupo do item alvo.
 - **Extra Headers**: `Content-Type: application/json-rpc`.
-- **Custom Payload → Edit Payload Template**: o template em `settings.payload.template` deste arquivo, referenciando `{{ .Vars.zabbix_itemid }}`.
+- **Custom Payload → Edit Payload Template**: Inclua o JSON a seguir.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "history.push",
+  "params": [
+    {"itemid": {{.Vars.zabbix_itemid}}, "value": "{{ monLabels.alertname     }}: {{ .Status }}"}
+  ],
+  "id": 1
+}
+```
+
 - **Payload Variables**: uma entrada `zabbix_itemid` com o itemid Zabbix de destino (o item precisa ser do tipo "Zabbix trapper").
 
 > ℹ️ **O Grafana só reporta "Test notification sent successfully" com base no status HTTP da resposta. A API JSON-RPC do Zabbix normalmente responde HTTP 200 mesmo quando o corpo contém um erro lógico (token inválido, sem permissão, itemid errado, tipo de item incompatível), então "sucesso" no Grafana não confirma sozinho que o Zabbix aceitou o valor.**
-
-> ⚠️ **Este arquivo não é aplicável pela tela `Administration` → `Provisioning` (Git Sync/"Force full pull"): essa funcionalidade só suporta dashboards e folders hoje — recursos de alerting (contact points, notification policies) ainda não têm suporte ([grafana/grafana#120686](https://github.com/grafana/grafana/issues/120686), em aberto). É um mecanismo diferente do file-based provisioning clássico de alerting (`apiVersion: 1` + `contactPoints:`, usado aqui). Para aplicar de fato: copiar este arquivo para `<grafana-data>/provisioning/alerting/` no filesystem do processo do Grafana (caminho definido em `[paths] provisioning` do `grafana.ini`, ou `GF_PATHS_PROVISIONING` em container) — não pela UI —, ou enviar via [Alerting Provisioning HTTP API](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/alerting_provisioning/) (`POST /api/v1/provisioning/contact-points`, único caminho no Grafana Cloud, que não tem file provisioning).**
 
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |
