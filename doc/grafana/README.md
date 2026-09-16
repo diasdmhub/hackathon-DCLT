@@ -69,7 +69,7 @@ Como recriar na UI do Grafana (`Alerting` → `Notification configuration` → `
 
 > ℹ️ **O Grafana só reporta "Test notification sent successfully" com base no status HTTP da resposta. A API JSON-RPC do Zabbix normalmente responde HTTP 200 mesmo quando o corpo contém um erro lógico (token inválido, sem permissão, itemid errado, tipo de item incompatível), então "sucesso" no Grafana não confirma sozinho que o Zabbix aceitou o valor.**
 
-> ⚠️ **Ao importar este arquivo via provisioning (`Administration` → `Plugins and data` → `Provisioning`, ou reconciliação de arquivo), `apiVersion` precisa ser string (`"1"`), não número. Aparentemente o parser de provisioning trata isso com mais rigor de tipo ao ler JSON do que YAML.**
+> ⚠️ **Este arquivo não é aplicável pela tela `Administration` → `Provisioning` (Git Sync/"Force full pull"): essa funcionalidade só suporta dashboards e folders hoje — recursos de alerting (contact points, notification policies) ainda não têm suporte ([grafana/grafana#120686](https://github.com/grafana/grafana/issues/120686), em aberto). É um mecanismo diferente do file-based provisioning clássico de alerting (`apiVersion: 1` + `contactPoints:`, usado aqui). Para aplicar de fato: copiar este arquivo para `<grafana-data>/provisioning/alerting/` no filesystem do processo do Grafana (caminho definido em `[paths] provisioning` do `grafana.ini`, ou `GF_PATHS_PROVISIONING` em container) — não pela UI —, ou enviar via [Alerting Provisioning HTTP API](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/alerting_provisioning/) (`POST /api/v1/provisioning/contact-points`, único caminho no Grafana Cloud, que não tem file provisioning).**
 
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |
