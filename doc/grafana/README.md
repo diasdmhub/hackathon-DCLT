@@ -83,5 +83,17 @@ Para recriar o Contact Point na UI do Grafana, siga para `Alerting` → `Notific
 
 > ℹ️ **O Grafana só reporta "Test notification sent successfully" com base no status HTTP da resposta. A API JSON-RPC do Zabbix normalmente responde HTTP 200 mesmo quando o corpo contém um erro lógico (token inválido, sem permissão, itemid errado, tipo de item incompatível), então "sucesso" no Grafana não confirma sozinho que o Zabbix aceitou o valor.**
 
+<BR>
+
+## [Regras de Alerta - SolidaryTech](alert-rules-solidarytech.json)
+
+Export de um grupo de regras do Grafana Alerting (`apiVersion: 1`, formato de provisionamento por arquivo), todas roteadas para o contact point `Zabbix` acima. Cobrem os cenários considerados mais relevantes para o `donation-service` (Hot Path) e para a saúde dos pods:
+
+- **Donation Service - taxa de erro acima da meta de SLO**: dispara quando a taxa de erro do `donation-service` fica acima de 5% por 5 minutos, tornando acionável a meta de 95% sem erro já definida na dashboard de Golden Metrics.
+- **SolidaryTech - pods indisponíveis abaixo do esperado**: dispara quando algum deployment do namespace `solidarytech` tem menos réplicas disponíveis do que o especificado, por 5 minutos — cobre os três serviços de uma só vez.
+- **Donation Service - sem tráfego no Hot Path**: dispara quando não há nenhuma chamada ao `donation-service` em 15 minutos, sustentado por 30 minutos. Não depende de erro ou de pod fora do ar: pega falhas silenciosas antes do serviço (ex.: SQS, NLB/Ingress) que RED e saúde de pods não enxergam.
+
+> ⚠️ **Assim como o Contact Point acima, este arquivo não é aplicável pelo Git Sync (que só suporta dashboards e folders) nem por file provisioning no Grafana Cloud (que não tem acesso ao filesystem do host). Ele serve de referência: recrie as regras pela UI (`Alerting` → `Alert rules` → `New alert rule`, ou `Import` a partir deste JSON quando suportado) ou aplique via API/Terraform. Antes de aplicar, substitua `<PROMETHEUS_DATASOURCE_UID>` pelo UID do datasource Prometheus do ambiente.**
+
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |
