@@ -36,7 +36,7 @@ Dashboard focada na saúde da infraestrutura por trás da SolidaryTech. É uma v
 Dashboard de acompanhamento de metas de qualidade (SLO) por microserviço, organizada em duas abas:
 
 - **Service SLI**: para cada um dos três serviços, a latência típica (p95) e a taxa de erro atuais, com seu histórico ao longo do tempo.
-- **Donation SLO**: um recorte mensal (30 dias fixos) dedicado ao serviço de doações, mostrando se a meta de "95% das requisições respondidas em até ~500ms" e a meta de "95% das requisições sem erro" estão sendo cumpridas no mês.
+- **Donation SLO**: um recorte mensal (30 dias fixos) dedicado ao serviço de doações, mostrando se a meta de "98% das requisições respondidas em até ~500ms" e a meta de "98% das requisições sem erro" estão sendo cumpridas no mês, conforme o SLO de 98% definido em `doc/estrutura.md`.
 
 É a dashboard de referência para responder "estamos cumprindo o nível de serviço combinado?", com foco especial no serviço de doações por ser o mais crítico da plataforma.
 
@@ -89,7 +89,7 @@ Para recriar o Contact Point na UI do Grafana, siga para `Alerting` → `Notific
 
 Arquivo com regras de alerta para ser importado no Grafana em `Alerting` → `Alert rules` → `Import alert rules`. No formato atual, a tela de importação deve solicitar a escolha do datasource Prometheus, o diretório de destino e a regra de notificação; selecione o contact point `Zabbix` (acima) nesse passo. As regras cobrem os cenários considerados mais relevantes para o `donation-service` (_Hot Path_) e para a saúde dos pods:
 
-- **solidarytech-donation-error-rate**: dispara quando a taxa de erro do `donation-service` fica acima de 5% por 5 minutos, tornando acionável a meta de 95% sem erro já definida na dashboard de Golden Metrics.
+- **solidarytech-donation-error-rate**: dispara quando a taxa de erro do `donation-service` fica acima de 2% por 5 minutos, o error budget do SLO de 98% definido em `doc/estrutura.md` para o serviço, mesma meta refletida nos painéis "SLO de erros"/"SLO de latência" da dashboard de Golden Metrics.
 - **solidarytech-pods-unavailable**: dispara quando algum deployment do namespace `solidarytech` tem menos réplicas disponíveis do que o especificado, por 5 minutos - cobre os três serviços de uma só vez.
 - **solidarytech-donation-silence**: dispara quando não há nenhuma chamada ao `donation-service` em 15 minutos, sustentado por 30 minutos. Não depende de erro ou de pod fora do ar: pega falhas silenciosas antes do serviço (ex.: SQS, NLB/Ingress) que RED e saúde de pods não enxergam.
 

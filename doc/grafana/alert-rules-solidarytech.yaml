@@ -5,15 +5,16 @@ groups:
       - alert: solidarytech-donation-error-rate
         expr: >-
           (100 * sum(rate(traces_spanmetrics_calls_total{service="donation-service", status_code="STATUS_CODE_ERROR"}[5m]))
-          / sum(rate(traces_spanmetrics_calls_total{service="donation-service"}[5m]))) > 5
+          / sum(rate(traces_spanmetrics_calls_total{service="donation-service"}[5m]))) > 2
         for: 5m
         labels:
           service: donation-service
           severity: critical
         annotations:
-          summary: donation-service acima de 5% de erro em 5m
+          summary: donation-service acima de 2% de erro em 5m
           description: >-
-            A meta de SLO (dashboard Golden Metrics, aba Donation SLO) é 95% das requisições sem erro.
+            O SLO do donation-service (doc/estrutura.md) é 98%, ou seja, error budget de 2%. Este
+            alerta dispara junto com a quebra do error budget mensal.
 
       - alert: solidarytech-pods-unavailable
         expr: >-
