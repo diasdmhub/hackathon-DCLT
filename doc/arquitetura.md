@@ -75,6 +75,14 @@ sequenceDiagram
 | **volunteer-service** | POST   | `/volunteers`          | `name, email, ngo_id`        | `201` + registro (`volunteer_id` UUID gerado)   | `400` Campo ausente ou inválido - `500` Erro interno ao processar dados |
 |                       | GET    | `/volunteers/<ngo_id>` | num inteiro no path          | `200` + lista filtrada                          | `404` se `ngo_id` não for inteiro - `500` Erro interno |
 
+<BR>
+
+## Considerações
+
+- As aplicações da SolidaryTech não possuem verificações de saúde reais, pois o `/health` é estático.
+- Os eventos de notificação com o SQS são considerados `fire-and-forget`, sem tratamento ou consumo real.
+- Esses aspectos estão fora do escopo do projeto, pois demandariam alterações na lógica das aplicações, conforme indicado no roteiro disponibilizado.
+
 | [⬆️ Top](#arquitetura-dos-microserviços) |
 | --- |
 

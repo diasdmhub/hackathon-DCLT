@@ -88,11 +88,6 @@ Os mecanismos automáticos de nível de pod/node reduzem o MTTR de possíveis in
 - Divergência de configuração - o FluxCD reconcilia o cluster com o repositório Git em até 5 minutos, se houver alterações diretamente no cluster.
 - HPA e PDB - Mantêm o mínimo de pods ativos durante a manutenção do ambiente, evitando indisponibilidades.
 
-> ⚠️ Nota
-> - **As aplicações da SolidaryTech não possuem verificações de saúde reais, pois o `/health` é estático.**
-> - **Os eventos de notificação com o SQS são considerados `fire-and-forget`, sem tratamento ou consumo real.**
-> - **Esses aspectos estão fora do escopo do projeto, pois demandariam alterações na lógica das aplicações, conforme indicado no roteiro disponibilizado.**
-
 Um ponto não automatizado é a indisponibilidade da camada de persistência (Postgres, DynamoDB, SQS). Essa camada é sensível e deve ser avaliada criteriosamente. Nesse caso, a detecção ocorre por meio da montoração ativa do ambiente (Grafana), com alertas de até 1m, e a resolução depende da intervenção humana, o que pode elevar o MTTR.
 
 <BR>
