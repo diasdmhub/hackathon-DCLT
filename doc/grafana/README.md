@@ -89,7 +89,7 @@ Para recriar o Contact Point na UI do Grafana, siga para `Alerting` → `Notific
 
 Arquivo com regras de alerta para ser importado no Grafana em `Alerting` → `Alert rules` → `Import alert rules`. No formato atual, a tela de importação deve solicitar a escolha do datasource Prometheus, o diretório de destino e a regra de notificação; selecione o contact point `Zabbix` (acima) nesse passo. As regras cobrem os cenários considerados mais relevantes para o `donation-service` (_Hot Path_) e para a saúde dos pods:
 
-- **solidarytech-donation-error-rate**: dispara quando a taxa de erro do `donation-service` fica acima de 2% por 5 minutos, o error budget do SLO de 98% definido em `doc/estrutura.md` para o serviço, mesma meta refletida nos painéis "SLO de erros"/"SLO de latência" da dashboard de Golden Metrics.
+- **solidarytech-donation-error-rate**: dispara quando a taxa de erro do `donation-service` fica acima de 2% por 5 minutos, mesma meta refletida nos painéis "SLO de erros"/"SLO de latência" da dashboard de Golden Metrics.
 - **solidarytech-pods-unavailable**: dispara quando algum deployment do namespace `solidarytech` tem menos réplicas disponíveis do que o especificado, por 5 minutos - cobre os três serviços de uma só vez.
 - **solidarytech-donation-silence**: dispara quando não há nenhuma chamada ao `donation-service` em 15 minutos, sustentado por 30 minutos. Não depende de erro ou de pod fora do ar: pega falhas silenciosas antes do serviço (ex.: SQS, NLB/Ingress) que RED e saúde de pods não enxergam.
 
