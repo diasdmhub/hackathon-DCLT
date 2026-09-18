@@ -85,7 +85,7 @@ Para recriar o Contact Point na UI do Grafana, siga para `Alerting` → `Notific
 
 <BR>
 
-## [Regras de Alerta - SolidaryTech](alert-rules-solidarytech.json)
+## [Regras de Alerta - SolidaryTech](alert-rules-solidarytech.yaml)
 
 Export de um grupo de regras do Grafana Alerting (`apiVersion: 1`, formato de provisionamento por arquivo), todas roteadas para o contact point `Zabbix` acima. Cobrem os cenários considerados mais relevantes para o `donation-service` (Hot Path) e para a saúde dos pods:
 
@@ -93,7 +93,7 @@ Export de um grupo de regras do Grafana Alerting (`apiVersion: 1`, formato de pr
 - **SolidaryTech - pods indisponíveis abaixo do esperado**: dispara quando algum deployment do namespace `solidarytech` tem menos réplicas disponíveis do que o especificado, por 5 minutos — cobre os três serviços de uma só vez.
 - **Donation Service - sem tráfego no Hot Path**: dispara quando não há nenhuma chamada ao `donation-service` em 15 minutos, sustentado por 30 minutos. Não depende de erro ou de pod fora do ar: pega falhas silenciosas antes do serviço (ex.: SQS, NLB/Ingress) que RED e saúde de pods não enxergam.
 
-> ⚠️ **Assim como o Contact Point acima, este arquivo não é aplicável pelo Git Sync (que só suporta dashboards e folders) nem por file provisioning no Grafana Cloud (que não tem acesso ao filesystem do host). Ele serve de referência: recrie as regras pela UI (`Alerting` → `Alert rules` → `New alert rule`, ou `Import` a partir deste JSON quando suportado) ou aplique via API/Terraform. Antes de aplicar, substitua `<PROMETHEUS_DATASOURCE_UID>` pelo UID do datasource Prometheus do ambiente.**
+> ⚠️ **Assim como o Contact Point acima, este arquivo não é aplicável pelo Git Sync (que só suporta dashboards e folders). Ao contrário do Contact Point, porém, as regras de alerta podem ser importadas diretamente: em `Alerting` → `Alert rules` → `Import`, o Grafana aceita YAML (não aceita JSON), por isso o arquivo é mantido nesse formato. O campo `datasourceUid` (`bfts7wbtgac5cf`) corresponde ao datasource Prometheus do ambiente onde o arquivo foi exportado; ao importar em outro ambiente, ajuste esse valor para o UID do datasource Prometheus correspondente.**
 
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |
