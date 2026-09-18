@@ -15,7 +15,7 @@
             {
               "refId": "A",
               "relativeTimeRange": { "from": 600, "to": 0 },
-              "datasourceUid": "<PROMETHEUS_DATASOURCE_UID>",
+              "datasourceUid": "bfts7wbtgac5cf",
               "model": {
                 "refId": "A",
                 "range": true,
@@ -77,7 +77,7 @@
             {
               "refId": "A",
               "relativeTimeRange": { "from": 300, "to": 0 },
-              "datasourceUid": "<PROMETHEUS_DATASOURCE_UID>",
+              "datasourceUid": "bfts7wbtgac5cf",
               "model": {
                 "refId": "A",
                 "range": true,
@@ -138,7 +138,7 @@
             {
               "refId": "A",
               "relativeTimeRange": { "from": 1800, "to": 0 },
-              "datasourceUid": "<PROMETHEUS_DATASOURCE_UID>",
+              "datasourceUid": "bfts7wbtgac5cf",
               "model": {
                 "refId": "A",
                 "range": true,
