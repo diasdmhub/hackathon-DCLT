@@ -1,212 +1,42 @@
-apiVersion: 1
 groups:
-- orgId: 1
-  name: solidarytech-alerts
-  folder: SolidaryTech
-  interval: 1m
-  rules:
-  - uid: solidarytech-donation-error-rate
-    title: Donation Service - taxa de erro acima da meta de SLO
-    condition: C
-    data:
-    - refId: A
-      relativeTimeRange:
-        from: 600
-        to: 0
-      datasourceUid: bfts7wbtgac5cf
-      model:
-        expr: 100 * sum(rate(traces_spanmetrics_calls_total{service="donation-service", status_code="STATUS_CODE_ERROR"}[5m]))
-          / sum(rate(traces_spanmetrics_calls_total{service="donation-service"}[5m]))
-        instant: false
-        intervalMs: 1000
-        maxDataPoints: 43200
-        range: true
-        refId: A
-    - refId: B
-      relativeTimeRange:
-        from: 600
-        to: 0
-      datasourceUid: __expr__
-      model:
-        expression: A
-        intervalMs: 1000
-        maxDataPoints: 43200
-        reducer: last
-        refId: B
-        type: reduce
-    - refId: C
-      relativeTimeRange:
-        from: 600
-        to: 0
-      datasourceUid: __expr__
-      model:
-        conditions:
-        - evaluator:
-            params:
-            - 5
-            type: gt
-          operator:
-            type: and
-          query:
-            params:
-            - B
-          reducer:
-            params: []
-            type: last
-          type: query
-        expression: B
-        intervalMs: 1000
-        maxDataPoints: 43200
-        refId: C
-        type: threshold
-    dashboardUid: ''
-    panelId: 0
-    noDataState: NoData
-    execErrState: Error
-    for: 5m
-    annotations:
-      description: 'A meta de SLO (dashboard Golden Metrics, aba Donation SLO) é 95% das requisições sem
-        erro. Taxa de erro atual: {{ $values.B }}%.'
-      summary: donation-service acima de 5% de erro em 5m
-    labels:
-      service: donation-service
-      severity: critical
-    isPaused: false
-    notification_settings:
-      receiver: Zabbix
-  - uid: solidarytech-pods-unavailable
-    title: SolidaryTech - pods indisponiveis abaixo do esperado
-    condition: C
-    data:
-    - refId: A
-      relativeTimeRange:
-        from: 300
-        to: 0
-      datasourceUid: bfts7wbtgac5cf
-      model:
-        expr: kube_deployment_spec_replicas{namespace="solidarytech"} - kube_deployment_status_replicas_available{namespace="solidarytech"}
-        instant: false
-        intervalMs: 1000
-        maxDataPoints: 43200
-        range: true
-        refId: A
-    - refId: B
-      relativeTimeRange:
-        from: 300
-        to: 0
-      datasourceUid: __expr__
-      model:
-        expression: A
-        intervalMs: 1000
-        maxDataPoints: 43200
-        reducer: last
-        refId: B
-        type: reduce
-    - refId: C
-      relativeTimeRange:
-        from: 300
-        to: 0
-      datasourceUid: __expr__
-      model:
-        conditions:
-        - evaluator:
-            params:
-            - 0
-            type: gt
-          operator:
-            type: and
-          query:
-            params:
-            - B
-          reducer:
-            params: []
-            type: last
-          type: query
-        expression: B
-        intervalMs: 1000
-        maxDataPoints: 43200
-        refId: C
-        type: threshold
-    dashboardUid: ''
-    panelId: 0
-    noDataState: NoData
-    execErrState: Error
-    for: 5m
-    annotations:
-      description: Diferenca entre replicas especificadas e disponiveis (por deployment) sustentada ha
-        5 minutos. Verificar rollout, crash loop ou falha de readiness probe.
-      summary: Deployment com menos replicas disponiveis do que o especificado
-    labels:
-      severity: warning
-    isPaused: false
-    notification_settings:
-      receiver: Zabbix
-  - uid: solidarytech-donation-silence
-    title: Donation Service - sem trafego no Hot Path
-    condition: C
-    data:
-    - refId: A
-      relativeTimeRange:
-        from: 1800
-        to: 0
-      datasourceUid: bfts7wbtgac5cf
-      model:
-        expr: sum(rate(traces_spanmetrics_calls_total{service="donation-service"}[15m]))
-        instant: false
-        intervalMs: 1000
-        maxDataPoints: 43200
-        range: true
-        refId: A
-    - refId: B
-      relativeTimeRange:
-        from: 1800
-        to: 0
-      datasourceUid: __expr__
-      model:
-        expression: A
-        intervalMs: 1000
-        maxDataPoints: 43200
-        reducer: last
-        refId: B
-        type: reduce
-    - refId: C
-      relativeTimeRange:
-        from: 1800
-        to: 0
-      datasourceUid: __expr__
-      model:
-        conditions:
-        - evaluator:
-            params:
-            - 0
-            type: lte
-          operator:
-            type: and
-          query:
-            params:
-            - B
-          reducer:
-            params: []
-            type: last
-          type: query
-        expression: B
-        intervalMs: 1000
-        maxDataPoints: 43200
-        refId: C
-        type: threshold
-    dashboardUid: ''
-    panelId: 0
-    noDataState: NoData
-    execErrState: Error
-    for: 30m
-    annotations:
-      description: 'RED e saude de pods podem estar normais mesmo com o fluxo de doacoes parado (ex.:
-        falha silenciosa na publicacao SQS, problema de roteamento no NLB/Ingress antes do servico). Considerar
-        Mute Timing para horarios sem uso esperado.'
-      summary: Nenhuma chamada ao donation-service nos ultimos 15 minutos
-    labels:
-      service: donation-service
-      severity: warning
-    isPaused: false
-    notification_settings:
-      receiver: Zabbix
+  - name: solidarytech-alerts
+    interval: 1m
+    rules:
+      - alert: solidarytech-donation-error-rate
+        expr: >-
+          (100 * sum(rate(traces_spanmetrics_calls_total{service="donation-service", status_code="STATUS_CODE_ERROR"}[5m]))
+          / sum(rate(traces_spanmetrics_calls_total{service="donation-service"}[5m]))) > 5
+        for: 5m
+        labels:
+          service: donation-service
+          severity: critical
+        annotations:
+          summary: donation-service acima de 5% de erro em 5m
+          description: >-
+            A meta de SLO (dashboard Golden Metrics, aba Donation SLO) é 95% das requisições sem erro.
+
+      - alert: solidarytech-pods-unavailable
+        expr: >-
+          (kube_deployment_spec_replicas{namespace="solidarytech"}
+          - kube_deployment_status_replicas_available{namespace="solidarytech"}) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Deployment com menos replicas disponiveis do que o especificado
+          description: >-
+            Diferenca entre replicas especificadas e disponiveis (por deployment) sustentada ha 5 minutos.
+            Verificar rollout, crash loop ou falha de readiness probe.
+
+      - alert: solidarytech-donation-silence
+        expr: sum(rate(traces_spanmetrics_calls_total{service="donation-service"}[15m])) <= 0
+        for: 30m
+        labels:
+          service: donation-service
+          severity: warning
+        annotations:
+          summary: Nenhuma chamada ao donation-service nos ultimos 15 minutos
+          description: >-
+            RED e saude de pods podem estar normais mesmo com o fluxo de doacoes parado (ex.: falha
+            silenciosa na publicacao SQS, problema de roteamento no NLB/Ingress antes do servico).
+            Considerar Mute Timing para horarios sem uso esperado.
