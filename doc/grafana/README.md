@@ -87,13 +87,13 @@ Para recriar o Contact Point na UI do Grafana, siga para `Alerting` → `Notific
 
 ## [Regras de Alerta - SolidaryTech](alert-rules-solidarytech.yaml)
 
-Arquivo de regras no formato compatível com Prometheus/Mimir/Loki (`groups` → `rules`, cada uma com `alert`/`expr`/`for`/`labels`/`annotations`), o formato aceito por `Alerting` → `Alert rules` → `Import` do Grafana. Nesse formato a condição de disparo fica embutida na própria expressão PromQL (a regra dispara quando a consulta retorna algum resultado), e não há campo de datasource ou de contact point no arquivo: a tela de importação pede para escolher o datasource Prometheus, a pasta de destino e a regra de notificação; selecione o contact point `Zabbix` (acima) nesse passo. Cobrem os cenários considerados mais relevantes para o `donation-service` (Hot Path) e para a saúde dos pods:
+Arquivo com regras de alerta para ser importado no Grafana em `Alerting` → `Alert rules` → `Import alert rules`. No formato atual, a tela de importação deve solicitar a escolha do datasource Prometheus, o diretório de destino e a regra de notificação; selecione o contact point `Zabbix` (acima) nesse passo. As regras cobrem os cenários considerados mais relevantes para o `donation-service` (_Hot Path_) e para a saúde dos pods:
 
 - **solidarytech-donation-error-rate**: dispara quando a taxa de erro do `donation-service` fica acima de 5% por 5 minutos, tornando acionável a meta de 95% sem erro já definida na dashboard de Golden Metrics.
-- **solidarytech-pods-unavailable**: dispara quando algum deployment do namespace `solidarytech` tem menos réplicas disponíveis do que o especificado, por 5 minutos — cobre os três serviços de uma só vez.
+- **solidarytech-pods-unavailable**: dispara quando algum deployment do namespace `solidarytech` tem menos réplicas disponíveis do que o especificado, por 5 minutos - cobre os três serviços de uma só vez.
 - **solidarytech-donation-silence**: dispara quando não há nenhuma chamada ao `donation-service` em 15 minutos, sustentado por 30 minutos. Não depende de erro ou de pod fora do ar: pega falhas silenciosas antes do serviço (ex.: SQS, NLB/Ingress) que RED e saúde de pods não enxergam.
 
-> ⚠️ **Assim como o Contact Point acima, este arquivo não é aplicável pelo Git Sync (que só suporta dashboards e folders); é preciso importar pela UI (`Alerting` → `Alert rules` → `Import`), que exige YAML (JSON é rejeitado com "missing or invalid groups array"). Depois de importado, cada regra vira um alerta gerenciado pelo Grafana com o `expr` original como consulta única — confira se a pasta e o contact point (`Zabbix`) escolhidos na importação estão corretos antes de habilitar.**
+> ⚠️ **Assim como o Contact Point acima, este arquivo não é aplicável pelo Git Sync (que só suporta dashboards e folders). É preciso importar as regras pela UI do Grafana (`Alerting` → `Alert rules` → `Import`), que exige um arquivo YAML. Depois de importado, cada regra vira um alerta gerenciado pelo Grafana, inicialmente pausada e com o `expr` original como consulta única. Confira se a pasta e o contact point (`Zabbix`) escolhidos na importação estão corretos antes de habilitar.**
 
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |
