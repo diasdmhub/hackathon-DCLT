@@ -3,20 +3,20 @@
 
 # SLI, SLO e SLA do Donation Service
 
-Este documento formaliza os indicadores, as metas e o compromisso de nível de serviço do `donation-service`, o _hot path_ da SolidaryTech. O resumo está na seção "SRE" de [`doc/estrutura.md`][estrutura].
+Este documento formaliza os indicadores, as metas e o compromisso de nível de serviço do `donation-service`, o _hot path_ da SolidaryTech.
 
 <BR>
 
-## SLI, SLO e SLA lado a lado
+## SLI, SLO e SLA
 
-Todos os valores se referem a uma **janela mensal de 30 dias (`720h`)**.
+Todos os valores se referem a uma **janela mensal de `30` dias (`720h`)**.
 
 | Indicador | SLI (o que se mede) | SLO (meta interna) | SLA (compromisso com as ONGs) |
 | --- | --- | --- | --- |
 | **Erros** | % de requisições sem erro | `>= 98%` | `>= 95%` |
 | **Latência** | % de requisições respondidas em até `512ms` | `>= 98%` | `>= 95%` |
 
-O SLA é deliberadamente mais brando que o SLO. Se as duas metas fossem iguais, o compromisso seria violado no mesmo instante em que o _error budget_ acabasse, sem tempo para reagir. A faixa entre 95% e 98% funciona como uma zona de alerta, em que a política de congelamento de mudanças já está em vigor.
+**O SLA é deliberadamente mais brando que o SLO.** Se as duas metas fossem iguais, o compromisso seria violado no mesmo instante em que o _error budget_ acabasse, sem tempo para reagir. A faixa entre 95% e 98% funciona como uma zona de alerta, em que a política de congelamento de mudanças já está em vigor.
 
 | Meta | Tolerância a falhas | Equivalência em `720h` |
 | --- | --- | --- |
@@ -29,34 +29,37 @@ As equivalências em horas são aproximações por proporção, já que os SLIs 
 
 ## Definição dos SLIs
 
-Os SLIs vêm do _span-metrics_ do Tempo (`traces_spanmetrics_*`), consultado pelo Prometheus, e estão implementados na [dashboard de Golden Metrics][dashgrafana].
+Os SLIs vêm do _span-metrics_ do Tempo (`traces_spanmetrics_*`), consultado pelo Prometheus, e são consultados na [dashboard de Golden Metrics][dashgrafana].
 
 | SLI | Serviços | Definição | Janela | SLO |
 | --- | --- | --- | --- | --- |
-| Latência p95 | Os 3 serviços | p95 do histograma `traces_spanmetrics_latency_bucket` | Seguem o seletor de tempo da dashboard | Não |
-| Taxa de erro | Os 3 serviços | Requisições com erro sobre o total, em `traces_spanmetrics_calls_total` | Seguem o seletor de tempo da dashboard | Não |
-| **SLO de erros** | `donation-service` | `1 - taxa de erro`. Evento bom é a requisição sem erro, sendo 5xx (`status_code=STATUS_CODE_ERROR`) ou 4xx (`http_response_status_code`) considerados erros | 30 dias fixos | `>= 98%` |
-| **SLO de latência** | `donation-service` | Razão entre as requisições de duração até `512ms` (`le="0.512"`) e o total (`le="+Inf"`) | 30 dias fixos | `>= 98%` |
+| Latência p95 | Os 3 serviços | p95 do histograma `traces_spanmetrics_latency_bucket` | Seletor de período da dashboard | Não |
+| Taxa de erro | Os 3 serviços | Requisições com erro sobre o total, em `traces_spanmetrics_calls_total` | Seletor de período da dashboard | Não |
+| **SLO de erros** | `donation-service` | Evento "bom" é a requisição sem erro, sendo 5xx ou 4xx considerados erros | 30 dias fixos | `>= 98%` |
+| **SLO de latência** | `donation-service` | Razão entre as requisições de duração até `512ms` e o total | 30 dias fixos | `>= 98%` |
 
-Detalhes que valem registro:
+Observações:
 
-- O limite de `512ms` é o bucket padrão do Tempo mais próximo de `500ms`, o que evita customizar os buckets do _metrics-generator_.
-- O SLI de erros é conservador de propósito: conta também os 4xx. A explicação de como isso se relaciona ao SLA está em "Escopo e medição".
-- O alerta `solidarytech-donation-error-rate` dispara quando a taxa de erro do `donation-service` passa de `2%` por 5 minutos, o mesmo limite do _error budget_ do SLO.
+- O SLI de erros é conservador de propósito: conta também os 4xx. Vide definição abaixo em "_Escopo e medição_".
+- O alerta `solidarytech-donation-error-rate` dispara quando a taxa de erro do `donation-service` passa de `2%` por `5` minutos, o mesmo limite do _error budget_ do SLO.
+
+> O limite de `512ms` é o bucket padrão do Tempo mais próximo de `500ms`, o que evita personalizar os buckets do _metrics-generator_.
 
 <BR>
 
 ## Escopo e medição
 
-**Escopo:** as requisições `POST /donations` e `GET /donations` do `donation-service`, no ambiente ativo (`terra/`). O SLA cobre a resposta à ONG ou ao doador. Não cobre o evento assíncrono publicado no SQS depois da gravação, pois a doação já está persistida no RDS nesse ponto.
+**Escopo:** as requisições `POST /donations` e `GET /donations` do `donation-service`. O SLA cobre a resposta à ONG ou ao doador. Não cobre o evento assíncrono publicado no SQS depois da gravação, pois a doação já está persistida no RDS nesse ponto.
 
-**Medição:**
+### Medição:
 
-- Fonte oficial: o _span-metrics_ do Tempo, no Prometheus, a mesma fonte dos SLIs acima. Usar uma só fonte evita números divergentes.
-- Verificação independente: a [dashboard de Visão Externa][dashgrafana], que consulta os serviços de fora do cluster.
-- Apuração: a cada mês, sobre a janela de 30 dias.
+- **Fonte principal:** o _span-metrics_ do Tempo, no Prometheus, a mesma fonte dos SLIs acima. Usar uma só fonte evita números divergentes.
+- **Verificação externa (independente):** a [dashboard de Visão Externa][dashgrafana], que consulta os serviços de fora do cluster.
+- **Apuração:** a cada mês, sobre a janela de 30 dias.
 
-**Como o SLI se relaciona ao SLA.** O SLI de erros conta 4xx e 5xx, enquanto o SLA considera erro apenas as respostas 5xx, pois um 4xx indica requisição inválida do cliente (ver "Exclusões"). Como o SLI conta mais erros que o SLA, um SLI de erros acima de 95% garante que o SLA de erros também foi cumprido. A dashboard, portanto, é uma medida segura do SLA, ainda que mais rigorosa.
+### Relação do SLI com o SLA:
+
+O SLI conta os erros `4xx` e `5xx`, enquanto o SLA considera erro apenas as respostas 5xx, pois um 4xx indica requisição inválida do cliente (ver "Exclusões"). Como o SLI conta mais erros que o SLA, um SLI de erros acima de 95% garante que o SLA de erros também foi cumprido. A dashboard, portanto, é uma medida segura do SLA, ainda que mais rigorosa.
 
 **Limitação atual:** as consultas dos painéis não filtram por rota, então incluem todas as requisições do serviço, como o `/health`. Isso tende a inflar levemente o resultado e deve ser considerado ao interpretar os números.
 
