@@ -71,7 +71,7 @@ O SLA usa a mesma definição do SLI que considera erros as respostas `4xx` e `5
 
 ## Consequências do descumprimento
 
-A SolidaryTech não cobra das ONGs, então não há crédito financeiro. As consequências são de transparência e de proteção do serviço:
+A SolidaryTech não cobra das ONGs, então não há crédito financeiro. As consequências são de transparência e de proteção do serviço, e se encaixam nas fases 3 e 7 do [ciclo de vida de incidentes][incidentes]:
 
 1. **Comunicação proativa** - As ONGs são informadas assim que o impacto nas doações é confirmado, com atualizações até a normalização do serviço. A comunicação ocorre quando o SLA é violado ou quando há ativação do DR.
 2. **Post-mortem publicado em até 3 dias úteis** - Depois da resolução, o relatório é publicado com a causa raiz, o impacto, a linha do tempo e as ações corretivas.
@@ -110,3 +110,4 @@ Portanto, um desastre regional recuperado dentro do RTO não é suficiente, sozi
 [estrutura]: ./estrutura.md
 [pcn]: ./plano-continuidade-negocios.md
 [dashgrafana]: ./grafana/README.md
+[incidentes]: ./incidentes.md

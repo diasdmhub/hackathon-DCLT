@@ -116,6 +116,8 @@ Estas são as estimativas por fase:
 | Confirmar a falha de failover do DNS e validar os 3 microsserviços saudáveis | Operador |
 | Decidir e coordenar a reversão | Plantão de SRE, após a região original ser confirmada como saudável |
 
+A falha regional é um dos caminhos de mitigação do [ciclo de vida de incidentes][incidentes], que usa os mesmos papéis.
+
 <BR>
 
 ## Testes de continuidade
@@ -154,3 +156,4 @@ As estimativas de RTO e RPO acima são estimativas derivadas da configuração d
 [roteirodr]: /doc/roteiro-dr-ativacao.md
 [estrutura]: /doc/estrutura.md
 [sla]: /doc/sla.md
+[incidentes]: /doc/incidentes.md

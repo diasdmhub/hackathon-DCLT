@@ -169,6 +169,8 @@ No que se refere aos aspectos de ITSM, o Grafana Cloud IRM é utilizado como fer
 - Ausência de custos iniciais (_com limitações_);
 - Integração nativa com IA;
 
+A detecção de incidentes é feita por regras de alerta que notificam o Grafana IRM. O assistente de IA do Grafana Cloud é usado sob demanda na triagem e no diagnóstico, mas não há detecção automática de anomalias por IA. O ciclo completo (detecção, triagem, comunicação, diagnóstico, mitigação, _post-mortem_ e melhoria contínua), com responsáveis e severidades (`Warning`, `Alert` e `Critical`), está em [`doc/incidentes.md` ⤴️][incidentes].
+
 <BR>
 
 ## Multicloud, Segurança e Disaster Recovery (DR)
@@ -195,5 +197,6 @@ Essa estratégia está formalizada no [Plano de Continuidade de Negócios (PCN) 
 [estimativa]: ./estimativa-custo.md
 [pcn]: ./plano-continuidade-negocios.md
 [sla]: ./sla.md
+[incidentes]: ./incidentes.md
 [roteirodr]: ./roteiro-dr-ativacao.md
 [dashgrafana]: /doc/grafana/

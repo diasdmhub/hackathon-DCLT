@@ -56,7 +56,7 @@ Dashboard extra que simula a perspectiva de um cliente externo consultando a Sol
 
 ## [Regras de Alerta - SolidaryTech](alert-rules-solidarytech.yaml)
 
-Arquivo com regras de alerta para ser importado no Grafana em `Alerting` → `Alert rules` → `Import alert rules`. No formato atual, a tela de importação deve solicitar a escolha do datasource Prometheus, o diretório de destino e a regra de notificação (_Grafana IRM_). Como demonstração, as regras cobrem os cenários considerados mais relevantes para o `donation-service` (_Hot Path_) e para a saúde dos pods:
+Arquivo com regras de alerta para ser importado no Grafana em `Alerting` → `Alert rules` → `Import alert rules`. No formato atual, a tela de importação deve solicitar a escolha do datasource Prometheus, o diretório de destino e a regra de notificação (_Grafana IRM_). Elas são o ponto de entrada do [ciclo de vida de incidentes](../incidentes.md), que também define como as severidades `Warning`, `Alert` e `Critical` se relacionam com estas regras. Como demonstração, as regras cobrem os cenários considerados mais relevantes para o `donation-service` (_Hot Path_) e para a saúde dos pods:
 
 - **solidarytech-donation-error-rate**: dispara quando a taxa de erro do `donation-service` fica acima de 2% por 5 minutos, mesma meta refletida nos painéis "SLO de erros"/"SLO de latência" da dashboard de Golden Metrics.
 - **solidarytech-pods-unavailable**: dispara quando algum deployment do namespace `solidarytech` tem menos réplicas disponíveis do que o especificado, por 5 minutos - cobre os três serviços de uma só vez.
