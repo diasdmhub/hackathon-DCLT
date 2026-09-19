@@ -157,7 +157,7 @@ A _stack_ completa foi implementada executando Prometheus, Loki, Tempo e Alloy (
 
 <BR>
 
-## ITSM e AIOps
+## ITSM
 
 No que se refere aos aspectos de ITSM, o Grafana Cloud IRM é utilizado como ferramenta central de eventos, devido à sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo inicial. Além disso, ele já dispõe de integração nativa de IA e diversos recursos de tratamento e automação de eventos. No ambiente implementado, estão incluídos:
 
@@ -169,15 +169,7 @@ No que se refere aos aspectos de ITSM, o Grafana Cloud IRM é utilizado como fer
 - Ausência de custos iniciais (_com limitações_);
 - Integração nativa com IA;
 
-A detecção de incidentes é feita por regras de alerta que notificam o Grafana IRM. O ciclo de vida completo de incidentes, que inclui detecção, triagem, comunicação, diagnóstico, mitigação, _post-mortem_ e melhoria contínua, está disponível em [`doc/incidentes.md` ⤴️][incidentes].
-
-O assistente de IA do Grafana Cloud é usado na triagem e no diagnóstico de incidentes, e também possibilita diversas análises preditivas. Por exemplo:
-
-- **Anomaly detection e forecasting** - Analisa o histórico dos dados para identificar padrões incomuns e prever comportamento futuro.
-- **Adaptive Traces** - É ativado por padrão e analisa continuamente os dados de trace em segundo plano, estabelecendo um "_baseline_" de comportamento normal e sinalizando desvios.
-- **Outlier Detection** - Monitora um grupo de instâncias/pods semelhantes e alerta quando um deles se comporta diferente dos demais.
-- **Forecasting** - Aprende sazonalidade (diária/semanal) e permite alertar quando uma métrica sai da faixa prevista, em vez de um threshold estático.
-- **Application Observability** - Usa comparação de baseline e agrupamento por atributos para identificar e investigar anomalias de performance.
+A detecção de incidentes é feita por regras de alerta que notificam o Grafana IRM. O assistente de IA do Grafana Cloud é usado principalmente na triagem e no diagnóstico de incidentes. O Grafana também oferece recursos nativos de detecção de anomalias e _forecasting_ (_Adaptive Traces_, _Outlier Detection_ e outros), resumidos no documento de incidentes. O ciclo de vida completo de incidentes, que inclui detecção, triagem, comunicação, diagnóstico, mitigação, _post-mortem_ e melhoria contínua, está disponível em [`doc/incidentes.md` ⤴️][incidentes].
 
 <BR>
 

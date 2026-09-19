@@ -70,7 +70,22 @@ O nível pode mudar durante o incidente. Um Warning confirmado sobe para Alert, 
 
 O assistente de IA do Grafana Cloud é usado **sob demanda** pelo Plantão de SRE na triagem e no diagnóstico. Ele ajuda a consultar métricas, logs e _traces_ e a resumir o que foi encontrado. Ele não detecta incidentes nem executa ações sozinho: a decisão e a execução continuam com as pessoas.
 
-A **detecção** hoje é feita por regras de alerta com limites definidos, e não por detecção automática de anomalias por IA. Essa é a principal limitação do ciclo em relação a uma abordagem preditiva.
+A **detecção** principal é feita por regras de alerta com limites definidos. A detecção automática de anomalias por IA não faz parte do fluxo de alerta descrito neste documento, embora o Grafana Cloud disponibilize recursos para isso, resumidos a seguir.
+
+### AIOps do Grafana Cloud
+
+O Grafana Cloud oferece recursos nativos de detecção de anomalias, inclusive na conta gratuita. Nem todos se aplicam ao ambiente da SolidaryTech, e o ciclo descrito acima não depende deles, necessariamente. No entanto, esses recursos fazem parte do fluxo de triagem e diagnóstico de incidentes.
+
+| Recurso | O que faz | Uso possível na SolidaryTech |
+| --- | --- | --- |
+| **Grafana AI** (anomaly detection e forecasting) | Aprende com o histórico dos dados para identificar padrões incomuns e prever o comportamento futuro | Alertas mais inteligentes para a latência e a taxa de erro do `donation-s
+ervice`, no lugar de limites fixos |
+| **Adaptive Traces** | Analisa os dados de _trace_ em segundo plano, estabelece uma _baseline_ de comportamento normal e sinaliza desvios, como um pico súbito de latência. As anomalias aparecem como recomendações na página _Overview_ (ativado por padrão) | Anomalias de latência nos _traces_ dos 3 serviços |
+| **Outlier Detection** | Monitora um grupo de instâncias semelhantes e alerta quando uma delas se comporta de forma diferente das demais (algoritmos DBSCAN ou MAD) | Réplicas do mesmo serviço, já que o HPA mantém de 2 a 4 pods (por exemplo, um pod com vazamento de memória) |
+| **Forecasting** | Aprende a sazonalidade diária e semanal e alerta quando a métrica sai da faixa prevista | Substituir o limite fixo do `solidarytech-donation-silence`, que pode disparar em horários sem uso esperado |
+| **Application Observability** | Compara com a _baseline_ e agrupa por atributos (como `k8s.cluster.name`) para identificar e investigar anomalias de performance | Comparar o comportamento entre clusters ou ambientes |
+
+Uma anomalia sinalizada por qualquer desses recursos entra no ciclo como **Warning**, pois ainda não tem impacto confirmado, e segue a triagem normal.
 
 <BR>
 
@@ -88,7 +103,7 @@ A linha do tempo registrada no incidente do Grafana IRM permite calcular os temp
 
 ## Limitações conhecidas
 
-- Não há detecção automática de anomalias por IA, apenas regras de alerta.
+- A detecção automática de alertas utiliza regras com limites fixos conforme o SLA definido. 
 - O nível **Alert** não tem regra de alerta dedicada, pois é atribuído na triagem. Regras para `ngo-service` e `volunteer-service` são uma evolução natural.
 - As regras de alerta são importadas manualmente na interface do Grafana, pois o Git Sync não cobre alertas (ver [`doc/grafana/README.md`][dashgrafana]).
 - A decisão de declarar um desastre regional é manual, o que inclui um tempo dependente da equipe no RTO do PCN.
