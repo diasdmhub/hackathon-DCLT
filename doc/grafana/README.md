@@ -54,46 +54,15 @@ Dashboard extra que simula a perspectiva de um cliente externo consultando a Sol
 
 <BR>
 
-## [Contact Point - Zabbix Trapper](contact-point-zabbix-trapper.json)
-
-Contact Point do Grafana Alerting que publica alertas num item Zabbix trapper via `history.push`, para centralizar alertas do Grafana no mesmo Zabbix que já cobre o monitoramento HTTP externo. É o export de um Contact Point criado pela UI do Grafana.
-
-> ⚠️ **Este arquivo não é aplicável pelo Git Sync, pois essa funcionalidade só suporta "dashboards" e "folders" hoje. Para aplicar este "Contact Point", é necessário copiar este arquivo para `Grafana_DIR/provisioning/alerting/` no filesystem do host do Grafana, não pela UI. O Grafana Cloud não possui a funcionalidade de file provisioning, portanto, este Contact Point deve ser incluído manualmente.**
-
-Para recriar o Contact Point na UI do Grafana, siga para `Alerting` → `Notification configuration` → `New contact point`, e preencha o formulário com, pelo menos, os valores abaixo.
-
-- **URL**: a URL do `api_jsonrpc.php` do Zabbix.
-- **Authorization Header - Scheme**: `Bearer`.
-- **Authorization Header - Credentials**: o token de API Zabbix, com o usuário dono do token tendo permissão de API habilitada e permissão de escrita no host/grupo do item alvo.
-- **Extra Headers**: `Content-Type: application/json-rpc`.
-- **Custom Payload → Edit Payload Template**: Inclua o JSON a seguir.
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "history.push",
-  "params": [
-    {"itemid": {{.Vars.zabbix_itemid}}, "value": "{{ monLabels.alertname     }}: {{ .Status }}"}
-  ],
-  "id": 1
-}
-```
-
-- **Payload Variables**: uma entrada `zabbix_itemid` com o itemid Zabbix de destino (o item precisa ser do tipo "Zabbix trapper").
-
-> ℹ️ **O Grafana só reporta "Test notification sent successfully" com base no status HTTP da resposta. A API JSON-RPC do Zabbix normalmente responde HTTP 200 mesmo quando o corpo contém um erro lógico (token inválido, sem permissão, itemid errado, tipo de item incompatível), então "sucesso" no Grafana não confirma sozinho que o Zabbix aceitou o valor.**
-
-<BR>
-
 ## [Regras de Alerta - SolidaryTech](alert-rules-solidarytech.yaml)
 
-Arquivo com regras de alerta para ser importado no Grafana em `Alerting` → `Alert rules` → `Import alert rules`. No formato atual, a tela de importação deve solicitar a escolha do datasource Prometheus, o diretório de destino e a regra de notificação; selecione o contact point `Zabbix` (acima) nesse passo. As regras cobrem os cenários considerados mais relevantes para o `donation-service` (_Hot Path_) e para a saúde dos pods:
+Arquivo com regras de alerta para ser importado no Grafana em `Alerting` → `Alert rules` → `Import alert rules`. No formato atual, a tela de importação deve solicitar a escolha do datasource Prometheus, o diretório de destino e a regra de notificação. Como demonstração, as regras cobrem os cenários considerados mais relevantes para o `donation-service` (_Hot Path_) e para a saúde dos pods:
 
 - **solidarytech-donation-error-rate**: dispara quando a taxa de erro do `donation-service` fica acima de 2% por 5 minutos, mesma meta refletida nos painéis "SLO de erros"/"SLO de latência" da dashboard de Golden Metrics.
 - **solidarytech-pods-unavailable**: dispara quando algum deployment do namespace `solidarytech` tem menos réplicas disponíveis do que o especificado, por 5 minutos - cobre os três serviços de uma só vez.
 - **solidarytech-donation-silence**: dispara quando não há nenhuma chamada ao `donation-service` em 15 minutos, sustentado por 30 minutos. Não depende de erro ou de pod fora do ar: pega falhas silenciosas antes do serviço (ex.: SQS, NLB/Ingress) que RED e saúde de pods não enxergam.
 
-> ⚠️ **Assim como o Contact Point acima, este arquivo não é aplicável pelo Git Sync (que só suporta dashboards e folders). É preciso importar as regras pela UI do Grafana (`Alerting` → `Alert rules` → `Import`), que exige um arquivo YAML. Depois de importado, cada regra vira um alerta gerenciado pelo Grafana, inicialmente pausada e com o `expr` original como consulta única. Confira se a pasta e o contact point (`Zabbix`) escolhidos na importação estão corretos antes de habilitar.**
+> ⚠️ **Este arquivo não é aplicável pelo Git Sync, pois o Grafana Cloud só suporta dashboards e folders. É preciso importar as regras pela UI do Grafana (`Alerting` → `Alert rules` → `Import`), que exige um arquivo YAML. Depois de importado, cada regra vira um alerta gerenciado pelo Grafana, inicialmente pausada e com o `expr` original como consulta única. Confira se a pasta e o contact point escolhidos na importação estão corretos antes de habilitar.**
 
 | [⬆️ Top](#dashboards-do-grafana) |
 | --- |

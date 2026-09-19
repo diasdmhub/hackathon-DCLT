@@ -161,14 +161,14 @@ A _stack_ completa foi implementada executando Prometheus, Loki, Tempo e Alloy (
 
 ## ITSM e AIOps
 
-No que se refere aos aspectos de ITSM, o Zabbix é utilizado como ferramenta central de eventos, devido à sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é open-source. Estão integrados a ele, estão recursos de tratamento e automação de eventos. No ambiente implementado, estão incluídos:
+No que se refere aos aspectos de ITSM, o Grafana Cloud IRM é utilizado como ferramenta central de eventos, devido à sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é gratúito inicialmente. Além disso, ele já dispõe de integração nativa de IA. Estão integrados a ele recursos de tratamento e automação de eventos. No ambiente implementado, estão incluídos:
 
 - alta performance em monitoramento e observabilidade;
 - integração diversificada com plataformas de notificação;
 - gerenciamento de eventos;
 - personalização de mensagens e relatórios;
 - ausência de custos de licenciamento;
-- integração com IA;
+- integração nativa com IA;
 
 <BR>
 
