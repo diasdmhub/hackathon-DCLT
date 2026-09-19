@@ -73,18 +73,9 @@ O _deploy_ foi testado de ponta a ponta no cluster remoto, no qual os serviços 
 
 Foram definidos **SLIs de latência e erros** para todos os serviços da SolidaryTech. Por ser mais relevante, o Donation Service (_hot-path_) tem também um SLO e um SLA, medidos em um **período mensal** de `720h`.
 
-| Indicador | SLI | SLO (meta interna) | SLA (compromisso com as ONGs) |
-| --- | --- | --- | --- |
-| **Erros** | % de requisições sem erro | `>= 98%` | `>= 95%` |
-| **Latência** | % de requisições em até `512ms` | `>= 98%` | `>= 95%` |
-
-- O SLO de `98%` estabelece um _error budget_ de `2%` (`14,4h` de tolerância), como margem de segurança para manutenções e atualizações.
-- O SLA de `95%` é mais brando que o SLO por definição, o que deixa uma zona de alerta antes de o compromisso com as ONGs ser violado. Não há crédito financeiro em caso de descumprimento: as consequências são a comunicação proativa, um _post-mortem_ publicado em até 3 dias úteis e o congelamento de mudanças.
-- A quebra do SLO implica o congelamento imediato das atualizações programadas do Donation Service, até o próximo período mensal e o alívio do _error budget_.
-
 As definições completas dos SLIs, o escopo e a medição, as exclusões e a ligação com o RTO do PCN estão em [`doc/sla.md` ⤴️][sla].
 
-Um conjunto de [dashboards do Grafana][dashgrafana] foi disponibilizado para apresentar os dados de saúde da SolidaryTech, incluindo os SLI/SLO mencionados e outros dados dos serviços. Essas dashboards podem ser sincronizadas com o repositório Git, complementando a estrutura de GitOps.
+Além disso, um conjunto de [dashboards do Grafana][dashgrafana] foi disponibilizado para apresentar os dados de saúde da SolidaryTech, incluindo os SLI/SLO mencionados e outros dados dos serviços. Essas dashboards podem ser sincronizadas com o repositório Git, complementando a estrutura de GitOps.
 
 ### Respostas a falhas e recuperação automática
 
@@ -168,15 +159,15 @@ A _stack_ completa foi implementada executando Prometheus, Loki, Tempo e Alloy (
 
 ## ITSM e AIOps
 
-No que se refere aos aspectos de ITSM, o Grafana Cloud IRM é utilizado como ferramenta central de eventos, devido à sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo, pois é gratuito inicialmente. Além disso, ele já dispõe de integração nativa de IA. Estão integrados a ele recursos de tratamento e automação de eventos. No ambiente implementado, estão incluídos:
+No que se refere aos aspectos de ITSM, o Grafana Cloud IRM é utilizado como ferramenta central de eventos, devido à sua flexibilidade com diversas ferramentas de mercado, e devido ao seu baixo custo inicial. Além disso, ele já dispõe de integração nativa de IA e diversos recursos de tratamento e automação de eventos. No ambiente implementado, estão incluídos:
 
 - Recursos de tratamento e gerenciamento de eventos e incidentes (IRM);
 - Recursos diversificados de "on-call", notificação e escalonamento;
 - Recursos de gerenciamento de SLOs;
-- alta performance em monitoramento e observabilidade;
-- integração diversificada com plataformas de notificação;
-- ausência de custos iniciais (_com limitações_);
-- integração nativa com IA;
+- Alta performance em monitoramento e observabilidade;
+- Integração diversificada com plataformas de notificação;
+- Ausência de custos iniciais (_com limitações_);
+- Integração nativa com IA;
 
 <BR>
 
