@@ -27,7 +27,7 @@ Optou-se por utilizar o SSM Parameter Store (_Standard tier_) em vez do Secrets 
 
 ### Observabilidade
 
-A _stack_ de observabilidade (Loki, Tempo, Alloy e Prometheus) está enviando os dados para o Grafana Cloud, evitando o custo de retenção de um SaaS de observabilidade e permitindo pagar apenas pelo processamento e armazenamento mínimos no cluster.
+A _stack_ de observabilidade (Loki, Tempo, Alloy e Prometheus) está enviando os dados para o Grafana Cloud, evitando o custo de retenção de um SaaS de observabilidade e permitindo pagar apenas pelo processamento e armazenamento mínimos no cluster. Além disso, o Grafana também absorve o escopo de ITSM ao tratar e gerenciar eventos/incidentes, alertas e escalonamento (_on-call_).
 
 ### CI/CD e imagens
 
