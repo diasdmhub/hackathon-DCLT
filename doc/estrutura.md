@@ -71,11 +71,18 @@ O _deploy_ foi testado de ponta a ponta no cluster remoto, no qual os serviços 
 
 ## SRE
 
-Foram definidos **SLIs de latência e erros** para todos os serviços da SolidaryTech. Por ser mais relevante, o Donation Service (_hot-path_) teve um SLO especificado de `98%`, o que estabelece um _error budget_ de `2%`.
+Foram definidos **SLIs de latência e erros** para todos os serviços da SolidaryTech. Por ser mais relevante, o Donation Service (_hot-path_) tem também um SLO e um SLA, medidos em um **período mensal** de `720h`.
 
-Essa especificação se refere a um **período mensal** de `720h`, garantindo um mínimo de `705,6h` de disponibilidade do serviço e `14.4h` de tolerância a erros. Esses valores estabelecem uma margem de segurança para manutenções e atualizações do ambiente, se necessário, e mantêm um alta disponibilidade para os clientes.
+| Indicador | SLI | SLO (meta interna) | SLA (compromisso com as ONGs) |
+| --- | --- | --- | --- |
+| **Erros** | % de requisições sem erro | `>= 98%` | `>= 95%` |
+| **Latência** | % de requisições em até `512ms` | `>= 98%` | `>= 95%` |
 
-A quebra do SLO implicará o congelamento imediato das atualizações programadas do Donation Service, exigindo a estabilização do ambiente até o próximo período mensal e o alívio do _error budget_.
+- O SLO de `98%` estabelece um _error budget_ de `2%` (`14,4h` de tolerância), como margem de segurança para manutenções e atualizações.
+- O SLA de `95%` é mais brando que o SLO por definição, o que deixa uma zona de alerta antes de o compromisso com as ONGs ser violado. Não há crédito financeiro em caso de descumprimento: as consequências são a comunicação proativa, um _post-mortem_ publicado em até 3 dias úteis e o congelamento de mudanças.
+- A quebra do SLO implica o congelamento imediato das atualizações programadas do Donation Service, até o próximo período mensal e o alívio do _error budget_.
+
+As definições completas dos SLIs, o escopo e a medição, as exclusões e a ligação com o RTO do PCN estão em [`doc/sla.md` ⤴️][sla].
 
 Um conjunto de [dashboards do Grafana][dashgrafana] foi disponibilizado para apresentar os dados de saúde da SolidaryTech, incluindo os SLI/SLO mencionados e outros dados dos serviços. Essas dashboards podem ser sincronizadas com o repositório Git, complementando a estrutura de GitOps.
 
@@ -196,5 +203,6 @@ Essa estratégia está formalizada no [Plano de Continuidade de Negócios (PCN) 
 [newrelic]: https://newrelic.com
 [estimativa]: ./estimativa-custo.md
 [pcn]: ./plano-continuidade-negocios.md
+[sla]: ./sla.md
 [roteirodr]: ./roteiro-dr-ativacao.md
 [dashgrafana]: /doc/grafana/

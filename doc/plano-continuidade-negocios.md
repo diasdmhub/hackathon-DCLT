@@ -76,6 +76,8 @@ O RTO é determinado pelo tempo necessário para provisionar a capacidade de pro
 
 **RTO consolidado estimado é de 30 a 50 minutos.**
 
+> **Relação com o SLA:** um desastre regional recuperado dentro desse RTO consome de `1,4%` a `2,3%` das `36h` mensais toleradas pelo SLA de `95%` do `donation-service`, portanto não o viola sozinho. O tempo de recuperação conta como indisponibilidade. Ver [`doc/sla.md`][sla].
+
 ### ✅ Simulações
 
 - O tempo entre a decisão de ativação e a aceitação de uma doação de teste ser aceita fim-a-fim (`POST /ngos` → `POST /donations` → `POST /volunteers` → `GET /volunteers/{ngo_id}`) por meio do endpoint com failover de DNS já aplicado foi de **36m01s**. Está dentro da faixa estimada, mas com uma distribuição diferente da esperada.
@@ -151,3 +153,4 @@ As estimativas de RTO e RPO acima são estimativas derivadas da configuração d
 [terradr]: /terra-dr/README.md
 [roteirodr]: /doc/roteiro-dr-ativacao.md
 [estrutura]: /doc/estrutura.md
+[sla]: /doc/sla.md

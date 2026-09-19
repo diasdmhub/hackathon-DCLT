@@ -38,7 +38,7 @@ Dashboard de acompanhamento de metas de qualidade (SLO) por microserviço, organ
 - **Service SLI**: para cada um dos três serviços, a latência típica (p95) e a taxa de erro atuais, com seu histórico ao longo do tempo.
 - **Donation SLO**: um recorte mensal (30 dias fixos) dedicado ao serviço de doações, mostrando se a meta de "98% das requisições respondidas em até ~500ms" e a meta de "98% das requisições sem erro" estão sendo cumpridas no mês, conforme o SLO de 98% definido em `doc/estrutura.md`.
 
-É a dashboard de referência para responder "estamos cumprindo o nível de serviço combinado?", com foco especial no serviço de doações por ser o mais crítico da plataforma.
+É a dashboard de referência para responder "estamos cumprindo o nível de serviço combinado?", com foco especial no serviço de doações por ser o mais crítico da plataforma. O SLA de 95% com as ONGs, que fica abaixo do SLO, e a forma como estes painéis o medem estão descritos em [`doc/sla.md`](../sla.md).
 
 <BR>
 
