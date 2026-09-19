@@ -40,7 +40,7 @@ Os SLIs vêm do _span-metrics_ do Tempo (`traces_spanmetrics_*`), consultado pel
 
 Observações:
 
-- O SLI de erros é conservador de propósito: conta também os 4xx. Vide definição abaixo em "_Escopo e medição_".
+- O SLI de erros é conservador de propósito, mas também conta também 4xx. Vide definição abaixo em "_Escopo e medição_".
 - O alerta `solidarytech-donation-error-rate` dispara quando a taxa de erro do `donation-service` passa de `2%` por `5` minutos, o mesmo limite do _error budget_ do SLO.
 
 > O limite de `512ms` é o bucket padrão do Tempo mais próximo de `500ms`, o que evita personalizar os buckets do _metrics-generator_.
@@ -49,19 +49,23 @@ Observações:
 
 ## Escopo e medição
 
-**Escopo:** as requisições `POST /donations` e `GET /donations` do `donation-service`. O SLA cobre a resposta à ONG ou ao doador. Não cobre o evento assíncrono publicado no SQS depois da gravação, pois a doação já está persistida no RDS nesse ponto.
+As requisições `POST /donations` e `GET /donations` do `donation-service` fazem parte do escopo de SLA. Ele cobre a resposta à ONG ou ao doador. No entanto, não cobre o evento assíncrono publicado no SQS depois da gravação, pois a doação já está persistida no RDS nesse ponto.
 
 ### Medição:
 
-- **Fonte principal:** o _span-metrics_ do Tempo, no Prometheus, a mesma fonte dos SLIs acima. Usar uma só fonte evita números divergentes.
-- **Verificação externa (independente):** a [dashboard de Visão Externa][dashgrafana], que consulta os serviços de fora do cluster.
+- **Fonte principal** - O _span-metrics_ do Tempo, no Prometheus, a mesma fonte dos SLIs acima. Usar uma só fonte evita números divergentes.
+- **Verificação externa (independente)** - A [dashboard de Visão Externa][dashgrafana], que consulta os serviços de fora do cluster.
 - **Apuração:** a cada mês, sobre a janela de 30 dias.
 
 ### Relação do SLI com o SLA:
 
-O SLI conta os erros `4xx` e `5xx`, enquanto o SLA considera erro apenas as respostas 5xx, pois um 4xx indica requisição inválida do cliente (ver "Exclusões"). Como o SLI conta mais erros que o SLA, um SLI de erros acima de 95% garante que o SLA de erros também foi cumprido. A dashboard, portanto, é uma medida segura do SLA, ainda que mais rigorosa.
+O SLA usa a mesma definição do SLI que considera erros as respostas `4xx` e `5xx`. Uma falha de aplicação pode se manifestar com o erro 4xx e também pode indicar requisição inválida do cliente. A dashboard, portanto, apresenta a medição de forma mais rigorosa que o SLA.
 
-**Limitação atual:** as consultas dos painéis não filtram por rota, então incluem todas as requisições do serviço, como o `/health`. Isso tende a inflar levemente o resultado e deve ser considerado ao interpretar os números.
+### Limitações:
+
+- **Rotas fora da medição** - O `/health` e o `/metrics` não geram spans e, portanto, não entram nas métricas. Assim, as sondas de _liveness_ e de _readiness_ não distorcem os SLIs.                   
+
+- **Filtro de códigos** - Um código `4xx` causado por dado inválido enviado pelo cliente (por exemplo, `400` por _payload_ malformado) também conta como erro, pois as métricas não distinguem a causa. Isso é aceito porque a margem de `5%` do SLA absorve o volume esperado. Se necessário, o SLI pode ser refinado no futuro por código de status, já que a dimensão `http_response_status_code` está disponível.
 
 <BR>
 
@@ -69,9 +73,9 @@ O SLI conta os erros `4xx` e `5xx`, enquanto o SLA considera erro apenas as resp
 
 A SolidaryTech não cobra das ONGs, então não há crédito financeiro. As consequências são de transparência e de proteção do serviço:
 
-1. **Comunicação proativa.** As ONGs são informadas assim que o impacto nas doações é confirmado, com atualizações até a normalização do serviço. A comunicação ocorre quando o SLA é violado ou quando há ativação do DR.
-2. **Post-mortem publicado em até 3 dias úteis.** Depois da resolução, o relatório é publicado com a causa raiz, o impacto, a linha do tempo e as ações corretivas.
-3. **Congelamento de mudanças no `donation-service`.** Vale desde a quebra do SLO, conforme já previsto em `doc/estrutura.md`, e se mantém até o _error budget_ se recompor no próximo período mensal.
+1. **Comunicação proativa** - As ONGs são informadas assim que o impacto nas doações é confirmado, com atualizações até a normalização do serviço. A comunicação ocorre quando o SLA é violado ou quando há ativação do DR.
+2. **Post-mortem publicado em até 3 dias úteis** - Depois da resolução, o relatório é publicado com a causa raiz, o impacto, a linha do tempo e as ações corretivas.
+3. **Congelamento de mudanças no `donation-service`** - Vale desde a quebra do SLO e se mantém até o _error budget_ se recompor no próximo período mensal.
 
 <BR>
 
@@ -80,26 +84,25 @@ A SolidaryTech não cobra das ONGs, então não há crédito financeiro. As cons
 Não contam como indisponibilidade para o SLA:
 
 - **Manutenção planejada**, comunicada com antecedência às ONGs, o que inclui o _failback_ planejado do DR.
-- **Erros causados pelo cliente**, ou seja, respostas 4xx decorrentes de requisições inválidas.
 - **Falhas fora do controle da plataforma** que a estratégia de DR não consiga contornar, como a indisponibilidade simultânea das duas regiões da AWS.
-- **Ambientes de desenvolvimento e teste**, como o cluster `kubeadm-local`.
+- **Ambientes de desenvolvimento e teste**, como um cluster local.
 - **Falhas apenas no evento assíncrono do SQS**, desde que a doação tenha sido gravada e respondida com sucesso.
 
-A **ativação do DR não é uma exclusão**: o tempo de recuperação de um desastre regional conta como indisponibilidade.
+> ℹ️ **A ativação do DR não é uma exclusão, pois o tempo de recuperação de um desastre regional conta como indisponibilidade.**
 
 <BR>
 
 ## Ligação com o PCN
 
-O [Plano de Continuidade de Negócios][pcn] define o RTO e o RPO da plataforma, e os valores são coerentes com o SLA:
+O [Plano de Continuidade de Negócios][pcn] define o RTO e o RPO da plataforma, e os valores são coerentes com o SLA.
 
 | Item do PCN | Valor | Efeito no SLA |
 | --- | --- | --- |
 | RTO estimado | 30 a 50 minutos | Consome entre `1,4%` e `2,3%` das `36h` toleradas pelo SLA, e entre `3,5%` e `5,8%` do _error budget_ do SLO |
-| Ativação medida em simulado | `36m01s` de ponta a ponta | Cerca de `1,7%` das `36h` do SLA |
+| Medição em simulado | `36m01s` de ponta a ponta | Cerca de `1,7%` das `36h` do SLA |
 | RPO das doações | Alguns segundos | O SLA não acrescenta garantia de dados além desta meta do PCN |
 
-Portanto, um desastre regional recuperado dentro do RTO não é suficiente, sozinho, para violar o SLA. Ele pode, no entanto, consumir uma parte relevante do _error budget_ do SLO do mês.
+Portanto, um desastre regional recuperado dentro do RTO não é suficiente, sozinho, para violar o SLA. Ele pode, no entanto, consumir uma parte relevante do _error budget_ do SLO do mês se não for conduzido com celeridade.
 
 | [⬆️ Top](#sli-slo-e-sla-do-donation-service) |
 | --- |
