@@ -11,7 +11,7 @@ Este documento descreve como um incidente da SolidaryTech é tratado, da detecç
 
 ```mermaid
 flowchart TD
-    A["1. Detecção<br/>Alerta do Grafana, Visão Externa<br/>ou health check do Route53"] --> B["2. Triagem<br/>Plantão de SRE classifica:<br/>Warning, Alert ou Critical"]
+    A["1. Detecção<br/>Alerta do Grafana, Visão Externa<br/>ou health check do Route53"] --> B["2. Triagem ou<br/>Plantão de SRE classifica:<br/>Warning, Alert ou Critical"]
     B --> C["3. Comunicação inicial<br/>ONGs informadas conforme o SLA"]
     C --> D["4. Diagnóstico<br/>Métrica, log e trace<br/>com apoio do assistente de IA"]
     D --> E{"5. Mitigação"}
@@ -48,7 +48,7 @@ Os papéis são os definidos no [PCN][pcn]: o **Plantão de SRE** decide e coord
 ### Caminhos de mitigação
 
 - **Falha de pod ou node:** a recuperação é automática, sem intervenção humana (_liveness probe_, HPA, PDB e reconciliação do Flux). Ver a seção "SRE" de [`doc/estrutura.md`][estrutura].
-- **Mudança defeituosa:** o caminho é um _commit_ de _revert_ na branch `main`, que o Flux aplica. É o caso de um _deploy_ que renomeia por engano o endpoint `/donations`, o que faz os clientes receberem 404. Assim, a correção segue a regra de não haver _deploy_ manual via `kubectl`.
+- **Mudança defeituosa:** o caminho é um _commit_ de _revert_ na branch `main`, que o Flux aplica. Por exemplo: caso um _deploy_ renomeie por engano o endpoint `/donations`, o que faz os clientes receberem o erro `404`.
 - **Falha regional:** o Plantão de SRE decide declarar o desastre e o Operador executa o [roteiro de ativação do DR][roteirodr]. A decisão é manual de propósito, como explica o [PCN][pcn].
 - **Camada de persistência:** Postgres, DynamoDB e SQS não têm recuperação automatizada. A detecção é rápida, mas a resolução depende do Operador, o que eleva o MTTR.
 
@@ -59,7 +59,7 @@ Os papéis são os definidos no [PCN][pcn]: o **Plantão de SRE** decide e coord
 | Nível | Critério | Regras atuais | Tratamento |
 | --- | --- | --- | --- |
 | **Critical** | Impacto direto no doador ou no SLA: `donation-service` com taxa de erro acima de `2%` sustentada, doações paradas ou falha regional | `solidarytech-donation-error-rate` (`severity: critical`) | Plantão notificado de imediato. Comunicação e _post-mortem_ conforme o SLA. Avaliação de ativação do DR se a falha for regional |
-| **Alert** | Impacto confirmado e limitado: `ngo-service` ou `volunteer-service` degradados, ou um Warning confirmado que ameaça as doações | Nenhuma regra dedicada. O nível é atribuído na triagem | Tratamento prioritário pelo Plantão. Escala para Critical se atingir o `donation-service` |
+| **Alert** | Impacto confirmado e limitado: `ngo-service` ou `volunteer-service` degradados, ou um Warning confirmado que ameaça as doações | O nível é atribuído na triagem | Tratamento prioritário pelo Plantão. Escala para Critical se atingir o `donation-service` |
 | **Warning** | Risco ou anomalia sem impacto confirmado no doador: pods indisponíveis com outras réplicas atendendo, ou silêncio de chamadas ainda não confirmado como falha | `solidarytech-pods-unavailable` e `solidarytech-donation-silence` (`severity: warning`) | Registro e análise pelo Plantão, sem comunicação externa |
 
 O nível pode mudar durante o incidente. Um Warning confirmado sobe para Alert, e qualquer impacto no `donation-service` o eleva a Critical. Por exemplo, o silêncio de chamadas pode ser apenas um período sem uso, mas, se for confirmado como falha de roteamento, passa a Critical.
