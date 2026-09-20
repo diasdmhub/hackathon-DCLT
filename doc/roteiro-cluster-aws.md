@@ -240,7 +240,7 @@ terraform destroy
 [grafanacloud]: https://grafana.com/products/cloud/
 [ativadr]: /doc/roteiro-dr-ativacao.md
 [gotksync]: /clusters/eks-aws/flux-system/gotk-sync.yaml
-[solidkustom]: clusters/eks-aws/solidarytech-kustomization.yaml
+[solidkustom]: /clusters/eks-aws/solidarytech-kustomization.yaml
 [terradr]: /terra-dr/
 [terra]: /terra/
 [kubeaws]: /kube-aws/
