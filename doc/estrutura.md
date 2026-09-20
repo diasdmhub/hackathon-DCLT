@@ -187,7 +187,7 @@ Essa estratégia está formalizada no [Plano de Continuidade de Negócios (PCN) 
 [cigitea]: /.gitea/workflows/ci-cd.yaml
 [cigithub]: /.github/workflows/ci-cd.yaml
 [fluxcd]: /clusters/kubeadm-local/
-[kube]: /kube/
+[kube]: /kube-aws/
 [observe]: /observe/
 [imageauto]: /image-automation/
 [dockerhub]: https://hub.docker.com/u/diasdmhub
