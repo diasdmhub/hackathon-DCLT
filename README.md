@@ -14,10 +14,25 @@ O projeto foi estruturado em partes distintas e correlacionadas. Foi criado o í
 
 ### [↗️ Estrutura de disciplinas do projeto][estrutura]
 ### [↗️ Arquitetura dos microserviços][arquiteturamicro]
+
+<BR>
+
 ### [↗️ Implementação inicial][implementacao]
 ### [↗️ Teste manual dos microserviços][testemanual]
-### [↗️ Plano de Continuidade de Negócios (PCN)][pcn]
+
+<BR>
+
 ### [↗️ Roteiro de ativação/failback do DR][roteirodr]
+### [↗️ Plano de Continuidade de Negócios (PCN)][pcn]
+
+<BR>
+
+### [↗️ SLA Donation Service][sla]
+### [↗️ Ciclo de vida para incidentes][incidentes]
+
+<BR>
+
+### [↗️ Estimativas de custos][custos]
 ### [↗️ Considerações para Otimização de Custos][consideracoes]
 
 ---
@@ -416,9 +431,12 @@ Faça a diferença com a **SolidaryTech** 💙
 [estrutura]: /doc/estrutura.md
 [implementacao]: /doc/roteiro-cluster-aws.md
 [arquiteturamicro]: /doc/arquitetura.md
+[sla]: /doc/sla.md
+[incidentes]: /doc/incidentes.md
 [testemanual]: /doc/teste-manual.md
 [pcn]: /doc/plano-continuidade-negocios.md
 [roteirodr]: /doc/roteiro-dr-ativacao.md
 [issue3]: https://github.com/dougls/hackathon-DCLT/issues/3
 [dockercompose]: /build/docker-compose.yaml
 [consideracoes]: /doc/consideracoes.md
+[custos]: /doc/estimativa-custo.md
